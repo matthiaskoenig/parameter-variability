@@ -1,0 +1,4 @@
+sbmlutils>=0.8.7
+libroadrunner>=2.4.0
+pandas
+matplotlib
