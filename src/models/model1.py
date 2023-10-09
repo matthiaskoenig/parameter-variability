@@ -20,22 +20,44 @@ _m.compartments = [
 
 _m.species = [
     Species(
-        sid="S1",
-        name="S1",
-        compartment="liver",
+        sid="gut",
+        name="gut",
+        compartment='liver',
         initialConcentration=1.0,
     ),
     Species(
-        sid="S2",
-        name="S2",
+        sid="cent",
+        name='cent',
         compartment="liver",
         initialConcentration=0.0,
+    ),
+    Species(
+        sid='peri',
+        name='peri',
+        compartment='liver',
+        initialConcentration=0.0
     )
 ]
 
 _m.parameters = [
     Parameter(
-        sid="k1",
+        sid="k",
+        value=1.0
+    ),
+    Parameter(
+        sid="cl",
+        value=1.0
+    ),
+    Parameter(
+        sid="q",
+        value=1.0
+    ),
+    Parameter(
+        sid="v_cent",
+        value=1.0
+    ),
+    Parameter(
+        sid="v_peri",
         value=1.0
     )
 ]
@@ -43,14 +65,29 @@ _m.parameters = [
 _m.reactions = [
     Reaction(
         sid="R1",
-        equation="S1 -> S2",
-        formula="k1 * S1",
+        equation="gut -> gut",
+        formula="-k * gut",
         notes="""
-        dS1 /dt = - k1 * S1
-        dS2 /dt = + k1 * S1
+        dgut /dt = - k * gut
         """
-
+    ),
+    Reaction(
+        sid="R2",
+        equation="gut, cent, peri -> cent",
+        formula="k * gut - (cl/v_cent + q/v_cent)*cent + q/v_peri*peri",
+        notes="""
+        dcent/dt = k * gut - (cl/v_cent + q/v_cent)*cent + q/v_peri*peri
+        """
+    ),
+    Reaction(
+        sid="R3",
+        equation="cent, peri -> peri",
+        formula="q/v_cent*cent - q/v_peri*peri",
+        notes="""
+        dperi /dt = q/v_cent*cent - q/v_peri*peri
+        """
     )
+
 ]
 
 
