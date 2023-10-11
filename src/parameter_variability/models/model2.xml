@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" xmlns:comp="http://www.sbml.org/sbml/level3/version1/comp/version1" level="3" version="2" comp:required="true">
+  <notes>
+    <body xmlns="http://www.w3.org/1999/xhtml">
+      <p>Created with <a href="https://github.com/matthiaskoenig/sbmlutils">https://github.com/matthiaskoenig/sbmlutils</a>.
+<a href="https://doi.org/10.5281/zenodo.5525390">
+        <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.5525390.svg" alt="DOI"/></a></p>
+      </body>
+    </notes>
+  <model id="model2" name="Model 2">
+    <listOfCompartments>
+      <compartment id="liver" spatialDimensions="3" size="1" constant="true"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="gut" name="gut" compartment="liver" initialConcentration="1" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="cent" name="cent" compartment="liver" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="peri" name="peri" compartment="liver" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="k" value="1" constant="true"/>
+      <parameter id="cl" value="1" constant="true"/>
+      <parameter id="q" value="1" constant="true"/>
+      <parameter id="v_cent" value="1" constant="true"/>
+      <parameter id="v_peri" value="1" constant="true"/>
+    </listOfParameters>
+    <listOfReactions>
+      <reaction id="R1" reversible="false">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <p>dgut /dt = - k * gut</p>
+          </body>
+        </notes>
+        <listOfReactants>
+          <speciesReference species="gut" stoichiometry="1" constant="true"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="gut" stoichiometry="1" constant="true"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <apply>
+                <minus/>
+                <ci> k </ci>
+              </apply>
+              <ci> gut </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R2" reversible="false">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <p>dcent/dt = k * gut - (cl/v_cent + q/v_cent)<em>cent + q/v_peri</em>peri</p>
+          </body>
+        </notes>
+        <listOfReactants>
+          <speciesReference constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="cent" stoichiometry="1" constant="true"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <plus/>
+              <apply>
+                <minus/>
+                <apply>
+                  <times/>
+                  <ci> k </ci>
+                  <ci> gut </ci>
+                </apply>
+                <apply>
+                  <times/>
+                  <apply>
+                    <plus/>
+                    <apply>
+                      <divide/>
+                      <ci> cl </ci>
+                      <ci> v_cent </ci>
+                    </apply>
+                    <apply>
+                      <divide/>
+                      <ci> q </ci>
+                      <ci> v_cent </ci>
+                    </apply>
+                  </apply>
+                  <ci> cent </ci>
+                </apply>
+              </apply>
+              <apply>
+                <times/>
+                <apply>
+                  <divide/>
+                  <ci> q </ci>
+                  <ci> v_peri </ci>
+                </apply>
+                <ci> peri </ci>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R3" reversible="false">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <p>dperi /dt = q/v_cent<em>cent - q/v_peri</em>peri</p>
+          </body>
+        </notes>
+        <listOfReactants>
+          <speciesReference species="peri" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="peri" stoichiometry="1" constant="true"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <minus/>
+              <apply>
+                <times/>
+                <apply>
+                  <divide/>
+                  <ci> q </ci>
+                  <ci> v_cent </ci>
+                </apply>
+                <ci> cent </ci>
+              </apply>
+              <apply>
+                <times/>
+                <apply>
+                  <divide/>
+                  <ci> q </ci>
+                  <ci> v_peri </ci>
+                </apply>
+                <ci> peri </ci>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>
