@@ -2,6 +2,7 @@
 from pathlib import Path
 
 from sbmlutils.console import console
+from sbmlutils.converters import odefac
 from sbmlutils.cytoscape import visualize_sbml
 from sbmlutils.factory import *
 from sbmlutils.metadata import *
@@ -13,28 +14,43 @@ _m = Model(
 )
 _m.compartments = [
     Compartment(
-        sid="liver",
+        sid="Vgut",
+        name="gut compartment",
+        value=1.0,
+    ),
+    Compartment(
+        sid="Vperi",
+        name="peripheral compartment",
+        value=1.0,
+    ),
+    Compartment(
+        sid="Vcent",
+        name="central compartment",
         value=1.0,
     )
 ]
 
 _m.species = [
     Species(
-        sid="gut",
-        name="gut",
-        compartment='liver',
-        initialConcentration=1.0,
+        sid="y_gut",
+        name="y gut",
+        compartment='Vgut',
+        initialAmount=1.0,
+        hasOnlySubstanceUnits=False,
+        notes="""
+        handled in amount not concentration
+        """
     ),
     Species(
-        sid="cent",
-        name='cent',
-        compartment="liver",
+        sid="y_cent",
+        name='y central',
+        compartment="Vcent",
         initialConcentration=0.0,
     ),
     Species(
-        sid='peri',
-        name='peri',
-        compartment='liver',
+        sid='y_peri',
+        name='y peripheral',
+        compartment='Vperi',
         initialConcentration=0.0
     )
 ]
@@ -45,46 +61,49 @@ _m.parameters = [
         value=1.0
     ),
     Parameter(
-        sid="cl",
+        sid="CL",
         value=1.0
     ),
     Parameter(
-        sid="q",
+        sid="Q",
         value=1.0
     ),
-    Parameter(
-        sid="v_cent",
-        value=1.0
-    ),
-    Parameter(
-        sid="v_peri",
-        value=1.0
-    )
 ]
 
 _m.reactions = [
     Reaction(
-        sid="R1",
-        equation="gut -> gut",
-        formula="-k * gut",
+        sid="ABSORPTION",
+        name="absorption",
+        equation="y_gut -> y_cent",
+        formula="-k * y_gut",
         notes="""
-        dgut /dt = - k * gut
+        absorption from gut
+        """
+    ),
+    Reaction(
+        sid="CLEARANCE",
+        name="clearance",
+        equation="y_cent ->",
+        formula="-CL * y_cent",
+        notes="""
+        clearance from central compartment
+        """
+    ),
+
+    Reaction(
+        sid="R1",
+        equation="y_cent -> y_peri",
+        formula="Q* y_cent",
+        notes="""
+        distribution in peripheral compartment
         """
     ),
     Reaction(
         sid="R2",
-        equation="gut, cent, peri -> cent",
-        formula="k * gut - (cl/v_cent + q/v_cent)*cent + q/v_peri*peri",
+        equation="y_peri -> y_cent",
+        formula="Q * y_peri",
         notes="""
-        dcent/dt = k * gut - (cl/v_cent + q/v_cent)*cent + q/v_peri*peri
-        """
-    ),
-    Reaction(
-        sid="R3",
-        equation="cent, peri -> peri",
-        formula="q/v_cent*cent - q/v_peri*peri",
-        notes="""
-        dperi /dt = q/v_cent*cent - q/v_peri*peri
+        distribution from peripheral compartment
         """
     )
 
@@ -100,4 +119,18 @@ if __name__ == "__main__":
         sbml_version=2,
         validation_options=ValidationOptions(units_consistency=False)
     )
-    visualize_sbml(sbml_path=results.sbml_path)
+    # create differential equations
+    md_path = Path(__file__).parent / f"{_m.sid}.md"
+    ode_factory = odefac.SBML2ODE.from_file(sbml_file=results.sbml_path)
+    ode_factory.to_markdown(md_file=md_path)
+
+    console.rule(style="white")
+    from rich.markdown import Markdown
+    with open(md_path, "r") as f:
+        md_str = f.read()
+        md = Markdown(md_str)
+        console.print(md)
+    console.rule(style="white")
+
+    # visualize network
+    visualize_sbml(sbml_path=results.sbml_path, delete_session=True)
