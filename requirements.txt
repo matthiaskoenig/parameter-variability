@@ -1,4 +1,4 @@
 sbmlutils>=0.8.7
-libroadrunner>=2.4.0
+libroadrunner>=2.2.2
 pandas
 matplotlib
