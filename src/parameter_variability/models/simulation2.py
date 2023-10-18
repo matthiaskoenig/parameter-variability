@@ -40,6 +40,8 @@ for parameter, ax in zip(results, axes):
                     markeredgecolor="black"
                 )
     # ax.legend()
+    ax.set_title(parameter)
     ax.set_xlabel("time [A.U.]")
     ax.set_ylabel("concentration [substance_units/compartment_units]")
+plt.tight_layout()
 plt.show()
