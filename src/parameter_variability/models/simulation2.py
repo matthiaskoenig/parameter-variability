@@ -14,7 +14,7 @@ def reference_simulation(r: roadrunner.RoadRunner) -> None:
 
     # simulation
     r.resetAll()
-    s = r.simulate(start=0, end=1, steps=400)
+    s = r.simulate(start=0, end=10, steps=400)  # [min]
     df: pd.DataFrame = pd.DataFrame(s, columns=s.colnames)
 
     for sid in ["[y_gut]", "[y_cent]", "[y_peri]"]:
@@ -22,8 +22,8 @@ def reference_simulation(r: roadrunner.RoadRunner) -> None:
 
         # ax.legend()
         ax.set_title("Reference simulation")
-        ax.set_xlabel("time [A.U.]")
-        ax.set_ylabel("concentration [substance_units/compartment_units]")
+        ax.set_xlabel("time [min]")
+        ax.set_ylabel("concentration [mM]")
 
     ax.legend()
     ax.grid(True)
@@ -67,8 +67,8 @@ def parameter_scan(r: roadrunner.RoadRunner) -> None:
                     )
         # ax.legend()
         ax.set_title(parameter)
-        ax.set_xlabel("time [A.U.]")
-        ax.set_ylabel("concentration [substance_units/compartment_units]")
+        ax.set_xlabel("time [min]")
+        ax.set_ylabel("concentration [mM]")
     plt.tight_layout()
     plt.show()
 
