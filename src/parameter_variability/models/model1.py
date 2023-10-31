@@ -55,11 +55,10 @@ _m.reactions = [
 
 
 if __name__ == "__main__":
-    model_path = Path(__file__).parent / "model1.xml"
 
     results: FactoryResult = create_model(
         model=_m,
-        filepath=model_path,
+        filepath=Path(__file__).parent / f"{_m.sid}.xml",
         sbml_level=3,
         sbml_version=2,
         validation_options=ValidationOptions(units_consistency=False)
