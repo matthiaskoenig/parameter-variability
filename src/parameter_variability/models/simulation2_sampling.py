@@ -44,6 +44,7 @@ class Sampler(object):
             self.plot()
 
     def define_distribution(self, true_dsn=stats.lognorm, errors_dsn=stats.halfnorm):
+        # TODO: add generalization to several parameters
         true_dsn = true_dsn(loc=self.loc, s=self.scale)
         errors_dsn = errors_dsn()
         self.true_distribution = true_dsn
@@ -97,12 +98,26 @@ class Sampler(object):
               f'\n-------------------- Simulation Finished! --------------------')
         print()
 
-    # TODO: add plotting method to plot and summarize the data
     def plot(self):
-        fig, ax = plt.subplots()
-        self.df_res.plot(x='time', y=['[y_gut]', '[y_cent]', '[y_peri]'], ax=ax, style='.-')
-        ax.set_xlabel('Time [min]')
-        ax.set_ylabel('Concentration [mM]')
+        # TODO: add generalization to several parameters
+        fig, ax = plt.subplots(2,1, figsize=(8, 12))
+
+        # PDF of theta and the value drawn
+        theta = np.linspace(self.true_distribution.ppf(0.001),
+                            self.true_distribution.ppf(0.999),
+                            500)
+        ax[0].plot(theta, self.true_distribution.pdf(theta), color='crimson',
+                   label=f'$k \sim lognorm({self.loc:.2f}, {self.scale:.2f})$')
+        ax[0].axvline(self.thetas, linestyle='--', color='green', label='$k$ drawn')
+        ax[0].set_xlabel('$k$')
+        ax[0].set_ylabel('Probability Density Function')
+        ax[0].legend()
+
+        # Generated data
+        self.df_res.plot(x='time', y=['[y_gut]', '[y_cent]', '[y_peri]'], ax=ax[1], style='.-')
+        ax[1].set_xlabel('Time [min]')
+        ax[1].set_ylabel('Concentration [mM]')
+        ax[1].legend()
         plt.tight_layout()
         plt.show()
 
