@@ -20,7 +20,8 @@ np.random.seed(2001)
 
 
 class Sampler(object):
-    def __init__(self, loc, scale, name, n, steps, model_path, save_dir, plot):
+    def __init__(self, loc=np.log(2.5), scale=1, name='k', n=1, steps=30,
+                 model_path='model2.xml', save_dir=None, plot=False):
         self.loc = loc
         self.scale = scale
         self.name = name
@@ -34,12 +35,14 @@ class Sampler(object):
         self.thetas = None
         self.errors_distribution = None
 
-        self.df_res = None
+        self.df_sampler = None
 
         self.define_distribution()
         self.draw_theta()
         self.sample_data()
-        self.save_data(save_dir)
+
+        if save_dir:
+            self.save_data(save_dir)
         if plot:
             self.plot()
 
@@ -78,15 +81,15 @@ class Sampler(object):
             self.model.resetAll()
 
         if len(sims) > 1:
-            df_res = pd.concat(sims, axis=1)
+            df_sampler = pd.concat(sims, axis=1)
 
         else:
-            df_res = sims[0]
+            df_sampler = sims[0]
 
-        self.df_res = df_res
+        self.df_sampler = df_sampler
 
     def save_data(self, save_dir):
-        res = self.df_res.to_dict(orient='split')
+        res = self.df_sampler.to_dict(orient='split')
         res['thetas'] = self.thetas.tolist()
         res['n'] = self.n
 
@@ -114,7 +117,7 @@ class Sampler(object):
         ax[0].legend()
 
         # Generated data
-        self.df_res.plot(x='time', y=['[y_gut]', '[y_cent]', '[y_peri]'], ax=ax[1], style='.-')
+        self.df_sampler.plot(x='time', y=['[y_gut]', '[y_cent]', '[y_peri]'], ax=ax[1], style='.-')
         ax[1].set_xlabel('Time [min]')
         ax[1].set_ylabel('Concentration [mM]')
         ax[1].legend()
