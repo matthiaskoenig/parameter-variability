@@ -128,8 +128,8 @@ class Sampler(object):
 if __name__ == '__main__':
     args = parse_args()
 
-    Sampler(loc=args.mean,
-            scale=args.variance,
+    Sampler(loc=args.sampler_mean,
+            scale=args.sampler_variance,
             name=args.parameter,
             n=args.n,
             steps=args.steps,
