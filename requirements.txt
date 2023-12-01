@@ -11,3 +11,5 @@ black>=22.1.0
 isort>=5.10
 mypy>=0.931
 pytest>=7.0.1
+rich
+xarray
