@@ -3,3 +3,5 @@
 .idea
 data
 **/.DS_Store
+parameter_variability/results
+__pycache__

@@ -7,7 +7,12 @@
         <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.5525390.svg" alt="DOI"/></a></p>
       </body>
     </notes>
-  <model id="model1" name="Model 1">
+  <model id="simple_chain" name="Model Simple Chain">
+    <notes>
+      <body xmlns="http://www.w3.org/1999/xhtml">
+        <p>Simple S1 -&gt; S2 conversion for testing.</p>
+      </body>
+    </notes>
     <listOfCompartments>
       <compartment id="liver" spatialDimensions="3" size="1" constant="true"/>
     </listOfCompartments>

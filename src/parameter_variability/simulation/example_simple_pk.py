@@ -1,9 +1,10 @@
+"""Example simulations and parameter scans with simple PK model."""
+
+import numpy as np
 import pandas as pd
 import roadrunner
-from sbmlutils.console import console
-
 from matplotlib import pyplot as plt
-import numpy as np
+from sbmlutils.console import console
 
 
 def reference_simulation(r: roadrunner.RoadRunner) -> None:
@@ -41,7 +42,7 @@ def parameter_scan(r: roadrunner.RoadRunner) -> None:
 
     results = {}
 
-    for parameter, par_name in zip([ks, cls, qs], ['k', 'CL', 'Q']):
+    for parameter, par_name in zip([ks, cls, qs], ["k", "CL", "Q"]):
         results_par = []
         for value in parameter:
             # reset to a clean state
@@ -60,11 +61,13 @@ def parameter_scan(r: roadrunner.RoadRunner) -> None:
         for sid in ["[y_cent]", "[y_gut]", "[y_peri]"]:
             for df in results[parameter]:
                 ax.plot(
-                        df.time, df[sid], label=sid,
-                        linestyle="-",
-                        # marker="o",
-                        markeredgecolor="black"
-                    )
+                    df.time,
+                    df[sid],
+                    label=sid,
+                    linestyle="-",
+                    # marker="o",
+                    markeredgecolor="black",
+                )
         # ax.legend()
         ax.set_title(parameter)
         ax.set_xlabel("time [min]")
@@ -75,7 +78,8 @@ def parameter_scan(r: roadrunner.RoadRunner) -> None:
 
 if __name__ == "__main__":
     # load_model
-    r: roadrunner.RoadRunner = roadrunner.RoadRunner("model2.xml")
+    from parameter_variability import MODEL_SIMPLE_PK
+
+    r: roadrunner.RoadRunner = roadrunner.RoadRunner(MODEL_SIMPLE_PK)
     reference_simulation(r)
     parameter_scan(r)
-

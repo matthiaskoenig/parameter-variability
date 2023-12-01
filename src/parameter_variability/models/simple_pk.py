@@ -4,9 +4,9 @@ from pathlib import Path
 from sbmlutils.console import console
 from sbmlutils.converters import odefac
 from sbmlutils.cytoscape import visualize_sbml
+from sbmlutils.examples.templates import terms_of_use
 from sbmlutils.factory import *
 from sbmlutils.metadata import *
-from sbmlutils.examples.templates import terms_of_use
 
 
 class U(Units):
@@ -28,26 +28,26 @@ class U(Units):
 
 
 _m = Model(
-    sid="model2",
-    name="Model 2",
+    sid="simple_pk",
+    name="Simple PK model",
     notes="""
     # Model of absorption and distribution of substance y.
     """
     + terms_of_use,
     creators=[
         Creator(
-           familyName="König",
-           givenName="Matthias",
-           email="koenigmx@hu-berlin.de",
-           organization="Humboldt-University Berlin, Institute for Theoretical Biology",
-           site="https://livermetabolism.com",
+            familyName="König",
+            givenName="Matthias",
+            email="koenigmx@hu-berlin.de",
+            organization="Humboldt-University Berlin, Institute for Theoretical Biology",
+            site="https://livermetabolism.com",
         ),
         Creator(
             familyName="Alvarez",
             givenName="Antonio",
             email="antonio.alvarez@student.hu-berlin.de",
             organization="Humboldt-University Berlin, Institute for Theoretical Biology",
-        )
+        ),
     ],
     units=U,
     model_units=ModelUnits(
@@ -57,9 +57,7 @@ _m = Model(
         length=U.meter,
         area=U.m2,
         volume=U.liter,
-    )
-
-
+    ),
 )
 _m.compartments = [
     Compartment(
@@ -82,38 +80,38 @@ _m.compartments = [
         value=1.0,
         sboTerm=SBO.PHYSICAL_COMPARTMENT,
         unit=U.liter,
-    )
+    ),
 ]
 
 _m.species = [
     Species(
         sid="y_gut",
         name="y gut",
-        compartment='Vgut',
+        compartment="Vgut",
         initialAmount=1.0,
         hasOnlySubstanceUnits=False,
         substanceUnit=U.mmole,
         sboTerm=SBO.SIMPLE_CHEMICAL,
         notes="""
         handled in amount not concentration
-        """
+        """,
     ),
     Species(
         sid="y_cent",
-        name='y central',
+        name="y central",
         compartment="Vcent",
         initialConcentration=0.0,
         substanceUnit=U.mmole,
         sboTerm=SBO.SIMPLE_CHEMICAL,
     ),
     Species(
-        sid='y_peri',
-        name='y peripheral',
-        compartment='Vperi',
+        sid="y_peri",
+        name="y peripheral",
+        compartment="Vperi",
         initialConcentration=0.0,
         substanceUnit=U.mmole,
         sboTerm=SBO.SIMPLE_CHEMICAL,
-    )
+    ),
 ]
 
 _m.reactions = [
@@ -135,7 +133,7 @@ _m.reactions = [
                 unit=U.l_per_min,
                 sboTerm=SBO.KINETIC_CONSTANT,
             ),
-        ]
+        ],
     ),
     Reaction(
         sid="CLEARANCE",
@@ -155,9 +153,8 @@ _m.reactions = [
                 unit=U.l_per_min,
                 sboTerm=SBO.KINETIC_CONSTANT,
             ),
-        ]
+        ],
     ),
-
     Reaction(
         sid="R1",
         name="transport peripheral (R1)",
@@ -176,7 +173,7 @@ _m.reactions = [
                 unit=U.l_per_min,
                 sboTerm=SBO.KINETIC_CONSTANT,
             ),
-        ]
+        ],
     ),
     Reaction(
         sid="R2",
@@ -187,27 +184,30 @@ _m.reactions = [
         notes="""
         [mmole/min]
         distribution from peripheral compartment
-        """
-    )
+        """,
+    ),
 ]
 
 
 if __name__ == "__main__":
+    from parameter_variability import MODELS_DIR
 
     results: FactoryResult = create_model(
         model=_m,
-        filepath=Path(__file__).parent / f"{_m.sid}.xml",
+        filepath=MODELS_DIR / f"{_m.sid}.xml",
         sbml_level=3,
         sbml_version=2,
         # validation_options=ValidationOptions(units_consistency=False)
     )
+
     # create differential equations
-    md_path = Path(__file__).parent / f"{_m.sid}.md"
+    md_path = MODELS_DIR / f"{_m.sid}.md"
     ode_factory = odefac.SBML2ODE.from_file(sbml_file=results.sbml_path)
     ode_factory.to_markdown(md_file=md_path)
 
     console.rule(style="white")
     from rich.markdown import Markdown
+
     with open(md_path, "r") as f:
         md_str = f.read()
         md = Markdown(md_str)
