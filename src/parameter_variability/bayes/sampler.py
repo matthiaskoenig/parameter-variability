@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 from typing import Union, List, Callable, Dict, Any
 
+import matplotlib.pyplot
 import numpy as np
 import pandas as pd
 import roadrunner
@@ -64,21 +65,22 @@ class SampleSimulator:
 
         return dset
 
-    def apply_errors(data: xr.Dataset, variables: List[str]) -> xr.Dataset:
+    def apply_errors(self, data: xr.Dataset, variables: List[str]) -> xr.Dataset:
         """Applies errors to the simulation."""
+        n_thetas = data.sizes['thetas']
+        n_steps = data.sizes['index']
 
-        # FIXME: error has to be applied on the state variables;
+        errors_dsn = stats.halfnorm(loc=0, scale=1)
+        errors = errors_dsn.rvs((n_thetas, n_steps))
 
+        variables = variables[0] if len(variables) < 2 else variables
 
-        pass
-        # # error distribution
-        # errors_dsn = stats.halfnorm
-        # errors_dsn = errors_dsn()  # ??? how large are the errors
-        # self.errors_distribution = errors_dsn
-        # TODO: implement
-        # sim[:, 1:] = sim[:, 1:] + errors.reshape((step_correction, 1))
-        # errors = self.errors_distribution.rvs(size=step_correction)
+        data[variables] = data[variables] + errors
+
         return data
+
+    def plot(self, data: xr.Dataset, ax: matplotlib.pyplot.Axes) -> None:
+        pass
 
     def save_data(self, data: xr.Dataset, results_path: Path):
         """Store dataset as netCDF."""
@@ -149,7 +151,9 @@ if __name__ == "__main__":
     data2 = simulator.load_data(dset_path)
     console.print(data2)
 
-    simulator.apply_errors(data, variables=["[y_gut]", "[y_gut]", "[y_peri]"])
+    console.rule("Errors", align="left", style="white")
+    data3 = simulator.apply_errors(data2, variables=['[y_gut]', '[y_cent]'])
+    console.print(data3)
 
     console.rule("Plotting", align="left", style="white")
 
