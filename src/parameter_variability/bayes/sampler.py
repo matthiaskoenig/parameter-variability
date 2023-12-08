@@ -57,30 +57,42 @@ class SampleSimulator:
             sim = self.model.simulate(start=start, end=end, steps=steps, **kwargs)
 
             # Adding the errors: y_i = yhat_i + errors_i
-            df = pd.DataFrame(sim, columns=sim.colnames)
+            df = pd.DataFrame(sim, columns=sim.colnames).set_index('time')
             dfs.append(df)
 
         # create xarray
-        dset = xr.concat([df.to_xarray() for df in dfs], dim="thetas")
+        dset = xr.concat([df.to_xarray() for df in dfs], dim="sim")
 
         return dset
 
-    def apply_errors(self, data: xr.Dataset, variables: List[str]) -> xr.Dataset:
+    def apply_errors(self, data: xr.Dataset, variables: List[str],
+                     error_scale: float = 0.05) -> xr.Dataset:
         """Applies errors to the simulation."""
-        n_thetas = data.sizes['thetas']
-        n_steps = data.sizes['index']
+        n_sim = data.sizes['sim']
+        n_time = data.sizes['time']
 
-        errors_dsn = stats.halfnorm(loc=0, scale=1)
-        errors = errors_dsn.rvs((n_thetas, n_steps))
+        errors_dsn = stats.halfnorm(loc=0, scale=error_scale)
+        errors = errors_dsn.rvs((n_sim, n_time))
 
-        variables = variables[0] if len(variables) < 2 else variables
+        variables = variables[0] if len(variables) <= 1 else variables
 
         data[variables] = data[variables] + errors
 
         return data
 
-    def plot(self, data: xr.Dataset, ax: matplotlib.pyplot.Axes) -> None:
-        pass
+    def plot(self, data: xr.Dataset, variables: List[str]) -> None:
+
+        sims = data.sim.values
+        for var in variables:
+            _, ax = plt.subplots()
+            for s in sims:
+                df_s = data.isel(sim=s)[var].to_dataframe().reset_index()
+                df_s.plot(x='time', y=var, ax=ax, label=s)
+            ax.set_xlabel('Time [min]')
+            ax.set_ylabel('Concentation [mM]')
+            ax.set_title(f'Compartment: {var}')
+
+        plt.show()
 
     def save_data(self, data: xr.Dataset, results_path: Path):
         """Store dataset as netCDF."""
@@ -89,36 +101,6 @@ class SampleSimulator:
     def load_data(self, results_path):
         """Load dataset from netCDF."""
         return xr.open_dataset(results_path)
-
-
-# def plot(self):
-#     # TODO: add generalization to several parameters
-#     fig, ax = plt.subplots(2, 1, figsize=(8, 12))
-#
-#     # PDF of theta and the value drawn
-#     theta = np.linspace(
-#         self.true_distribution.ppf(0.001), self.true_distribution.ppf(0.999), 500
-#     )
-#     ax[0].plot(
-#         theta,
-#         self.true_distribution.pdf(theta),
-#         color="crimson",
-#         label=f"$k \sim lognorm({self.loc:.2f}, {self.scale:.2f})$",
-#     )
-#     ax[0].axvline(self.thetas, linestyle="--", color="green", label="$k$ drawn")
-#     ax[0].set_xlabel("$k$")
-#     ax[0].set_ylabel("Probability Density Function")
-#     ax[0].legend()
-#
-#     # Generated data
-#     self.df_sampler.plot(
-#         x="time", y=["[y_gut]", "[y_cent]", "[y_peri]"], ax=ax[1], style=".-"
-#     )
-#     ax[1].set_xlabel("Time [min]")
-#     ax[1].set_ylabel("Concentration [mM]")
-#     ax[1].legend()
-#     plt.tight_layout()
-#     plt.show()
 
 
 if __name__ == "__main__":
@@ -156,4 +138,5 @@ if __name__ == "__main__":
     console.print(data3)
 
     console.rule("Plotting", align="left", style="white")
+    simulator.plot(data3, variables=['[y_gut]', '[y_cent]', '[y_peri]'])
 
