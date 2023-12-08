@@ -36,6 +36,36 @@ class Sampler:
         dsn = self.f_distribution(**self.distribution_parameters)
         return {self.parameter: dsn.rvs(size=n)}
 
+    def plot(self, thetas: Dict[str, np.array]):
+        dsn = self.f_distribution(**self.distribution_parameters)
+        theta_values = list(thetas.values())[0]
+
+        _, ax = plt.subplots()
+
+        theta = np.linspace(
+            dsn.ppf(0.001), dsn.ppf(0.999), 500
+        )
+        ax.plot(
+                theta, dsn.pdf(theta), color="crimson",
+                label=f"${self.parameter} \sim "
+                      f"lognorm({self.distribution_parameters['loc']:.2f}, "
+                      f"{self.distribution_parameters['s']:.2f})$"
+        )
+
+        for i, value in enumerate(theta_values, start=1):
+
+            if i < len(theta_values):
+                ax.axvline(value, linestyle="--", color="green")
+            else:
+                ax.axvline(value, linestyle="--", color="green",
+                           label=f"${self.parameter}$ drawn (n={i})")
+
+        ax.set_xlabel(f"${self.parameter}$")
+        ax.set_ylabel("Probability Density Function")
+        ax.legend()
+
+        plt.show()
+
 
 @dataclass
 class SampleSimulator:
@@ -121,6 +151,9 @@ if __name__ == "__main__":
     thetas = sampler.sample(n=10)
     console.print(f"{thetas=}")
 
+    console.rule('Thetas PDF', align='left', style='white')
+    sampler.plot(thetas)
+
     console.rule("Simulation", align="left", style="white")
     simulator = SampleSimulator(
         model=MODEL_SIMPLE_PK,
@@ -137,6 +170,6 @@ if __name__ == "__main__":
     data3 = simulator.apply_errors(data2, variables=['[y_gut]', '[y_cent]'])
     console.print(data3)
 
-    console.rule("Plotting", align="left", style="white")
+    console.rule("Simulation plots", align="left", style="white")
     simulator.plot(data3, variables=['[y_gut]', '[y_cent]', '[y_peri]'])
 
