@@ -1,91 +1,112 @@
 import json
-
+from typing import Union, List, Callable, Dict, Any
 import numpy as np
 import pandas as pd
 import pymc as pm
 import pytensor
 import pytensor.tensor as pt
-from config import parse_args
+import xarray as xr
 from matplotlib import pyplot as plt
 from numba import njit
 from pymc.ode import DifferentialEquation
 from pytensor.compile.ops import as_op
 from scipy.stats import lognorm
-from simulation2_sampling import Sampler
+from dataclasses import dataclass
+from pathlib import Path
+import roadrunner
+from parameter_variability.console import console
+from parameter_variability import MODEL_SIMPLE_PK
 
 
-class BayesModel(Sampler):
-    def __init__(
-        self, prior_loc, prior_scale, compartment="[y_gut]", n_post=2000, **kwargs
-    ):
-        super().__init__(
-            loc=kwargs["true_loc"],
-            scale=kwargs["true_scale"],
-            name=kwargs["parameter_name"],
-            n=kwargs["n_sampler"],
-            steps=kwargs["sampler_steps"],
-            model_path=kwargs["model_path"],
-        )
+@dataclass
+class BayesModel:
+    ode_mod: Union[str, Path]
+    parameter: str
+    compartment: str
+    prior_parameters: Dict[str, float]
+    f_prior_dsn: Callable
 
-        self.prior_loc = prior_loc
-        self.prior_scale = prior_scale
-        self.n_post = n_post
-        self.compartment = compartment
-        print("\n-------------------- Model Initialized --------------------")
 
-        self.model_bayes = None
-        self.post_samples = None
+    def read_data(self, path: str):
+        return xr.open_dataset(path)
 
-        self.model_bayes_setup()
+    def model_bayes_setup(self, data: xr.Dataset):
+        ode_model = roadrunner.RoadRunner(self.ode_mod)
 
-    def model_bayes_setup(self):
-        # Forward training
         @as_op(itypes=[pt.dvector], otypes=[pt.dmatrix])
-        def pytensor_forward_model_matrix(theta):
-            self.model.resetAll()
-            for par_name, value in zip(self.name, theta):
-                self.model.setValue(par_name, value)
-            sim = self.model.simulate(start=0, end=10, steps=self.steps)
+        def pytensor_forward_model_matrix(theta, compartment, steps=10):
+            ode_model.resetAll()
+            for par_name, value in zip(self.parameter, theta):
+                ode_model.setValue(par_name, value)
+            sim = ode_model.simulate(start=0, end=10, steps=steps)
             sim_df = pd.DataFrame(sim, columns=sim.colnames)
-            return sim_df[self.compartment]
+            return sim_df[compartment]
 
         with pm.Model() as model:
-            k = pm.LogNormal("k", mu=self.prior_loc, sigma=self.prior_scale, initval=1)
+            theta = self.f_prior_dsn(self.compartment, mu=self.prior_parameters['loc'],
+                                     sigma=self.prior_parameters['s'], initval=1)
 
             sigma = pm.HalfNormal("sigma", sigma=1)
 
             # ODE solution function
-            ode_soln = pytensor_forward_model_matrix(k)
+            ode_soln = pytensor_forward_model_matrix(theta, self.compartment)
 
             # likelihood
             pm.LogNormal(
                 name=self.compartment,
                 mu=ode_soln,
                 sigma=sigma,
-                observed=self.df_sampler[self.compartment],
+                observed=data[self.compartment],
             )
 
             pm.model_to_graphviz(model=model)
 
-        print("\n------------------ Model Setup Finalized ------------------")
+        return model
 
-        self.model_bayes = model
 
+
+# class BayesModel(Sampler):
+#     def __init__(
+#         self, prior_loc, prior_scale, compartment="[y_gut]", n_post=2000, **kwargs
+#     ):
+#         super().__init__(
+#             loc=kwargs["true_loc"],
+#             scale=kwargs["true_scale"],
+#             name=kwargs["parameter_name"],
+#             n=kwargs["n_sampler"],
+#             steps=kwargs["sampler_steps"],
+#             model_path=kwargs["model_path"],
+#         )
+#
+#         self.prior_loc = prior_loc
+#         self.prior_scale = prior_scale
+#         self.n_post = n_post
+#         self.compartment = compartment
+#         print("\n-------------------- Model Initialized --------------------")
+#
+#         self.model_bayes = None
+#         self.post_samples = None
+#
+#         self.model_bayes_setup()
+#
+#     def model_bayes_setup(self):
+#         # Forward training
+#         @as_op(itypes=[pt.dvector], otypes=[pt.dmatrix])
+#         def pytensor_forward_model_matrix(theta):
+#             self.model.resetAll()
+#             for par_name, value in zip(self.name, theta):
+#                 self.model.setValue(par_name, value)
+#             sim = self.model.simulate(start=0, end=10, steps=self.steps)
+#             sim_df = pd.DataFrame(sim, columns=sim.colnames)
+#             return sim_df[self.compartment]
 
 if __name__ == "__main__":
-    args = parse_args()
 
-    BayesModel(
-        # Sampler Params
-        true_loc=args.sampler_mean,
-        true_scale=args.sampler_variance,
-        n_sampler=args.n,
-        parameter_name=args.parameter,
-        sampler_steps=args.steps,
-        model_path=args.model_path,
-        # Model params
-        prior_loc=args.prior_mean,
-        prior_scale=args.prior_variance,
-        n_post=args.n_post,
-        compartment=args.compartment,
-    )
+    bayes_model = BayesModel(ode_mod=MODEL_SIMPLE_PK,
+                             parameter='k',
+                             compartment='[y_gut]',
+                             prior_parameters={
+                                 'loc': np.log(1.5),
+                                 's': 2
+                             },
+                             f_prior_dsn=pm.LogNormal)
