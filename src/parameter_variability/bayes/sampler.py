@@ -55,9 +55,9 @@ class Sampler:
         for i, value in enumerate(theta_values, start=1):
 
             if i < len(theta_values):
-                ax.axvline(value, linestyle="--", color="green")
+                ax.axvline(value, linestyle="--", color="green", alpha=0.5)
             else:
-                ax.axvline(value, linestyle="--", color="green",
+                ax.axvline(value, linestyle="--", color="green", alpha=0.5,
                            label=f"${self.parameter}$ drawn (n={i})")
 
         ax.set_xlabel(f"${self.parameter}$")
@@ -161,15 +161,18 @@ if __name__ == "__main__":
     )
     data = simulator.simulate(start=0, end=10, steps=10)
     console.print(data)
+
+    console.rule("Errors", align="left", style="white")
+    data = simulator.apply_errors(data, variables=['[y_gut]', '[y_cent]'])
+    console.print(data)
+
+    console.rule("Simulation plots", align="left", style="white")
+    simulator.plot(data, variables=['[y_gut]', '[y_cent]', '[y_peri]'])
+
     dset_path = RESULTS_DIR / "test.nc"
     simulator.save_data(data, dset_path)
     data2 = simulator.load_data(dset_path)
     console.print(data2)
 
-    console.rule("Errors", align="left", style="white")
-    data3 = simulator.apply_errors(data2, variables=['[y_gut]', '[y_cent]'])
-    console.print(data3)
 
-    console.rule("Simulation plots", align="left", style="white")
-    simulator.plot(data3, variables=['[y_gut]', '[y_cent]', '[y_peri]'])
 
