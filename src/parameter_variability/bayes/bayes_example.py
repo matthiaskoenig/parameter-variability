@@ -15,7 +15,8 @@ from dataclasses import dataclass
 from pathlib import Path
 import roadrunner
 from parameter_variability.console import console
-from parameter_variability import MODEL_SIMPLE_PK
+from parameter_variability import MODEL_SIMPLE_PK, RESULTS_DIR
+from parameter_variability.bayes.sampler import SampleSimulator
 
 
 @dataclass
@@ -23,24 +24,21 @@ class BayesModel:
     ode_mod: Union[str, Path]
     parameter: str
     compartment: str
+    steps: int
     prior_parameters: Dict[str, float]
     f_prior_dsn: Callable
 
-
-    def read_data(self, path: str):
-        return xr.open_dataset(path)
-
-    def model_bayes_setup(self, data: xr.Dataset):
+    def setup(self, data: xr.Dataset):
         ode_model = roadrunner.RoadRunner(self.ode_mod)
 
         @as_op(itypes=[pt.dvector], otypes=[pt.dmatrix])
-        def pytensor_forward_model_matrix(theta, compartment, steps=10):
+        def pytensor_forward_model_matrix(theta):
             ode_model.resetAll()
             for par_name, value in zip(self.parameter, theta):
                 ode_model.setValue(par_name, value)
-            sim = ode_model.simulate(start=0, end=10, steps=steps)
+            sim = ode_model.simulate(start=0, end=10, steps=self.steps)
             sim_df = pd.DataFrame(sim, columns=sim.colnames)
-            return sim_df[compartment]
+            return sim_df[self.compartment]
 
         with pm.Model() as model:
             theta = self.f_prior_dsn(self.compartment, mu=self.prior_parameters['loc'],
@@ -49,7 +47,7 @@ class BayesModel:
             sigma = pm.HalfNormal("sigma", sigma=1)
 
             # ODE solution function
-            ode_soln = pytensor_forward_model_matrix(theta, self.compartment)
+            ode_soln = pytensor_forward_model_matrix(theta)
 
             # likelihood
             pm.LogNormal(
@@ -62,8 +60,6 @@ class BayesModel:
             pm.model_to_graphviz(model=model)
 
         return model
-
-
 
 # class BayesModel(Sampler):
 #     def __init__(
@@ -100,13 +96,27 @@ class BayesModel:
 #             sim_df = pd.DataFrame(sim, columns=sim.colnames)
 #             return sim_df[self.compartment]
 
+
 if __name__ == "__main__":
 
+    console.rule('Loading Data')
+    simulator = SampleSimulator(
+        model=MODEL_SIMPLE_PK,
+        thetas={},
+    )
+    dset_path = RESULTS_DIR / "test.nc"
+    df = simulator.load_data(dset_path)
+    console.print(df)
+
+    console.rule('Model Setup')
     bayes_model = BayesModel(ode_mod=MODEL_SIMPLE_PK,
                              parameter='k',
                              compartment='[y_gut]',
+                             steps=10,
                              prior_parameters={
                                  'loc': np.log(1.5),
                                  's': 2
                              },
                              f_prior_dsn=pm.LogNormal)
+
+    bayes_model.setup(df)
