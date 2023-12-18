@@ -47,17 +47,15 @@ class BayesModel:
             sigma = pm.HalfNormal("sigma", sigma=1)
 
             # ODE solution function
-            ode_soln = pytensor_forward_model_matrix(theta)
+            ode_soln = pytensor_forward_model_matrix(pm.math.stack([theta]))
 
             # likelihood
             pm.LogNormal(
-                name=self.compartment,
+                name='y',
                 mu=ode_soln,
                 sigma=sigma,
                 observed=data[self.compartment],
             )
-
-            pm.model_to_graphviz(model=model)
 
         return model
 
@@ -119,4 +117,4 @@ if __name__ == "__main__":
                              },
                              f_prior_dsn=pm.LogNormal)
 
-    bayes_model.setup(df)
+    pm.model_to_graphviz(bayes_model.setup(df))
