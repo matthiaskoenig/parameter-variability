@@ -17,6 +17,7 @@ import roadrunner
 from parameter_variability.console import console
 from parameter_variability import MODEL_SIMPLE_PK, RESULTS_DIR
 from parameter_variability.bayes.sampler import SampleSimulator
+import arviz as az
 
 
 @dataclass
@@ -27,8 +28,10 @@ class BayesModel:
     steps: int
     prior_parameters: Dict[str, float]
     f_prior_dsn: Callable
+    tune: int
+    draws: int
 
-    def setup(self, data: xr.Dataset):
+    def setup(self, data: xr.Dataset) -> pm.Model:
         ode_model = roadrunner.RoadRunner(self.ode_mod)
 
         @as_op(itypes=[pt.dvector], otypes=[pt.dmatrix])
@@ -38,7 +41,7 @@ class BayesModel:
                 ode_model.setValue(par_name, value)
             sim = ode_model.simulate(start=0, end=10, steps=self.steps)
             sim_df = pd.DataFrame(sim, columns=sim.colnames)
-            return sim_df[self.compartment]
+            return sim_df[self.compartment].to_numpy()
 
         with pm.Model() as model:
             theta = self.f_prior_dsn(self.compartment, mu=self.prior_parameters['loc'],
@@ -58,6 +61,15 @@ class BayesModel:
             )
 
         return model
+
+    def sampler(self, model: pm.Model):
+
+        vars_list = list(model.values_to_rvs.keys())[:-1]
+        with model:
+            trace = pm.sample(step=[pm.Slice(vars_list)],
+                              tune=self.tune, draws=self.draws)
+
+        return trace
 
 # class BayesModel(Sampler):
 #     def __init__(
@@ -115,6 +127,13 @@ if __name__ == "__main__":
                                  'loc': np.log(1.5),
                                  's': 2
                              },
-                             f_prior_dsn=pm.LogNormal)
+                             f_prior_dsn=pm.LogNormal,
+                             tune=2000, draws=2000)
 
-    pm.model_to_graphviz(bayes_model.setup(df))
+    mod = bayes_model.setup(df)
+    console.print(mod)
+
+    console.rule('Sampling starts')
+    sample = bayes_model.sampler(mod)
+    console.print(sample)
+
