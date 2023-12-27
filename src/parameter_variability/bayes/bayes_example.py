@@ -3,12 +3,9 @@ from typing import Union, List, Callable, Dict, Any
 import numpy as np
 import pandas as pd
 import pymc as pm
-import pytensor
 import pytensor.tensor as pt
 import xarray as xr
 from matplotlib import pyplot as plt
-from numba import njit
-from pymc.ode import DifferentialEquation
 from pytensor.compile.ops import as_op
 from scipy import stats
 from dataclasses import dataclass
@@ -118,15 +115,6 @@ if __name__ == "__main__":
     df = simulator.simulate(start=0, end=10, steps=10)
     console.print(df)
 
-    # console.rule('Loading Data')
-    # simulator = SampleSimulator(
-    #     model=MODEL_SIMPLE_PK,
-    #     thetas={},
-    # )
-    # dset_path = RESULTS_DIR / "test.nc"
-    # df = simulator.load_data(dset_path)
-    #
-
     console.rule('Model Setup')
     bayes_model = BayesModel(ode_mod=MODEL_SIMPLE_PK,
                              parameter='k',
@@ -145,5 +133,7 @@ if __name__ == "__main__":
 
     console.rule('Sampling starts')
     sample = bayes_model.sampler(mod)
+
+    console.rule('Results')
     bayes_model.plot_trace(sample)
 
