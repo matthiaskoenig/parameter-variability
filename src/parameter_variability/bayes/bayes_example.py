@@ -10,13 +10,13 @@ from matplotlib import pyplot as plt
 from numba import njit
 from pymc.ode import DifferentialEquation
 from pytensor.compile.ops import as_op
-from scipy.stats import lognorm
+from scipy import stats
 from dataclasses import dataclass
 from pathlib import Path
 import roadrunner
 from parameter_variability.console import console
 from parameter_variability import MODEL_SIMPLE_PK, RESULTS_DIR
-from parameter_variability.bayes.sampler import SampleSimulator
+from parameter_variability.bayes.sampler import SampleSimulator, Sampler
 import arviz as az
 
 
@@ -31,6 +31,10 @@ class BayesModel:
     f_prior_dsn: Callable
     tune: int
     draws: int
+    init_vals: Dict[str, np.ndarray]
+
+    def ls_soln(self, data: xr.Dataset) -> Dict[str, np.ndarray]:
+        pass
 
     def setup(self, data: xr.Dataset) -> pm.Model:
         """Initialization of Priors and Likelihood"""
@@ -47,7 +51,8 @@ class BayesModel:
 
         with pm.Model() as model:
             theta = self.f_prior_dsn(self.parameter, mu=self.prior_parameters['loc'],
-                                     sigma=self.prior_parameters['s'], initval=1)
+                                     sigma=self.prior_parameters['s'],
+                                     initval=self.init_vals[self.parameter][0])
 
             sigma = pm.HalfNormal("sigma", sigma=1)
 
@@ -77,7 +82,7 @@ class BayesModel:
 
     def plot_trace(self, trace: az.InferenceData) -> None:
         """Trace plots of the parameters sampled"""
-        console.print(az.summary(trace))
+        console.print(az.summary(trace, stat_focus='median'))
 
         az.plot_trace(sample, kind='rank_bars')
         plt.suptitle('Trace plots')
@@ -87,14 +92,40 @@ class BayesModel:
 
 if __name__ == "__main__":
 
-    console.rule('Loading Data')
+    console.rule("Sampling")
+    sampler = Sampler(
+        model=MODEL_SIMPLE_PK,
+        parameter="k",
+        f_distribution=stats.lognorm,
+        distribution_parameters={
+            "loc": np.log(2.5),
+            "s": 1,
+        }
+    )
+    console.print(sampler)
+
+    true_thetas = sampler.sample(n=1)
+    console.print(f"{true_thetas=}")
+
+    console.rule('Thetas PDF')
+    sampler.plot(true_thetas)
+
+    console.rule("Simulation", align="left", style="white")
     simulator = SampleSimulator(
         model=MODEL_SIMPLE_PK,
-        thetas={},
+        thetas=true_thetas,
     )
-    dset_path = RESULTS_DIR / "test.nc"
-    df = simulator.load_data(dset_path)
+    df = simulator.simulate(start=0, end=10, steps=10)
     console.print(df)
+
+    # console.rule('Loading Data')
+    # simulator = SampleSimulator(
+    #     model=MODEL_SIMPLE_PK,
+    #     thetas={},
+    # )
+    # dset_path = RESULTS_DIR / "test.nc"
+    # df = simulator.load_data(dset_path)
+    #
 
     console.rule('Model Setup')
     bayes_model = BayesModel(ode_mod=MODEL_SIMPLE_PK,
@@ -102,11 +133,12 @@ if __name__ == "__main__":
                              compartment='[y_gut]',
                              steps=10,
                              prior_parameters={
-                                 'loc': np.log(1.5),
-                                 's': 2
+                                 'loc': np.log(2.0),
+                                 's': 1
                              },
                              f_prior_dsn=pm.LogNormal,
-                             tune=2000, draws=2000)
+                             tune=2000, draws=2000,
+                             init_vals={'k': np.array([2.00])})
 
     mod = bayes_model.setup(df)
     console.print(mod)
