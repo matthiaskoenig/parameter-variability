@@ -22,6 +22,7 @@ import arviz as az
 
 @dataclass
 class BayesModel:
+    """Perform Bayesian Inference on Parameter of ODE model"""
     ode_mod: Union[str, Path]
     parameter: str
     compartment: str
@@ -32,9 +33,10 @@ class BayesModel:
     draws: int
 
     def setup(self, data: xr.Dataset) -> pm.Model:
+        """Initialization of Priors and Likelihood"""
         ode_model = roadrunner.RoadRunner(self.ode_mod)
 
-        @as_op(itypes=[pt.dvector], otypes=[pt.dmatrix])
+        @as_op(itypes=[pt.dvector], otypes=[pt.dvector])  # otypes=[pt.dmatrix]
         def pytensor_forward_model_matrix(theta):
             ode_model.resetAll()
             for par_name, value in zip(self.parameter, theta):
@@ -44,7 +46,7 @@ class BayesModel:
             return sim_df[self.compartment].to_numpy()
 
         with pm.Model() as model:
-            theta = self.f_prior_dsn(self.compartment, mu=self.prior_parameters['loc'],
+            theta = self.f_prior_dsn(self.parameter, mu=self.prior_parameters['loc'],
                                      sigma=self.prior_parameters['s'], initval=1)
 
             sigma = pm.HalfNormal("sigma", sigma=1)
@@ -54,7 +56,7 @@ class BayesModel:
 
             # likelihood
             pm.LogNormal(
-                name='y',
+                name=self.compartment,
                 mu=ode_soln,
                 sigma=sigma,
                 observed=data[self.compartment],
@@ -62,49 +64,25 @@ class BayesModel:
 
         return model
 
-    def sampler(self, model: pm.Model):
+    def sampler(self, model: pm.Model) -> az.InferenceData:
+        """Definition of the Sampling Process """
 
         vars_list = list(model.values_to_rvs.keys())[:-1]
+        print(f'Variables: {vars_list}\n')
         with model:
             trace = pm.sample(step=[pm.Slice(vars_list)],
                               tune=self.tune, draws=self.draws)
 
         return trace
 
-# class BayesModel(Sampler):
-#     def __init__(
-#         self, prior_loc, prior_scale, compartment="[y_gut]", n_post=2000, **kwargs
-#     ):
-#         super().__init__(
-#             loc=kwargs["true_loc"],
-#             scale=kwargs["true_scale"],
-#             name=kwargs["parameter_name"],
-#             n=kwargs["n_sampler"],
-#             steps=kwargs["sampler_steps"],
-#             model_path=kwargs["model_path"],
-#         )
-#
-#         self.prior_loc = prior_loc
-#         self.prior_scale = prior_scale
-#         self.n_post = n_post
-#         self.compartment = compartment
-#         print("\n-------------------- Model Initialized --------------------")
-#
-#         self.model_bayes = None
-#         self.post_samples = None
-#
-#         self.model_bayes_setup()
-#
-#     def model_bayes_setup(self):
-#         # Forward training
-#         @as_op(itypes=[pt.dvector], otypes=[pt.dmatrix])
-#         def pytensor_forward_model_matrix(theta):
-#             self.model.resetAll()
-#             for par_name, value in zip(self.name, theta):
-#                 self.model.setValue(par_name, value)
-#             sim = self.model.simulate(start=0, end=10, steps=self.steps)
-#             sim_df = pd.DataFrame(sim, columns=sim.colnames)
-#             return sim_df[self.compartment]
+    def plot_trace(self, trace: az.InferenceData) -> None:
+        """Trace plots of the parameters sampled"""
+        console.print(az.summary(trace))
+
+        az.plot_trace(sample, kind='rank_bars')
+        plt.suptitle('Trace plots')
+        plt.tight_layout()
+        plt.show()
 
 
 if __name__ == "__main__":
@@ -135,5 +113,5 @@ if __name__ == "__main__":
 
     console.rule('Sampling starts')
     sample = bayes_model.sampler(mod)
-    console.print(sample)
+    bayes_model.plot_trace(sample)
 
