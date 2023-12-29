@@ -28,6 +28,7 @@ class BayesModel:
     f_prior_dsn: Callable
     tune: int
     draws: int
+    chains: int
     init_vals: Dict[str, np.ndarray]
 
     def ls_soln(self, data: xr.Dataset) -> Dict[str, np.ndarray]:
@@ -73,7 +74,8 @@ class BayesModel:
         print(f'Variables: {vars_list}\n')
         with model:
             trace = pm.sample(step=[pm.Slice(vars_list)],
-                              tune=self.tune, draws=self.draws)
+                              tune=self.tune, draws=self.draws,
+                              chains=self.chains)
 
         return trace
 
@@ -81,7 +83,7 @@ class BayesModel:
         """Trace plots of the parameters sampled"""
         console.print(az.summary(trace, stat_focus='median'))
 
-        az.plot_trace(sample, kind='rank_bars')
+        az.plot_trace(sample, compact=True, kind='trace')
         plt.suptitle('Trace plots')
         plt.tight_layout()
         plt.show()
@@ -122,10 +124,10 @@ if __name__ == "__main__":
                              steps=10,
                              prior_parameters={
                                  'loc': np.log(2.0),
-                                 's': 1
+                                 's': 0.5
                              },
                              f_prior_dsn=pm.LogNormal,
-                             tune=2000, draws=2000,
+                             tune=2000, draws=4000, chains=4,
                              init_vals={'k': np.array([2.00])})
 
     mod = bayes_model.setup(df)
