@@ -3,3 +3,5 @@
 .idea
 data
 **/.DS_Store
+results
+__pycache__

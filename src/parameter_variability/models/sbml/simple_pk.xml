@@ -7,7 +7,7 @@
         <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.5525390.svg" alt="DOI"/></a></p>
       </body>
     </notes>
-  <model metaid="meta_model2" id="model2" name="Model 2" substanceUnits="mmole" timeUnits="min" volumeUnits="litre" areaUnits="m2" lengthUnits="metre" extentUnits="mmole">
+  <model metaid="meta_simple_pk" id="simple_pk" name="Simple PK model" substanceUnits="mmole" timeUnits="min" volumeUnits="litre" areaUnits="m2" lengthUnits="metre" extentUnits="mmole">
     <notes>
       <body xmlns="http://www.w3.org/1999/xhtml">
         <h1>Model of absorption and distribution of substance y.</h1>
@@ -35,7 +35,7 @@ FOR A PARTICULAR PURPOSE.</p></body>
       </notes>
     <annotation>
       <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:vCard4="http://www.w3.org/2006/vcard/ns#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">
-        <rdf:Description rdf:about="#meta_model2">
+        <rdf:Description rdf:about="#meta_simple_pk">
           <dcterms:creator>
             <rdf:Bag>
               <rdf:li rdf:parseType="Resource">
