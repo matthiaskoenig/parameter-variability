@@ -148,7 +148,7 @@ if __name__ == "__main__":
     )
     console.print(sampler)
 
-    thetas = sampler.sample(n=1)
+    thetas = sampler.sample(n=2)
     console.print(f"{thetas=}")
 
     console.rule('Thetas PDF', align='left', style='white')

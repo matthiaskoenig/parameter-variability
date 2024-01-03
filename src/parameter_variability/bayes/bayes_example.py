@@ -1,4 +1,5 @@
 import json
+from itertools import cycle
 from typing import Union, List, Callable, Dict, Any
 import numpy as np
 import pandas as pd
@@ -21,7 +22,7 @@ import arviz as az
 class BayesModel:
     """Perform Bayesian Inference on Parameter of ODE model"""
     ode_mod: Union[str, Path]
-    parameter: str
+    parameter: List[str]
     compartment: str
     steps: int
     prior_parameters: Dict[str, float]
@@ -37,25 +38,35 @@ class BayesModel:
     def setup(self, data: xr.Dataset) -> pm.Model:
         """Initialization of Priors and Likelihood"""
         ode_model = roadrunner.RoadRunner(self.ode_mod)
+        n_sim = data.sizes['sim']
 
-        @as_op(itypes=[pt.dvector], otypes=[pt.dvector])  # otypes=[pt.dmatrix]
+        # TODO: add dimensions for several thetas and sims
+        @as_op(itypes=[pt.dmatrix], otypes=[pt.dmatrix])  # otypes=[pt.dmatrix]
         def pytensor_forward_model_matrix(theta):
-            ode_model.resetAll()
-            for par_name, value in zip(self.parameter, theta):
-                ode_model.setValue(par_name, value)
-            sim = ode_model.simulate(start=0, end=10, steps=self.steps)
-            sim_df = pd.DataFrame(sim, columns=sim.colnames)
-            return sim_df[self.compartment].to_numpy()
+            dfs = []
+            for i in range(n_sim):
+                ode_model.resetAll()
+                for par, val in zip(self.parameter, theta):  # each prior parameter
+                    ode_model.setValue(par, val[i])
+
+                sim = ode_model.simulate(start=0, end=10, steps=self.steps)
+                sim_df = pd.DataFrame(sim, columns=sim.colnames)
+                dfs.append(sim_df)
+
+            dset = xr.concat([d.to_xarray() for d in dfs], dim="sim")
+
+            return dset[self.compartment].to_numpy()
 
         with pm.Model() as model:
-            theta = self.f_prior_dsn(self.parameter, mu=self.prior_parameters['loc'],
-                                     sigma=self.prior_parameters['s'],
-                                     initval=self.init_vals[self.parameter][0])
+            k = self.f_prior_dsn(self.parameter[0], mu=self.prior_parameters['loc'],
+                                 sigma=self.prior_parameters['s'],
+                                 initval=self.init_vals['k'],
+                                 shape=(n_sim,), dims='sim')
 
             sigma = pm.HalfNormal("sigma", sigma=1)
 
             # ODE solution function
-            ode_soln = pytensor_forward_model_matrix(pm.math.stack([theta]))
+            ode_soln = pytensor_forward_model_matrix(pm.math.stack([k]))
 
             # likelihood
             pm.LogNormal(
@@ -103,7 +114,7 @@ if __name__ == "__main__":
     )
     console.print(sampler)
 
-    true_thetas = sampler.sample(n=1)
+    true_thetas = sampler.sample(n=2)
     console.print(f"{true_thetas=}")
 
     console.rule('Thetas PDF')
@@ -119,7 +130,7 @@ if __name__ == "__main__":
 
     console.rule('Model Setup')
     bayes_model = BayesModel(ode_mod=MODEL_SIMPLE_PK,
-                             parameter='k',
+                             parameter=['k'],
                              compartment='[y_gut]',
                              steps=10,
                              prior_parameters={
@@ -128,7 +139,7 @@ if __name__ == "__main__":
                              },
                              f_prior_dsn=pm.LogNormal,
                              tune=2000, draws=4000, chains=4,
-                             init_vals={'k': np.array([2.00])})
+                             init_vals={'k': np.array([2.00, 2.00])})
 
     mod = bayes_model.setup(df)
     console.print(mod)
