@@ -3,126 +3,134 @@
 Samples parameters from models and runs corresponding forward simulations.
 Using a SBML Model, declare a random distribution to generate solutions to the model as simulations.
 """
-import argparse
-import json
-import os
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Union, List, Callable, Dict, Any
+from typing import Callable, Dict, List, Union, Optional
 
-import matplotlib.pyplot
 import numpy as np
 import pandas as pd
 import roadrunner
-from matplotlib import pyplot as plt
-from scipy import stats
-from dataclasses import dataclass
 import xarray as xr
+from matplotlib import pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
+from scipy import stats
 
-from parameter_variability.console import console
 from parameter_variability import MODEL_SIMPLE_PK
-
+from parameter_variability.console import console
 
 @dataclass
-class Sampler:
-    """Samples parameters from a SBML model."""
-
-    model: Union[str, Path]
+class DistDefinition:
+    """Definition of distribution via scipy callables."""
     parameter: str
     f_distribution: Callable
     distribution_parameters: Dict[str, float]
 
+
+@dataclass
+class Sampler:
+    """Samples parameters from a SBML model.
+    FIXME: include covariance structure in the sampling.
+    """
+
+    model: Union[str, Path]
+    distributions: List[DistDefinition]
+
     def sample(self, n: int) -> Dict[str, np.ndarray]:
-        """Sample from sampler."""
-        dsn = self.f_distribution(**self.distribution_parameters)
-        return {self.parameter: dsn.rvs(size=n)}
+        """Sample from sampler.
 
-    def plot(self, thetas: Dict[str, np.array]):
-        dsn = self.f_distribution(**self.distribution_parameters)
-        theta_values = list(thetas.values())[0]
+        :param n: number of samples
+        """
+        samples: Dict[str, np.ndarray] = {}
+        for dist in self.distributions:
+            dsn = dist.f_distribution(**dist.distribution_parameters)
+            samples[dist.parameter] = dsn.rvs(size=n)
+        return samples
 
-        _, ax = plt.subplots()
+    @staticmethod
+    def plot_samples(thetas: Dict[str, np.ndarray], distributions: Optional[List[DistDefinition]] = None) -> Figure:
+        """Plot the samples"""
+        n_pars = len(thetas)
 
-        theta = np.linspace(
-            dsn.ppf(0.001), dsn.ppf(0.999), 500
-        )
-        ax.plot(
-                theta, dsn.pdf(theta), color="crimson",
-                label=f"${self.parameter} \sim "
-                      f"lognorm({self.distribution_parameters['loc']:.2f}, "
-                      f"{self.distribution_parameters['s']:.2f})$"
-        )
+        fontdict = {
+            "fontweight": "bold"
+        }
+        f, axes = plt.subplots(nrows=n_pars, ncols=1, dpi=300, figsize=(5, 5*n_pars), layout="constrained")
+        if n_pars == 1:
+            axes = [axes]
 
-        for i, value in enumerate(theta_values, start=1):
+        for k, sid in enumerate(thetas):
+            ax = axes[k]
+            ax.set_xlabel(sid, **fontdict)
 
-            if i < len(theta_values):
-                ax.axvline(value, linestyle="--", color="green", alpha=0.5)
-            else:
-                ax.axvline(value, linestyle="--", color="green", alpha=0.5,
-                           label=f"${self.parameter}$ drawn (n={i})")
+            theta_values = thetas[sid]
 
-        ax.set_xlabel(f"${self.parameter}$")
-        ax.set_ylabel("Probability Density Function")
-        ax.legend()
+            # plot histogram
+            ax.hist(
+                theta_values,
+                color="tab:orange",
+                density=True,
+            )
 
-        plt.show()
+            # plot values
+            for kv, value in enumerate(theta_values):
+                label = f"{sid} samples (n={len(theta_values)})" if kv == 0 else "__nolabel__"
+                ax.axvline(
+                    value,
+                    linestyle="--",
+                    color="tab:blue",
+                    alpha=0.5,
+                    label=label,
+                )
+
+            # plot the distribution
+            if distributions:
+                dist = distributions[k]
+                dsn = dist.f_distribution(**dist.distribution_parameters)
+                theta = np.linspace(dsn.ppf(0.001), dsn.ppf(0.999), 500)
+
+                ax.plot(
+                    theta,
+                    dsn.pdf(theta),
+                    color="black",
+                    label=f"{sid} distribution",
+                )
+
+        for ax in axes:
+            ax.set_ylabel("Probability Density Function", **fontdict)
+            ax.legend()
+
+        return f
+
 
 
 @dataclass
 class SampleSimulator:
     """Simulation of parameter samples."""
+
     model: Union[str, Path]
     thetas: Dict[str, np.ndarray]
 
     def simulate(self, start, end, steps, **kwargs) -> xr.Dataset:
-        """Simulate data."""
+        """Simulate data as xarray dataset."""
         self.model = roadrunner.RoadRunner(self.model)
-        n_sim = len(list(self.thetas.values())[0])
+        n_sim = list(self.thetas.values())[0].size
 
         dfs: List[pd.DataFrame] = []
-        for i in range(n_sim):
+        for ksim in range(n_sim):
             self.model.resetAll()
+
             for parameter, values in self.thetas.items():
-                self.model.setValue(parameter, values[i])
+                self.model.setValue(parameter, values[ksim])
 
             sim = self.model.simulate(start=start, end=end, steps=steps, **kwargs)
-
-            # Adding the errors: y_i = yhat_i + errors_i
-            df = pd.DataFrame(sim, columns=sim.colnames).set_index('time')
+            df = pd.DataFrame(sim, columns=sim.colnames).set_index("time")
             dfs.append(df)
 
         # create xarray
         dset = xr.concat([df.to_xarray() for df in dfs], dim="sim")
 
         return dset
-
-    def apply_errors(self, data: xr.Dataset, variables: List[str],
-                     error_scale: float = 0.05) -> xr.Dataset:
-        """Applies errors to the simulation."""
-        n_sim = data.sizes['sim']
-        n_time = data.sizes['time']
-
-        errors_dsn = stats.halfnorm(loc=0, scale=error_scale)
-        errors = errors_dsn.rvs((n_sim, n_time))
-
-        variables = variables[0] if len(variables) <= 1 else variables
-
-        data[variables] = data[variables] + errors
-
-        return data
-
-    def plot(self, data: xr.Dataset, variables: List[str]) -> None:
-
-        sims = data.sim.values
-        for var in variables:
-            _, ax = plt.subplots()
-            for s in sims:
-                df_s = data.isel(sim=s)[var].to_dataframe().reset_index()
-                df_s.plot(x='time', y=var, ax=ax, label=s)
-            ax.set_xlabel('Time [min]')
-            ax.set_ylabel('Concentation [mM]')
-            ax.set_title(f'Compartment: {var}')
-
-        plt.show()
 
     def save_data(self, data: xr.Dataset, results_path: Path):
         """Store dataset as netCDF."""
@@ -133,46 +141,160 @@ class SampleSimulator:
         return xr.open_dataset(results_path)
 
 
+    @staticmethod
+    def apply_errors_to_data(
+        data: xr.Dataset, variables: List[str], error_scale: float = 0.05
+    ) -> xr.Dataset:
+        """Applies errors to the simulation data."""
+        n_sim = data.sizes["sim"]
+        n_time = data.sizes["time"]
+
+        # normal distributed errors (independent of data)
+        errors_dsn = stats.halfnorm(loc=0, scale=error_scale)
+        errors = errors_dsn.rvs((n_sim, n_time))
+
+        variables = variables[0] if len(variables) <= 1 else variables
+
+        # additive errors
+        data_err = data.copy()
+        data_err[variables] = data_err[variables] + errors
+
+        return data_err
+
+    @staticmethod
+    def plot_data(data: xr.Dataset, data_err: xr.Dataset, variables: List[str]) -> None:
+
+        n_vars = len(variables)
+        fontdict = {"fontweight": "bold"}
+
+        f, axes = plt.subplots(nrows=n_vars, ncols=1, dpi=300, figsize=(5, 5 * n_vars),
+                               layout="constrained")
+        axes = [axes] if n_vars == 1 else axes
+
+        sims = data.sim.values
+        for kp, var in enumerate(variables):
+            ax = axes[kp]
+
+            for s in sims:
+                # plot data
+                df = data.isel(sim=s)[var].to_dataframe().reset_index()
+                ax.plot(df["time"], df[var], alpha=0.7, color="black")
+
+                df_err = data_err.isel(sim=s)[var].to_dataframe().reset_index()
+                ax.plot(
+                    df_err["time"], df_err[var], alpha=0.7, color="tab:blue",
+                    marker="o", linestyle="None"
+                )
+
+            ax.set_xlabel("Time [min]")
+            ax.set_ylabel("Concentation [mM]")
+            ax.set_title(f"Compartment: {var}")
+
+        plt.show()
+
+
 if __name__ == "__main__":
     from parameter_variability import RESULTS_DIR
 
-    console.rule("Sampling", align="left", style="white")
+    console.rule("Sampler (1 parameter, 1 sample)", align="left", style="white")
     sampler = Sampler(
         model=MODEL_SIMPLE_PK,
-        parameter="k",
-        f_distribution=stats.lognorm,
-        distribution_parameters={
-            "loc": np.log(2.5),
-            "s": 1,
-        }
+        distributions=[
+            DistDefinition(
+                parameter="k",
+                f_distribution=stats.lognorm,
+                distribution_parameters={
+                    "loc": np.log(2.5),
+                    "s": 1,
+                },
+            )
+        ]
     )
     console.print(sampler)
-
     thetas = sampler.sample(n=1)
     console.print(f"{thetas=}")
+    sampler.plot_samples(thetas, distributions=sampler.distributions)
 
-    console.rule('Thetas PDF', align='left', style='white')
-    sampler.plot(thetas)
+    console.rule("Sampler (1 parameter, 200 sample)", align="left", style="white")
+    thetas100 = sampler.sample(n=100)
+    console.print(f"{thetas100=}")
+    sampler.plot_samples(thetas100, distributions=sampler.distributions)
+
+    console.rule("Sampler (2 parameter, 25 sample)", align="left", style="white")
+    sampler2p = Sampler(
+        model=MODEL_SIMPLE_PK,
+        distributions=[
+            DistDefinition(
+                parameter="k",
+                f_distribution=stats.lognorm,
+                distribution_parameters={
+                    "loc": np.log(2.5),
+                    "s": 1,
+                },
+            ),
+            DistDefinition(
+                parameter="CL",
+                f_distribution=stats.lognorm,
+                distribution_parameters={
+                    "loc": np.log(20),
+                    "s": 1.5,
+                },
+            )
+        ]
+    )
+    console.print(sampler2p)
+    thetas2p = sampler2p.sample(n=200)
+    console.print(f"{thetas2p=}")
+    sampler2p.plot_samples(thetas2p, distributions=sampler2p.distributions)
+    plt.show()
+
 
     console.rule("Simulation", align="left", style="white")
     simulator = SampleSimulator(
         model=MODEL_SIMPLE_PK,
         thetas=thetas,
     )
-    data = simulator.simulate(start=0, end=10, steps=10)
+    data = simulator.simulate(start=0, end=20, steps=100)
     console.print(data)
 
-    console.rule("Errors", align="left", style="white")
-    data = simulator.apply_errors(data, variables=['[y_gut]', '[y_cent]'])
-    console.print(data)
+    simulator = SampleSimulator(
+        model=MODEL_SIMPLE_PK,
+        thetas=thetas100,
+    )
+    data100 = simulator.simulate(start=0, end=20, steps=100)
+    console.print(data100)
+
+    simulator = SampleSimulator(
+        model=MODEL_SIMPLE_PK,
+        thetas=thetas2p,
+    )
+    data2p = simulator.simulate(start=0, end=20, steps=100)
+    console.print(data2p)
 
     console.rule("Simulation plots", align="left", style="white")
-    simulator.plot(data, variables=['[y_gut]', '[y_cent]', '[y_peri]'])
+    data_err = simulator.apply_errors_to_data(data, variables=["[y_gut]", "[y_cent]"])
+    simulator.plot_data(
+        data=data,
+        data_err=data_err,
+        variables=["[y_gut]", "[y_cent]", "[y_peri]"]
+    )
 
+    data100_err = simulator.apply_errors_to_data(data100, variables=["[y_gut]", "[y_cent]"])
+    simulator.plot_data(
+        data=data100,
+        data_err=data100_err,
+        variables=["[y_gut]", "[y_cent]", "[y_peri]"]
+    )
+
+    data2p_err = simulator.apply_errors_to_data(data2p, variables=["[y_gut]", "[y_cent]"])
+    simulator.plot_data(
+        data=data2p,
+        data_err=data2p_err,
+        variables=["[y_gut]", "[y_cent]", "[y_peri]"]
+    )
+
+    # testing loading and saving of data
     dset_path = RESULTS_DIR / "test.nc"
     simulator.save_data(data, dset_path)
     data2 = simulator.load_data(dset_path)
     console.print(data2)
-
-
-

@@ -28,7 +28,7 @@ def example_simulation_chain() -> None:
     f, ax = plt.subplots(nrows=1, ncols=1)
     for sid in ["[S1]", "[S2]"]:
         for df in results:
-            ax.plot(
+            ax.plot_samples(
                 df.time,
                 df[sid],
                 label=sid,

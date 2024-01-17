@@ -3,7 +3,6 @@ from rich import pretty
 from rich.console import Console
 from rich.theme import Theme
 
-
 pretty.install()
 custom_theme = Theme(
     {

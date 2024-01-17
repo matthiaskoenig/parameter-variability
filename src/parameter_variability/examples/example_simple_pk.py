@@ -19,7 +19,7 @@ def reference_simulation(r: roadrunner.RoadRunner) -> None:
     df: pd.DataFrame = pd.DataFrame(s, columns=s.colnames)
 
     for sid in ["[y_gut]", "[y_cent]", "[y_peri]"]:
-        ax.plot(df.time, df[sid], label=sid)
+        ax.plot_samples(df.time, df[sid], label=sid)
 
         # ax.legend()
         ax.set_title("Reference simulation")
@@ -60,7 +60,7 @@ def parameter_scan(r: roadrunner.RoadRunner) -> None:
     for parameter, ax in zip(results, axes):
         for sid in ["[y_cent]", "[y_gut]", "[y_peri]"]:
             for df in results[parameter]:
-                ax.plot(
+                ax.plot_samples(
                     df.time,
                     df[sid],
                     label=sid,

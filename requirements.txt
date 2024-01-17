@@ -1,4 +1,6 @@
+# probably due to M1 (check if this can be relaxed)
 numpy<1.26
+
 sbmlutils>=0.8.7
 libroadrunner>=2.2.2
 pytensor==2.10.1
