@@ -193,10 +193,32 @@ class SampleSimulator:
         plt.show()
 
 
-if __name__ == "__main__":
-    from parameter_variability import RESULTS_DIR
+def analysis(sampler: Sampler, n: int, end=20, steps=100) -> None:
+    """Complete sampling analysis."""
 
-    console.rule("Sampler (1 parameter, 1 sample)", align="left", style="white")
+    console.rule("Sampling", align="left", style="white")
+    console.print(sampler)
+    thetas = sampler.sample(n=n)
+    console.print(f"{thetas=}")
+    sampler.plot_samples(thetas, distributions=sampler.distributions)
+
+    console.rule("Simulation", align="left", style="white")
+    simulator = SampleSimulator(
+        model=MODEL_SIMPLE_PK,
+        thetas=thetas,
+    )
+    data = simulator.simulate(start=0, end=end, steps=steps)
+    console.print(data)
+
+    data_err = simulator.apply_errors_to_data(data, variables=["[y_gut]", "[y_cent]"])
+    simulator.plot_data(
+        data=data,
+        data_err=data_err,
+        variables=["[y_gut]", "[y_cent]", "[y_peri]"]
+    )
+
+
+if __name__ == "__main__":
     sampler = Sampler(
         model=MODEL_SIMPLE_PK,
         distributions=[
@@ -210,17 +232,10 @@ if __name__ == "__main__":
             )
         ]
     )
-    console.print(sampler)
-    thetas = sampler.sample(n=1)
-    console.print(f"{thetas=}")
-    sampler.plot_samples(thetas, distributions=sampler.distributions)
+    analysis(sampler, n=1)
+    analysis(sampler, n=100)
 
-    console.rule("Sampler (1 parameter, 200 sample)", align="left", style="white")
-    thetas100 = sampler.sample(n=100)
-    console.print(f"{thetas100=}")
-    sampler.plot_samples(thetas100, distributions=sampler.distributions)
 
-    console.rule("Sampler (2 parameter, 25 sample)", align="left", style="white")
     sampler2p = Sampler(
         model=MODEL_SIMPLE_PK,
         distributions=[
@@ -242,59 +257,11 @@ if __name__ == "__main__":
             )
         ]
     )
-    console.print(sampler2p)
-    thetas2p = sampler2p.sample(n=200)
-    console.print(f"{thetas2p=}")
-    sampler2p.plot_samples(thetas2p, distributions=sampler2p.distributions)
-    plt.show()
+    analysis(sampler2p, n=25)
 
-
-    console.rule("Simulation", align="left", style="white")
-    simulator = SampleSimulator(
-        model=MODEL_SIMPLE_PK,
-        thetas=thetas,
-    )
-    data = simulator.simulate(start=0, end=20, steps=100)
-    console.print(data)
-
-    simulator = SampleSimulator(
-        model=MODEL_SIMPLE_PK,
-        thetas=thetas100,
-    )
-    data100 = simulator.simulate(start=0, end=20, steps=100)
-    console.print(data100)
-
-    simulator = SampleSimulator(
-        model=MODEL_SIMPLE_PK,
-        thetas=thetas2p,
-    )
-    data2p = simulator.simulate(start=0, end=20, steps=100)
-    console.print(data2p)
-
-    console.rule("Simulation plots", align="left", style="white")
-    data_err = simulator.apply_errors_to_data(data, variables=["[y_gut]", "[y_cent]"])
-    simulator.plot_data(
-        data=data,
-        data_err=data_err,
-        variables=["[y_gut]", "[y_cent]", "[y_peri]"]
-    )
-
-    data100_err = simulator.apply_errors_to_data(data100, variables=["[y_gut]", "[y_cent]"])
-    simulator.plot_data(
-        data=data100,
-        data_err=data100_err,
-        variables=["[y_gut]", "[y_cent]", "[y_peri]"]
-    )
-
-    data2p_err = simulator.apply_errors_to_data(data2p, variables=["[y_gut]", "[y_cent]"])
-    simulator.plot_data(
-        data=data2p,
-        data_err=data2p_err,
-        variables=["[y_gut]", "[y_cent]", "[y_peri]"]
-    )
-
+    # from parameter_variability import RESULTS_DIR
     # testing loading and saving of data
-    dset_path = RESULTS_DIR / "test.nc"
-    simulator.save_data(data, dset_path)
-    data2 = simulator.load_data(dset_path)
-    console.print(data2)
+    # dset_path = RESULTS_DIR / "test.nc"
+    # simulator.save_data(data, dset_path)
+    # data2 = simulator.load_data(dset_path)
+    # console.print(data2)
