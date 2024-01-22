@@ -143,7 +143,7 @@ class SampleSimulator:
 
     @staticmethod
     def apply_errors_to_data(
-        data: xr.Dataset, variables: List[str], error_scale: float = 0.05
+        data: xr.Dataset, variables: List[str], error_scale: float = 0.01
     ) -> xr.Dataset:
         """Applies errors to the simulation data."""
         n_sim = data.sizes["sim"]
