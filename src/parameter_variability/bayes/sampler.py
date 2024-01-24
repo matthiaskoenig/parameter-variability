@@ -5,15 +5,15 @@ Using a SBML Model, declare a random distribution to generate solutions to the m
 """
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, List, Union, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 import roadrunner
 import xarray as xr
 from matplotlib import pyplot as plt
-from matplotlib.figure import Figure
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from scipy import stats
 
 from parameter_variability import MODEL_SIMPLE_PK
@@ -23,6 +23,7 @@ from parameter_variability.console import console
 @dataclass
 class DistDefinition:
     """Definition of distribution via scipy callables."""
+
     parameter: str
     f_distribution: Callable
     distribution_parameters: Dict[str, float]
@@ -49,14 +50,21 @@ class Sampler:
         return samples
 
     @staticmethod
-    def plot_samples(thetas: Dict[str, np.ndarray], distributions: Optional[List[DistDefinition]] = None) -> Figure:
+    def plot_samples(
+        thetas: Dict[str, np.ndarray],
+        distributions: Optional[List[DistDefinition]] = None,
+    ) -> Figure:
         """Plot the samples"""
         n_pars = len(thetas)
 
-        fontdict = {
-            "fontweight": "bold"
-        }
-        f, axes = plt.subplots(nrows=n_pars, ncols=1, dpi=300, figsize=(5, 5*n_pars), layout="constrained")
+        fontdict = {"fontweight": "bold"}
+        f, axes = plt.subplots(
+            nrows=n_pars,
+            ncols=1,
+            dpi=300,
+            figsize=(5, 5 * n_pars),
+            layout="constrained",
+        )
         if n_pars == 1:
             axes = [axes]
 
@@ -75,7 +83,11 @@ class Sampler:
 
             # plot values
             for kv, value in enumerate(theta_values):
-                label = f"{sid} samples (n={len(theta_values)})" if kv == 0 else "__nolabel__"
+                label = (
+                    f"{sid} samples (n={len(theta_values)})"
+                    if kv == 0
+                    else "__nolabel__"
+                )
                 ax.axvline(
                     value,
                     linestyle="--",
@@ -102,7 +114,6 @@ class Sampler:
             ax.legend()
 
         return f
-
 
 
 @dataclass
@@ -141,7 +152,6 @@ class SampleSimulator:
         """Load dataset from netCDF."""
         return xr.open_dataset(results_path)
 
-
     @staticmethod
     def apply_errors_to_data(
         data: xr.Dataset, variables: List[str], error_scale: float = 0.01
@@ -164,12 +174,16 @@ class SampleSimulator:
 
     @staticmethod
     def plot_data(data: xr.Dataset, data_err: xr.Dataset, variables: List[str]) -> None:
-
         n_vars = len(variables)
         fontdict = {"fontweight": "bold"}
 
-        f, axes = plt.subplots(nrows=n_vars, ncols=1, dpi=300, figsize=(5, 5 * n_vars),
-                               layout="constrained")
+        f, axes = plt.subplots(
+            nrows=n_vars,
+            ncols=1,
+            dpi=300,
+            figsize=(5, 5 * n_vars),
+            layout="constrained",
+        )
         axes = [axes] if n_vars == 1 else axes
 
         sims = data.sim.values
@@ -183,8 +197,12 @@ class SampleSimulator:
 
                 df_err = data_err.isel(sim=s)[var].to_dataframe().reset_index()
                 ax.plot(
-                    df_err["time"], df_err[var], alpha=0.7, color="tab:blue",
-                    marker="o", linestyle="None"
+                    df_err["time"],
+                    df_err[var],
+                    alpha=0.7,
+                    color="tab:blue",
+                    marker="o",
+                    linestyle="None",
                 )
 
             ax.set_xlabel("Time [min]")
@@ -194,8 +212,12 @@ class SampleSimulator:
         plt.show()
 
 
-def analysis(sampler: Sampler, n: int, end=20, steps=100) -> None:
-    """Complete sampling analysis."""
+def sampling_analysis(sampler: Sampler, n: int, end=20, steps=100, seed: Optional[int] = None) -> xr.Dataset:
+    """Creates samples from sampler with control plots."""
+
+    # set seed for reproducibility
+    if seed is not None:
+        np.random.seed(seed)
 
     console.rule("Sampling", align="left", style="white")
     console.print(sampler)
@@ -213,13 +235,13 @@ def analysis(sampler: Sampler, n: int, end=20, steps=100) -> None:
 
     data_err = simulator.apply_errors_to_data(data, variables=["[y_gut]", "[y_cent]"])
     simulator.plot_data(
-        data=data,
-        data_err=data_err,
-        variables=["[y_gut]", "[y_cent]", "[y_peri]"]
+        data=data, data_err=data_err, variables=["[y_gut]", "[y_cent]", "[y_peri]"]
     )
+    return data_err
 
 
 if __name__ == "__main__":
+    seed = 1234
     sampler = Sampler(
         model=MODEL_SIMPLE_PK,
         distributions=[
@@ -231,11 +253,10 @@ if __name__ == "__main__":
                     "s": 1,
                 },
             )
-        ]
+        ],
     )
-    analysis(sampler, n=1)
-    analysis(sampler, n=100)
-
+    sampling_analysis(sampler, n=1, seed=seed)
+    sampling_analysis(sampler, n=100, seed=seed)
 
     sampler2p = Sampler(
         model=MODEL_SIMPLE_PK,
@@ -255,10 +276,10 @@ if __name__ == "__main__":
                     "loc": np.log(20),
                     "s": 1.5,
                 },
-            )
-        ]
+            ),
+        ],
     )
-    analysis(sampler2p, n=25)
+    sampling_analysis(sampler2p, n=25, seed=seed)
 
     # from parameter_variability import RESULTS_DIR
     # testing loading and saving of data

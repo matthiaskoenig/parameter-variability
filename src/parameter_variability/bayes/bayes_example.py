@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, List, Union
 
 import arviz as az
 import numpy as np
-import pandas as pd
 import pymc as pm
+
 import pytensor.tensor as pt
 import roadrunner
 import xarray as xr
@@ -15,79 +15,96 @@ from pytensor.compile.ops import as_op
 from scipy import stats
 
 from parameter_variability import MODEL_SIMPLE_PK, RESULTS_DIR
-from parameter_variability.bayes.sampler import Sampler, SampleSimulator, DistDefinition
+from parameter_variability.bayes.sampler import DistDefinition, Sampler, \
+    SampleSimulator, sampling_analysis
 from parameter_variability.console import console
 
 
 @dataclass
 class BayesModel:
-    """Perform Bayesian Inference on Parameter of ODE model"""
+    """Perform Bayesian Inference on Parameter of ODE model.
 
-    ode_mod: Union[str, Path]
-    parameter: List[str]
-    compartment: str
+    This is based on SBML as a model format.
+    """
+    sbml_model: Union[str, Path]
+    observable: str  # FIXME: should be list
     prior_parameters: Dict[str, Dict[str, float]]
     f_prior_dsn: Callable
 
     def ls_soln(self, data: xr.Dataset) -> Dict[str, np.ndarray]:
         pass
 
-    def setup(self, data: xr.Dataset, end: int, steps: int,
-              init_vals: Dict[str, np.ndarray]) -> pm.Model:
+    def setup(
+        self, data: xr.Dataset, end: int, steps: int, init_vals: Dict[str, np.ndarray]
+    ) -> pm.Model:
         """Initialization of Priors and Likelihood"""
-        n_sim = data.sizes['sim']
-        ode_model = roadrunner.RoadRunner(self.ode_mod)
+        n_sim = data.sizes["sim"]
+        rr_model: roadrunner.RoadRunner = roadrunner.RoadRunner(self.sbml_model)
+        # minimal selection
+        rr_model.timeCourseSelections = [self.observable]
 
-        @as_op(itypes=[pt.dmatrix], otypes=[pt.dmatrix])  # otypes=[pt.dmatrix]
-        def pytensor_forward_model_matrix(theta):
-            dfs = []
+        @as_op(itypes=[pt.dmatrix], otypes=[pt.dmatrix])
+        def pytensor_forward_model_matrix(theta: np.ndarray):
+            """ODE solution function.
 
-            for i in range(n_sim):
-                ode_model.resetAll()
-                for par_name, value in zip(self.parameter, theta):
-                    ode_model.setValue(par_name, value[i])
-                sim = ode_model.simulate(start=0, end=end, steps=steps)
-                sim_df = pd.DataFrame(sim, columns=sim.colnames)
-                dfs.append(sim_df)
+            Run the forward simulation for the sampled parameters theta.
+            """
+            y = np.empty(shape=(n_sim, steps+1))
 
-            dset = xr.concat([d.to_xarray() for d in dfs], dim="sim")
+            for ksim in range(n_sim):
+                rr_model.resetAll()
+                for kkey, key in enumerate(self.prior_parameters):
+                    rr_model.setValue(key, theta[ksim, kkey])  # theta[ksim, kkey]
 
-            return dset[self.compartment].to_numpy()
+                # FIXME: use timepoints which match samples
+                sim = rr_model.simulate(start=0, end=end, steps=steps)
+                # store data
+                # y[ksim, :, kobs] = sim[self.observable[kobs]]
+                y[ksim, :] = sim[self.observable]
+
+            # console.print(f"{y=}")
+            # console.print(f"{y.shape}")
+            return y
 
         with pm.Model() as model:
-            k = self.f_prior_dsn(
-                'k',
-                mu=self.prior_parameters['k']['loc'],
-                sigma=self.prior_parameters['k']['s'],
-                initval=init_vals['k'], shape=(n_sim,), dims='sim'
+
+            # prior distribution (FIXME: should not be hardcoded)
+            p_prior_dsn = self.f_prior_dsn(
+                "k",
+                mu=self.prior_parameters["k"]["loc"],
+                sigma=self.prior_parameters["k"]["s"],
+                initval=init_vals["k"],
+                shape=(n_sim,),
+                dims="sim",
             )
 
+            # errors
             sigma = pm.HalfNormal("sigma", sigma=1, shape=(n_sim,))
 
             # ODE solution function
-            ode_soln = pytensor_forward_model_matrix(pm.math.stack([k]))
+            ode_soln = pytensor_forward_model_matrix(pm.math.stack([p_prior_dsn]))
 
             # likelihood
             pm.LogNormal(
-                name=self.compartment,
+                name=self.observable,
                 mu=ode_soln,
                 sigma=sigma,
-                observed=data[self.compartment],
+                observed=data[self.observable],
             )
 
         return model
 
-    def sampler(self, model: pm.Model, tune: int, draws: int, chains: int) -> az.InferenceData:
+    def sampler(
+        self, model: pm.Model, tune: int, draws: int, chains: int
+    ) -> az.InferenceData:
         """Definition of the Sampling Process"""
 
         vars_list = list(model.values_to_rvs.keys())[:-1]
         print(f"Variables: {vars_list}\n")
         with model:
             trace = pm.sample(
-                step=[pm.Slice(vars_list)],
-                tune=tune,
-                draws=draws,
-                chains=chains
+                step=[pm.Slice(vars_list)], tune=tune, draws=draws, chains=chains,
+                # cores=15  # Number of CPUs - 2
             )
 
         return trace
@@ -102,42 +119,44 @@ class BayesModel:
         plt.show()
 
 
-def bayes_analysis(sampler: Sampler, bayes_model: BayesModel,
-                   n: int, end: int = 20, steps: int = 100) -> None:
+def bayes_analysis(
+    bayes_model: BayesModel,
+    sampler: Sampler,
+    tune: int = 2000, draws: int = 4000, chains: int = 4,
+    n: int = 1, end: int = 20, steps: int = 100
+) -> None:
 
+    # Sampling of data (FIXME: make this work only with the data; )
     console.rule("Sampling", align="left", style="white")
-    console.print(sampler)
-    thetas = sampler.sample(n=n)
-    console.print(f"{thetas=}")
-    sampler.plot_samples(thetas, distributions=sampler.distributions)
-
-    console.rule("Simulation", align="left", style="white")
-    simulator = SampleSimulator(
-        model=MODEL_SIMPLE_PK,
-        thetas=thetas,
-    )
-    data = simulator.simulate(start=0, end=end, steps=steps)
-    console.print(data)
-
-    data_err = simulator.apply_errors_to_data(data, variables=["[y_gut]", "[y_cent]"])
-    simulator.plot_data(
-        data=data,
-        data_err=data_err,
-        variables=["[y_gut]", "[y_cent]", "[y_peri]"]
+    data_err = sampling_analysis(
+        sampler=sampler,
+        n=n,
+        end=end,
+        steps=steps,
     )
 
-    mod = bayes_model.setup(data_err, end, steps, init_vals={'k': np.repeat(2.0, n)})
+    console.rule(f"Setup Bayes model")
+    mod = bayes_model.setup(data_err, end, steps, init_vals={"k": np.repeat(2.0, n)})
     console.print(mod)
 
-    console.rule(f'Sampling starts for {n=}')
-    sample = bayes_model.sampler(mod, tune=2000, draws=4000, chains=4)
+    console.rule(f"Sampling starts for {n=}")
+    sample = bayes_model.sampler(mod, tune=tune, draws=draws, chains=chains)
 
-    console.rule(f'Results for {n=}')
+    console.rule(f"Results for {n=}")
     bayes_model.plot_trace(sample)
 
 
 if __name__ == "__main__":
 
+    # model definition
+    bayes_model = BayesModel(
+        sbml_model=MODEL_SIMPLE_PK,
+        observable="[y_gut]",  # FIXME
+        prior_parameters={"k": {"loc": np.log(1.0), "s": 0.5}},
+        f_prior_dsn=pm.LogNormal,
+    )
+
+    # example sampler
     sampler = Sampler(
         model=MODEL_SIMPLE_PK,
         distributions=[
@@ -149,21 +168,23 @@ if __name__ == "__main__":
                     "s": 1,
                 },
             )
-        ]
+        ],
     )
 
-    bayes_model = BayesModel(ode_mod=MODEL_SIMPLE_PK,
-                             parameter=['k'],
-                             compartment='[y_gut]',
-                             prior_parameters={'k': {
-                                 'loc': np.log(1.0),
-                                 's': 0.5
-                             }},
-                             f_prior_dsn=pm.LogNormal
-                             )
+    bayes_analysis(
+        bayes_model=bayes_model,
+        tune=2000,
+        draws=4000,
+        chains=4,
+        sampler=sampler,
+        n=1
+    )
 
-    bayes_analysis(sampler, bayes_model, n=1)
-    bayes_analysis(sampler, bayes_model, n=2)
+    # FIXME: bias in the sampling
+    # FIXME: make work for multiple parameters
+    # FIXME: make work for multiple observables
+
+    # bayes_analysis(sampler, bayes_model, n=2)
 
     # console.print(sampler)
     #
