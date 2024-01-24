@@ -19,6 +19,7 @@ from scipy import stats
 from parameter_variability import MODEL_SIMPLE_PK
 from parameter_variability.console import console
 
+
 @dataclass
 class DistDefinition:
     """Definition of distribution via scipy callables."""

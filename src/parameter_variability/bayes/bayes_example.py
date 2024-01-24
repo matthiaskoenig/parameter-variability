@@ -15,7 +15,7 @@ from pytensor.compile.ops import as_op
 from scipy import stats
 
 from parameter_variability import MODEL_SIMPLE_PK, RESULTS_DIR
-from parameter_variability.bayes.sampler import Sampler, SampleSimulator
+from parameter_variability.bayes.sampler import Sampler, SampleSimulator, DistDefinition
 from parameter_variability.console import console
 
 
@@ -24,44 +24,48 @@ class BayesModel:
     """Perform Bayesian Inference on Parameter of ODE model"""
 
     ode_mod: Union[str, Path]
-    parameter: str
+    parameter: List[str]
     compartment: str
-    steps: int
-    prior_parameters: Dict[str, float]
+    prior_parameters: Dict[str, Dict[str, float]]
     f_prior_dsn: Callable
-    tune: int
-    draws: int
-    chains: int
-    init_vals: Dict[str, np.ndarray]
 
     def ls_soln(self, data: xr.Dataset) -> Dict[str, np.ndarray]:
         pass
 
-    def setup(self, data: xr.Dataset) -> pm.Model:
+    def setup(self, data: xr.Dataset, end: int, steps: int,
+              init_vals: Dict[str, np.ndarray]) -> pm.Model:
         """Initialization of Priors and Likelihood"""
+        n_sim = data.sizes['sim']
         ode_model = roadrunner.RoadRunner(self.ode_mod)
 
-        @as_op(itypes=[pt.dvector], otypes=[pt.dvector])  # otypes=[pt.dmatrix]
+        @as_op(itypes=[pt.dmatrix], otypes=[pt.dmatrix])  # otypes=[pt.dmatrix]
         def pytensor_forward_model_matrix(theta):
-            ode_model.resetAll()
-            for par_name, value in zip(self.parameter, theta):
-                ode_model.setValue(par_name, value)
-            sim = ode_model.simulate(start=0, end=10, steps=self.steps)
-            sim_df = pd.DataFrame(sim, columns=sim.colnames)
-            return sim_df[self.compartment].to_numpy()
+            dfs = []
+
+            for i in range(n_sim):
+                ode_model.resetAll()
+                for par_name, value in zip(self.parameter, theta):
+                    ode_model.setValue(par_name, value[i])
+                sim = ode_model.simulate(start=0, end=end, steps=steps)
+                sim_df = pd.DataFrame(sim, columns=sim.colnames)
+                dfs.append(sim_df)
+
+            dset = xr.concat([d.to_xarray() for d in dfs], dim="sim")
+
+            return dset[self.compartment].to_numpy()
 
         with pm.Model() as model:
-            theta = self.f_prior_dsn(
-                self.parameter,
-                mu=self.prior_parameters["loc"],
-                sigma=self.prior_parameters["s"],
-                initval=self.init_vals[self.parameter][0],
+            k = self.f_prior_dsn(
+                'k',
+                mu=self.prior_parameters['k']['loc'],
+                sigma=self.prior_parameters['k']['s'],
+                initval=init_vals['k'], shape=(n_sim,), dims='sim'
             )
 
-            sigma = pm.HalfNormal("sigma", sigma=1)
+            sigma = pm.HalfNormal("sigma", sigma=1, shape=(n_sim,))
 
             # ODE solution function
-            ode_soln = pytensor_forward_model_matrix(pm.math.stack([theta]))
+            ode_soln = pytensor_forward_model_matrix(pm.math.stack([k]))
 
             # likelihood
             pm.LogNormal(
@@ -73,7 +77,7 @@ class BayesModel:
 
         return model
 
-    def sampler(self, model: pm.Model) -> az.InferenceData:
+    def sampler(self, model: pm.Model, tune: int, draws: int, chains: int) -> az.InferenceData:
         """Definition of the Sampling Process"""
 
         vars_list = list(model.values_to_rvs.keys())[:-1]
@@ -81,9 +85,9 @@ class BayesModel:
         with model:
             trace = pm.sample(
                 step=[pm.Slice(vars_list)],
-                tune=self.tune,
-                draws=self.draws,
-                chains=self.chains,
+                tune=tune,
+                draws=draws,
+                chains=chains
             )
 
         return trace
@@ -92,58 +96,110 @@ class BayesModel:
         """Trace plots of the parameters sampled"""
         console.print(az.summary(trace, stat_focus="median"))
 
-        az.plot_trace(sample, compact=True, kind="trace")
+        az.plot_trace(trace, compact=True, kind="trace")
         plt.suptitle("Trace plots")
         plt.tight_layout()
         plt.show()
 
 
-if __name__ == "__main__":
-    console.rule("Sampling")
-    sampler = Sampler(
-        model=MODEL_SIMPLE_PK,
-        parameter="k",
-        f_distribution=stats.lognorm,
-        distribution_parameters={
-            "loc": np.log(2.5),
-            "s": 1,
-        },
-    )
+def bayes_analysis(sampler: Sampler, bayes_model: BayesModel,
+                   n: int, end: int = 20, steps: int = 100) -> None:
+
+    console.rule("Sampling", align="left", style="white")
     console.print(sampler)
-
-    true_thetas = sampler.sample(n=1)
-    console.print(f"{true_thetas=}")
-
-    console.rule("Thetas PDF")
-    sampler.plot_samples(true_thetas)
+    thetas = sampler.sample(n=n)
+    console.print(f"{thetas=}")
+    sampler.plot_samples(thetas, distributions=sampler.distributions)
 
     console.rule("Simulation", align="left", style="white")
     simulator = SampleSimulator(
         model=MODEL_SIMPLE_PK,
-        thetas=true_thetas,
+        thetas=thetas,
     )
-    df = simulator.simulate(start=0, end=10, steps=10)
-    console.print(df)
+    data = simulator.simulate(start=0, end=end, steps=steps)
+    console.print(data)
 
-    console.rule("Model Setup")
-    bayes_model = BayesModel(
-        ode_mod=MODEL_SIMPLE_PK,
-        parameter="k",
-        compartment="[y_gut]",
-        steps=10,
-        prior_parameters={"loc": np.log(2.0), "s": 0.5},
-        f_prior_dsn=pm.LogNormal,
-        tune=2000,
-        draws=4000,
-        chains=4,
-        init_vals={"k": np.array([2.00])},
+    data_err = simulator.apply_errors_to_data(data, variables=["[y_gut]", "[y_cent]"])
+    simulator.plot_data(
+        data=data,
+        data_err=data_err,
+        variables=["[y_gut]", "[y_cent]", "[y_peri]"]
     )
 
-    mod = bayes_model.setup(df)
+    mod = bayes_model.setup(data_err, end, steps, init_vals={'k': np.repeat(2.0, n)})
     console.print(mod)
 
-    console.rule("Sampling starts")
-    sample = bayes_model.sampler(mod)
+    console.rule(f'Sampling starts for {n=}')
+    sample = bayes_model.sampler(mod, tune=2000, draws=4000, chains=4)
 
-    console.rule("Results")
+    console.rule(f'Results for {n=}')
     bayes_model.plot_trace(sample)
+
+
+if __name__ == "__main__":
+
+    sampler = Sampler(
+        model=MODEL_SIMPLE_PK,
+        distributions=[
+            DistDefinition(
+                parameter="k",
+                f_distribution=stats.lognorm,
+                distribution_parameters={
+                    "loc": np.log(2.5),
+                    "s": 1,
+                },
+            )
+        ]
+    )
+
+    bayes_model = BayesModel(ode_mod=MODEL_SIMPLE_PK,
+                             parameter=['k'],
+                             compartment='[y_gut]',
+                             prior_parameters={'k': {
+                                 'loc': np.log(1.0),
+                                 's': 0.5
+                             }},
+                             f_prior_dsn=pm.LogNormal
+                             )
+
+    bayes_analysis(sampler, bayes_model, n=1)
+    bayes_analysis(sampler, bayes_model, n=2)
+
+    # console.print(sampler)
+    #
+    # true_thetas = sampler.sample(n=1)
+    # console.print(f"{true_thetas=}")
+    #
+    # console.rule("Thetas PDF")
+    # sampler.plot_samples(true_thetas)
+    #
+    # console.rule("Simulation", align="left", style="white")
+    # simulator = SampleSimulator(
+    #     model=MODEL_SIMPLE_PK,
+    #     thetas=true_thetas,
+    # )
+    # df = simulator.simulate(start=0, end=10, steps=10)
+    # console.print(df)
+    #
+    # console.rule("Model Setup")
+    # bayes_model = BayesModel(
+    #     ode_mod=MODEL_SIMPLE_PK,
+    #     parameter="k",
+    #     compartment="[y_gut]",
+    #     steps=10,
+    #     prior_parameters={"loc": np.log(2.0), "s": 0.5},
+    #     f_prior_dsn=pm.LogNormal,
+    #     tune=2000,
+    #     draws=4000,
+    #     chains=4,
+    #     init_vals={"k": np.array([2.00])},
+    # )
+    #
+    # mod = bayes_model.setup(df)
+    # console.print(mod)
+    #
+    # console.rule("Sampling starts")
+    # sample = bayes_model.sampler(mod)
+    #
+    # console.rule("Results")
+    # bayes_model.plot_trace(sample)
