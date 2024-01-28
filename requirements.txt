@@ -1,7 +1,17 @@
+# probably due to M1 (check if this can be relaxed)
 numpy<1.26
+
 sbmlutils>=0.8.7
 libroadrunner>=2.2.2
 pytensor==2.10.1
 pymc==5.1.2
 pandas
 matplotlib
+
+# testing
+black>=22.1.0
+isort>=5.10
+mypy>=0.931
+pytest>=7.0.1
+rich
+xarray
