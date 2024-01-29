@@ -27,7 +27,7 @@ class BayesModel:
     This is based on SBML as a model format.
     """
     sbml_model: Union[str, Path]
-    observable: List[str]  # FIXME: should be list
+    observable: str  # FIXME: should be list
     prior_parameters: Dict[str, Dict[str, float]]
     f_prior_dsn: Callable
 
@@ -39,18 +39,15 @@ class BayesModel:
     ) -> pm.Model:
         """Initialization of Priors and Likelihood"""
         n_sim = data.sizes["sim"]
-        n_observables = len(self.observable)
         rr_model: roadrunner.RoadRunner = roadrunner.RoadRunner(self.sbml_model)
         # minimal selection
-        rr_model.timeCourseSelections = self.observable
+        rr_model.timeCourseSelections = [self.observable]
 
         @as_op(itypes=[pt.dmatrix], otypes=[pt.dmatrix])
         def pytensor_forward_model_matrix(theta: np.ndarray):
             """ODE solution function.
 
             Run the forward simulation for the sampled parameters theta.
-
-            theta[i, j, k]: i simulations, j steps, k observables
             """
             y = np.empty(shape=(n_sim, steps+1))
 
@@ -89,10 +86,10 @@ class BayesModel:
 
             # likelihood
             pm.LogNormal(
-                name=f"observed_{self.observable}",
+                name=self.observable,
                 mu=ode_soln,
                 sigma=sigma,
-                observed=data[self.observable].to_array(),
+                observed=data[self.observable],
             )
 
         return model
@@ -154,7 +151,7 @@ if __name__ == "__main__":
     # model definition
     bayes_model = BayesModel(
         sbml_model=MODEL_SIMPLE_PK,
-        observable=["[y_gut]"],  # FIXME
+        observable="[y_gut]",  # FIXME
         prior_parameters={"k": {"loc": np.log(1.0), "s": 0.5}},
         f_prior_dsn=pm.LogNormal,
     )
