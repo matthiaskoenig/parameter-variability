@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Union, Sequence
 
 import arviz as az
 import numpy as np
@@ -28,14 +28,15 @@ class BayesModel:
     """
     sbml_model: Union[str, Path]
     observable: str  # FIXME: should be list
+    init_values: Dict[str, float]
+    f_prior_dsns: Dict[str, Callable]
     prior_parameters: Dict[str, Dict[str, float]]
-    f_prior_dsn: Callable
 
     def ls_soln(self, data: xr.Dataset) -> Dict[str, np.ndarray]:
         pass
 
     def setup(
-        self, data: xr.Dataset, end: int, steps: int, init_vals: Dict[str, np.ndarray]
+        self, data: xr.Dataset, end: int, steps: int,
     ) -> pm.Model:
         """Initialization of Priors and Likelihood"""
         n_sim = data.sizes["sim"]
@@ -54,35 +55,44 @@ class BayesModel:
             for ksim in range(n_sim):
                 rr_model.resetAll()
                 for kkey, key in enumerate(self.prior_parameters):
-                    rr_model.setValue(key, theta[ksim, kkey])  # theta[ksim, kkey]
+                    # FIXME: make work for multiple parameters
+
+                    rr_model.setValue(key, theta[kkey][ksim])  # theta[ksim, kkey]
 
                 # FIXME: use timepoints which match samples
                 sim = rr_model.simulate(start=0, end=end, steps=steps)
                 # store data
                 # y[ksim, :, kobs] = sim[self.observable[kobs]]
                 y[ksim, :] = sim[self.observable]
-
-            # console.print(f"{y=}")
-            # console.print(f"{y.shape}")
             return y
 
         with pm.Model() as model:
 
-            # prior distribution (FIXME: should not be hardcoded)
-            p_prior_dsn = self.f_prior_dsn(
-                "k",
-                mu=self.prior_parameters["k"]["loc"],
-                sigma=self.prior_parameters["k"]["s"],
-                initval=init_vals["k"],
-                shape=(n_sim,),
-                dims="sim",
-            )
+            # prior distribution
+            p_prior_dsns: Dict[str, np.ndarray] = {}
+            for pid in self.prior_parameters:
+                dsn_pars = self.prior_parameters[pid]
+                dsn_f = self.f_prior_dsns[pid]
 
-            # errors
+                p_prior_dsns[pid] = dsn_f(
+                    pid,
+                    mu=dsn_pars["loc"],
+                    sigma=dsn_pars["s"],
+                    initval=np.repeat(self.init_values[pid], n_sim),
+                    shape=(n_sim,),
+                    dims="sim",
+                )
+            console.print(p_prior_dsns)
+
+
+            # errors (FIXME: should not be hardcoded, must support multiple paramters)
             sigma = pm.HalfNormal("sigma", sigma=1, shape=(n_sim,))
 
             # ODE solution function
-            ode_soln = pytensor_forward_model_matrix(pm.math.stack([p_prior_dsn]))
+            theta: Sequence["TensorLike"] = [p_prior_dsns[pid] for pid in self.prior_parameters]
+            theta_tensor: np.ndarray = pm.math.stack(theta)
+
+            ode_soln = pytensor_forward_model_matrix(theta_tensor)
 
             # likelihood
             pm.LogNormal(
@@ -136,10 +146,10 @@ def bayes_analysis(
     )
 
     console.rule(f"Setup Bayes model")
-    mod = bayes_model.setup(data_err, end, steps, init_vals={"k": np.repeat(2.0, n)})
+    mod = bayes_model.setup(data_err, end, steps)
     console.print(mod)
 
-    console.rule(f"Sampling starts for {n=}")
+    console.rule(f"Sampling for {n=}")
     sample = bayes_model.sampler(mod, tune=tune, draws=draws, chains=chains)
 
     console.rule(f"Results for {n=}")
@@ -151,10 +161,21 @@ if __name__ == "__main__":
     # model definition
     bayes_model = BayesModel(
         sbml_model=MODEL_SIMPLE_PK,
-        observable="[y_gut]",  # FIXME
-        prior_parameters={"k": {"loc": np.log(1.0), "s": 0.5}},
-        f_prior_dsn=pm.LogNormal,
+        observable="[y_gut]",  # FIXME: support multiple
+        init_values={
+            "k": 2.0,
+            "CL": 1.0,
+        },
+        prior_parameters={
+            "k": {"loc": np.log(1.0), "s": 0.5},
+            "CL": {"loc": np.log(1.0), "s": 0.5}
+        },
+        f_prior_dsns={
+            "k": pm.LogNormal,
+            "CL": pm.LogNormal,
+        },
     )
+    console.print(f"{bayes_model=}")
 
     # example sampler
     sampler = Sampler(
@@ -167,9 +188,18 @@ if __name__ == "__main__":
                     "loc": np.log(2.5),
                     "s": 1,
                 },
+            ),
+            DistDefinition(
+                parameter="CL",
+                f_distribution=stats.lognorm,
+                distribution_parameters={
+                    "loc": np.log(2.5),
+                    "s": 1,
+                },
             )
         ],
     )
+    console.print(f"{sampler=}")
 
     bayes_analysis(
         bayes_model=bayes_model,
