@@ -50,7 +50,7 @@ class BayesModel:
 
             Run the forward simulation for the sampled parameters theta.
             """
-            y = np.empty(shape=(n_sim, steps+1))
+            y = np.empty(shape=(steps+1, n_sim))
 
             for ksim in range(n_sim):
                 rr_model.resetAll()
@@ -63,7 +63,9 @@ class BayesModel:
                 sim = rr_model.simulate(start=0, end=end, steps=steps)
                 # store data
                 # y[ksim, :, kobs] = sim[self.observable[kobs]]
-                y[ksim, :] = sim[self.observable]
+                y[:, ksim] = sim[self.observable]
+            # console.print(y)
+            # console.print(y.shape)
             return y
 
         with pm.Model() as model:
@@ -82,8 +84,6 @@ class BayesModel:
                     shape=(n_sim,),
                     dims="sim",
                 )
-            console.print(p_prior_dsns)
-
 
             # errors (FIXME: should not be hardcoded, must support multiple paramters)
             sigma = pm.HalfNormal("sigma", sigma=1, shape=(n_sim,))
@@ -99,7 +99,7 @@ class BayesModel:
                 name=self.observable,
                 mu=ode_soln,
                 sigma=sigma,
-                observed=data[self.observable],
+                observed=data[self.observable].transpose('time', 'sim'),
             )
 
         return model
@@ -207,7 +207,7 @@ if __name__ == "__main__":
         draws=4000,
         chains=4,
         sampler=sampler,
-        n=1
+        n=2
     )
 
     # FIXME: bias in the sampling
