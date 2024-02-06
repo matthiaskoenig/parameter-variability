@@ -91,7 +91,7 @@ class BayesModel:
 
             # ODE solution function
             theta: Sequence["TensorLike"] = \
-                [p_prior_dsns[pid][sims] for pid in self.prior_parameters]
+                [p_prior_dsns[pid] for pid in self.prior_parameters]
             theta_tensor: np.ndarray = pm.math.stack(theta, axis=1)\
 
             ode_soln = pytensor_forward_model_matrix(theta_tensor, sims)
