@@ -40,25 +40,24 @@ class BayesModel:
     ) -> pm.Model:
         """Initialization of Priors and Likelihood"""
         n_sim = data.sizes["sim"]
+        coords = {'sim': data['sim']}
         rr_model: roadrunner.RoadRunner = roadrunner.RoadRunner(self.sbml_model)
         # minimal selection
         rr_model.timeCourseSelections = [self.observable]
 
-        @as_op(itypes=[pt.dmatrix], otypes=[pt.dmatrix])
-        def pytensor_forward_model_matrix(theta: np.ndarray):
+        @as_op(itypes=[pt.dmatrix, pt.ivector], otypes=[pt.dmatrix])
+        def pytensor_forward_model_matrix(theta: np.ndarray, h: pm.ConstantData):
             """ODE solution function.
 
             Run the forward simulation for the sampled parameters theta.
             """
-            y = np.empty(shape=(steps+1, n_sim))
+            y = np.empty(shape=(steps+1, h.size))
 
-            for ksim in range(n_sim):
+            for ksim in h:
                 rr_model.resetAll()
                 for kkey, key in enumerate(self.prior_parameters):
-                    # FIXME: make work for multiple parameters
-
-                    rr_model.setValue(key, theta[kkey][ksim])  # theta[ksim, kkey]
-
+                    # FIXME: make work for multiple parameter
+                    rr_model.setValue(key, theta[ksim, kkey])  # theta[ksim, kkey]
                 # FIXME: use timepoints which match samples
                 sim = rr_model.simulate(start=0, end=end, steps=steps)
                 # store data
@@ -68,8 +67,8 @@ class BayesModel:
             # console.print(y.shape)
             return y
 
-        with pm.Model() as model:
-
+        with pm.Model(coords=coords) as model:
+            sims = pm.ConstantData('sim_idx', data['sim'], dims='sim')
             # prior distribution
             p_prior_dsns: Dict[str, np.ndarray] = {}
             for pid in self.prior_parameters:
@@ -81,18 +80,21 @@ class BayesModel:
                     mu=dsn_pars["loc"],
                     sigma=dsn_pars["s"],
                     initval=np.repeat(self.init_values[pid], n_sim),
-                    shape=(n_sim,),
+                    # shape=(n_sim,),
                     dims="sim",
                 )
 
-            # errors (FIXME: should not be hardcoded, must support multiple paramters)
-            sigma = pm.HalfNormal("sigma", sigma=1, shape=(n_sim,))
+                # p_prior_dsns[pid] = p_prior_dsns[pid][sims]
+
+            # errors
+            sigma = pm.HalfNormal("sigma", sigma=1)
 
             # ODE solution function
-            theta: Sequence["TensorLike"] = [p_prior_dsns[pid] for pid in self.prior_parameters]
-            theta_tensor: np.ndarray = pm.math.stack(theta)
+            theta: Sequence["TensorLike"] = \
+                [p_prior_dsns[pid][sims] for pid in self.prior_parameters]
+            theta_tensor: np.ndarray = pm.math.stack(theta, axis=1)\
 
-            ode_soln = pytensor_forward_model_matrix(theta_tensor)
+            ode_soln = pytensor_forward_model_matrix(theta_tensor, sims)
 
             # likelihood
             pm.LogNormal(
@@ -149,7 +151,7 @@ def bayes_analysis(
     mod = bayes_model.setup(data_err, end, steps)
     console.print(mod)
 
-    console.rule(f"Sampling for {n=}")
+    console.rule(f"Sampling for {n=}") # FIXME: Save results to investigate later
     sample = bayes_model.sampler(mod, tune=tune, draws=draws, chains=chains)
 
     console.rule(f"Results for {n=}")
@@ -207,7 +209,7 @@ if __name__ == "__main__":
         draws=4000,
         chains=4,
         sampler=sampler,
-        n=2
+        n=5
     )
 
     # FIXME: bias in the sampling
