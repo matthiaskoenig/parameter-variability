@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, List, Union, Sequence
 
 import arviz as az
 import numpy as np
+from numpy.typing import ArrayLike
 import pymc as pm
 
 import pytensor.tensor as pt
@@ -33,32 +34,31 @@ class BayesModel:
     prior_parameters: Dict[str, Dict[str, float]]
 
     def ls_soln(self, data: xr.Dataset) -> Dict[str, np.ndarray]:
+        # TODO: Use the ls solution for the init values
         pass
 
     def setup(
         self, data: xr.Dataset, end: int, steps: int,
     ) -> pm.Model:
         """Initialization of Priors and Likelihood"""
-        n_sim = data.sizes["sim"]
-        coords = {'sim': data['sim']}
+        coords: Dict[str, ArrayLike] = {'sim': data['sim']}
         rr_model: roadrunner.RoadRunner = roadrunner.RoadRunner(self.sbml_model)
         # minimal selection
         rr_model.timeCourseSelections = [self.observable]
 
         @as_op(itypes=[pt.dmatrix, pt.ivector], otypes=[pt.dmatrix])
-        def pytensor_forward_model_matrix(theta: np.ndarray, h: pm.ConstantData):
+        def pytensor_forward_model_matrix(theta: np.ndarray, sims: pt.TensorConstant):
             """ODE solution function.
 
             Run the forward simulation for the sampled parameters theta.
             """
-            y = np.empty(shape=(steps+1, h.size))
+            y = np.empty(shape=(steps+1, sims.size))
 
-            for ksim in h:
+            for ksim in sims:
                 rr_model.resetAll()
                 for kkey, key in enumerate(self.prior_parameters):
-                    # FIXME: make work for multiple parameter
-                    rr_model.setValue(key, theta[ksim, kkey])  # theta[ksim, kkey]
-                # FIXME: use timepoints which match samples
+                    rr_model.setValue(key, theta[ksim, kkey])
+
                 sim = rr_model.simulate(start=0, end=end, steps=steps)
                 # store data
                 # y[ksim, :, kobs] = sim[self.observable[kobs]]
@@ -79,7 +79,7 @@ class BayesModel:
                     pid,
                     mu=dsn_pars["loc"],
                     sigma=dsn_pars["s"],
-                    initval=np.repeat(self.init_values[pid], n_sim),
+                    initval=np.repeat(self.init_values[pid], data['sim'].size),
                     # shape=(n_sim,),
                     dims="sim",
                 )
@@ -90,9 +90,9 @@ class BayesModel:
             sigma = pm.HalfNormal("sigma", sigma=1)
 
             # ODE solution function
-            theta: Sequence["TensorLike"] = \
-                [p_prior_dsns[pid] for pid in self.prior_parameters]
-            theta_tensor: np.ndarray = pm.math.stack(theta, axis=1)\
+            theta: Sequence[pt.TensorLike] = \
+                [p_prior_dsns[pid][sims] for pid in self.prior_parameters]
+            theta_tensor: np.ndarray = pm.math.stack(theta, axis=1)
 
             ode_soln = pytensor_forward_model_matrix(theta_tensor, sims)
 
@@ -124,7 +124,7 @@ class BayesModel:
     def plot_trace(self, trace: az.InferenceData) -> None:
         """Trace plots of the parameters sampled"""
         console.print(az.summary(trace, stat_focus="median"))
-
+        # TODO: Add more plots to show results
         az.plot_trace(trace, compact=True, kind="trace")
         plt.suptitle("Trace plots")
         plt.tight_layout()
