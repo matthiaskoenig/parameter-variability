@@ -1,10 +1,11 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Union, Sequence
 
 import arviz as az
 import numpy as np
+from numpy.typing import ArrayLike
 import pymc as pm
 
 import pytensor.tensor as pt
@@ -28,68 +29,79 @@ class BayesModel:
     """
     sbml_model: Union[str, Path]
     observable: str  # FIXME: should be list
+    init_values: Dict[str, float]
+    f_prior_dsns: Dict[str, Callable]
     prior_parameters: Dict[str, Dict[str, float]]
-    f_prior_dsn: Callable
 
     def ls_soln(self, data: xr.Dataset) -> Dict[str, np.ndarray]:
+        # TODO: Use the ls solution for the init values
         pass
 
     def setup(
-        self, data: xr.Dataset, end: int, steps: int, init_vals: Dict[str, np.ndarray]
+        self, data: xr.Dataset, end: int, steps: int,
     ) -> pm.Model:
         """Initialization of Priors and Likelihood"""
-        n_sim = data.sizes["sim"]
+        coords: Dict[str, ArrayLike] = {'sim': data['sim']}
         rr_model: roadrunner.RoadRunner = roadrunner.RoadRunner(self.sbml_model)
         # minimal selection
         rr_model.timeCourseSelections = [self.observable]
 
-        @as_op(itypes=[pt.dmatrix], otypes=[pt.dmatrix])
-        def pytensor_forward_model_matrix(theta: np.ndarray):
+        @as_op(itypes=[pt.dmatrix, pt.ivector], otypes=[pt.dmatrix])
+        def pytensor_forward_model_matrix(theta: np.ndarray, sims: pt.TensorConstant):
             """ODE solution function.
 
             Run the forward simulation for the sampled parameters theta.
             """
-            y = np.empty(shape=(n_sim, steps+1))
+            y = np.empty(shape=(steps+1, sims.size))
 
-            for ksim in range(n_sim):
+            for ksim in sims:
                 rr_model.resetAll()
                 for kkey, key in enumerate(self.prior_parameters):
-                    rr_model.setValue(key, theta[ksim, kkey])  # theta[ksim, kkey]
+                    rr_model.setValue(key, theta[ksim, kkey])
 
-                # FIXME: use timepoints which match samples
                 sim = rr_model.simulate(start=0, end=end, steps=steps)
                 # store data
                 # y[ksim, :, kobs] = sim[self.observable[kobs]]
-                y[ksim, :] = sim[self.observable]
-
-            # console.print(f"{y=}")
-            # console.print(f"{y.shape}")
+                y[:, ksim] = sim[self.observable]
+            # console.print(y)
+            # console.print(y.shape)
             return y
 
-        with pm.Model() as model:
+        with pm.Model(coords=coords) as model:
+            sims = pm.ConstantData('sim_idx', data['sim'], dims='sim')
+            # prior distribution
+            p_prior_dsns: Dict[str, np.ndarray] = {}
+            for pid in self.prior_parameters:
+                dsn_pars = self.prior_parameters[pid]
+                dsn_f = self.f_prior_dsns[pid]
 
-            # prior distribution (FIXME: should not be hardcoded)
-            p_prior_dsn = self.f_prior_dsn(
-                "k",
-                mu=self.prior_parameters["k"]["loc"],
-                sigma=self.prior_parameters["k"]["s"],
-                initval=init_vals["k"],
-                shape=(n_sim,),
-                dims="sim",
-            )
+                p_prior_dsns[pid] = dsn_f(
+                    pid,
+                    mu=dsn_pars["loc"],
+                    sigma=dsn_pars["s"],
+                    initval=np.repeat(self.init_values[pid], data['sim'].size),
+                    # shape=(n_sim,),
+                    dims="sim",
+                )
+
+                # p_prior_dsns[pid] = p_prior_dsns[pid][sims]
 
             # errors
-            sigma = pm.HalfNormal("sigma", sigma=1, shape=(n_sim,))
+            sigma = pm.HalfNormal("sigma", sigma=1)
 
             # ODE solution function
-            ode_soln = pytensor_forward_model_matrix(pm.math.stack([p_prior_dsn]))
+            theta: Sequence[pt.TensorLike] = \
+                [p_prior_dsns[pid][sims] for pid in self.prior_parameters]
+            theta_tensor: np.ndarray = pm.math.stack(theta, axis=1)
+
+            ode_soln = pytensor_forward_model_matrix(theta_tensor, sims)
 
             # likelihood
             pm.LogNormal(
                 name=self.observable,
                 mu=ode_soln,
                 sigma=sigma,
-                observed=data[self.observable],
+                observed=data[self.observable].transpose('time', 'sim'),
             )
 
         return model
@@ -112,7 +124,7 @@ class BayesModel:
     def plot_trace(self, trace: az.InferenceData) -> None:
         """Trace plots of the parameters sampled"""
         console.print(az.summary(trace, stat_focus="median"))
-
+        # TODO: Add more plots to show results
         az.plot_trace(trace, compact=True, kind="trace")
         plt.suptitle("Trace plots")
         plt.tight_layout()
@@ -136,10 +148,10 @@ def bayes_analysis(
     )
 
     console.rule(f"Setup Bayes model")
-    mod = bayes_model.setup(data_err, end, steps, init_vals={"k": np.repeat(2.0, n)})
+    mod = bayes_model.setup(data_err, end, steps)
     console.print(mod)
 
-    console.rule(f"Sampling starts for {n=}")
+    console.rule(f"Sampling for {n=}") # FIXME: Save results to investigate later
     sample = bayes_model.sampler(mod, tune=tune, draws=draws, chains=chains)
 
     console.rule(f"Results for {n=}")
@@ -151,10 +163,21 @@ if __name__ == "__main__":
     # model definition
     bayes_model = BayesModel(
         sbml_model=MODEL_SIMPLE_PK,
-        observable="[y_gut]",  # FIXME
-        prior_parameters={"k": {"loc": np.log(1.0), "s": 0.5}},
-        f_prior_dsn=pm.LogNormal,
+        observable="[y_gut]",  # FIXME: support multiple
+        init_values={
+            "k": 2.0,
+            "CL": 1.0,
+        },
+        prior_parameters={
+            "k": {"loc": np.log(1.0), "s": 0.5},
+            "CL": {"loc": np.log(1.0), "s": 0.5}
+        },
+        f_prior_dsns={
+            "k": pm.LogNormal,
+            "CL": pm.LogNormal,
+        },
     )
+    console.print(f"{bayes_model=}")
 
     # example sampler
     sampler = Sampler(
@@ -167,9 +190,18 @@ if __name__ == "__main__":
                     "loc": np.log(2.5),
                     "s": 1,
                 },
+            ),
+            DistDefinition(
+                parameter="CL",
+                f_distribution=stats.lognorm,
+                distribution_parameters={
+                    "loc": np.log(2.5),
+                    "s": 1,
+                },
             )
         ],
     )
+    console.print(f"{sampler=}")
 
     bayes_analysis(
         bayes_model=bayes_model,
@@ -177,7 +209,7 @@ if __name__ == "__main__":
         draws=4000,
         chains=4,
         sampler=sampler,
-        n=1
+        n=5
     )
 
     # FIXME: bias in the sampling
