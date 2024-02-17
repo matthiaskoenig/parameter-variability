@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, List, Union, Sequence
 
 import arviz as az
 import numpy as np
+import pandas as pd
 from numpy.typing import ArrayLike
 import pymc as pm
 
@@ -68,7 +69,7 @@ class BayesModel:
             return y
 
         with pm.Model(coords=coords) as model:
-            sims = pm.ConstantData('sim_idx', data['sim'], dims='sim')
+            sims = pm.ConstantData('sim_idx', data['sim'].values, dims='sim')
             # prior distribution
             p_prior_dsns: Dict[str, np.ndarray] = {}
             for pid in self.prior_parameters:
@@ -130,6 +131,61 @@ class BayesModel:
         plt.tight_layout()
         plt.show()
 
+    def plot_simulations(
+        self, data: xr.Dataset, trace: az.InferenceData,
+        num_samples: int, forward_end: int, forward_steps: int
+    ) -> None:
+
+        sims = data['sim'].values
+        n_sim = data['sim'].size
+        rr_model: roadrunner.RoadRunner = roadrunner.RoadRunner(self.sbml_model)
+
+        f, axes = plt.subplots(
+            nrows=n_sim,
+            ncols=1,
+            dpi=300,
+            figsize=(5, 5 * n_sim),
+            layout="constrained",
+        )
+        axes = [axes] if n_sim == 1 else axes
+
+        trace_ex = az.extract(trace, num_samples=num_samples)
+
+        for s, ax in zip(sims, axes):
+
+            df_s = data.sel(sim=s).to_dataframe().reset_index()
+            trace_s = trace_ex.sel(sim=s).to_dataframe().reset_index(drop=True)
+            ax.plot(
+                df_s["time"],
+                df_s[self.observable],
+                alpha=0.7,
+                color="tab:blue",
+                marker="o",
+                linestyle="None",
+            )
+
+            # plot sims
+            for _, row in trace_s.iterrows():
+                rr_model.resetAll()
+                for key in self.prior_parameters:
+                    rr_model.setValue(key, row[key])
+                sim = rr_model.simulate(start=0, end=forward_end, steps=forward_steps)
+                sim = pd.DataFrame(sim, columns=sim.colnames)
+
+                ax.plot(
+                    sim['time'],
+                    sim[self.observable],
+                    alpha=0.2,
+                    lw=1,
+                    linestyle='solid'
+                )
+
+            ax.set_xlabel("Time [min]")
+            ax.set_ylabel("Concentation [mM]")
+            ax.set_title(f"Compartment: {self.observable}\nSimulation: {s}")
+
+        plt.show()
+
 
 def bayes_analysis(
     bayes_model: BayesModel,
@@ -156,6 +212,10 @@ def bayes_analysis(
 
     console.rule(f"Results for {n=}")
     bayes_model.plot_trace(sample)
+
+    console.rule(f'Simulation for {n=}')
+    bayes_model.plot_simulations(data_err, sample, num_samples=25,
+                                 forward_end=end, forward_steps=steps)
 
 
 if __name__ == "__main__":
@@ -207,7 +267,7 @@ if __name__ == "__main__":
         bayes_model=bayes_model,
         tune=2000,
         draws=4000,
-        chains=4,
+        chains=3,
         sampler=sampler,
         n=5
     )
@@ -215,44 +275,3 @@ if __name__ == "__main__":
     # FIXME: bias in the sampling
     # FIXME: make work for multiple parameters
     # FIXME: make work for multiple observables
-
-    # bayes_analysis(sampler, bayes_model, n=2)
-
-    # console.print(sampler)
-    #
-    # true_thetas = sampler.sample(n=1)
-    # console.print(f"{true_thetas=}")
-    #
-    # console.rule("Thetas PDF")
-    # sampler.plot_samples(true_thetas)
-    #
-    # console.rule("Simulation", align="left", style="white")
-    # simulator = SampleSimulator(
-    #     model=MODEL_SIMPLE_PK,
-    #     thetas=true_thetas,
-    # )
-    # df = simulator.simulate(start=0, end=10, steps=10)
-    # console.print(df)
-    #
-    # console.rule("Model Setup")
-    # bayes_model = BayesModel(
-    #     ode_mod=MODEL_SIMPLE_PK,
-    #     parameter="k",
-    #     compartment="[y_gut]",
-    #     steps=10,
-    #     prior_parameters={"loc": np.log(2.0), "s": 0.5},
-    #     f_prior_dsn=pm.LogNormal,
-    #     tune=2000,
-    #     draws=4000,
-    #     chains=4,
-    #     init_vals={"k": np.array([2.00])},
-    # )
-    #
-    # mod = bayes_model.setup(df)
-    # console.print(mod)
-    #
-    # console.rule("Sampling starts")
-    # sample = bayes_model.sampler(mod)
-    #
-    # console.rule("Results")
-    # bayes_model.plot_trace(sample)
