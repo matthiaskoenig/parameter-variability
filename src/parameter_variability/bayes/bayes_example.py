@@ -64,11 +64,11 @@ class BayesModel:
                 # store data
                 # y[ksim, :, kobs] = sim[self.observable[kobs]]
                 y[:, ksim] = sim[self.observable]
-            # console.print(y)
-            # console.print(y.shape)
+
             return y
 
         with pm.Model(coords=coords) as model:
+            # TODO: Add correlation matrix between priors and/or sims
             sims = pm.ConstantData('sim_idx', data['sim'].values, dims='sim')
             # prior distribution
             p_prior_dsns: Dict[str, np.ndarray] = {}
@@ -125,7 +125,6 @@ class BayesModel:
     def plot_trace(self, trace: az.InferenceData) -> None:
         """Trace plots of the parameters sampled"""
         console.print(az.summary(trace, stat_focus="median"))
-        # TODO: Add more plots to show results
         az.plot_trace(trace, compact=True, kind="trace")
         plt.suptitle("Trace plots")
         plt.tight_layout()
@@ -135,6 +134,7 @@ class BayesModel:
         self, data: xr.Dataset, trace: az.InferenceData,
         num_samples: int, forward_end: int, forward_steps: int
     ) -> None:
+        """Plot observable with the simulations based on the MCMC samples"""
 
         sims = data['sim'].values
         n_sim = data['sim'].size
@@ -155,6 +155,7 @@ class BayesModel:
 
             df_s = data.sel(sim=s).to_dataframe().reset_index()
             trace_s = trace_ex.sel(sim=s).to_dataframe().reset_index(drop=True)
+            # plot observable
             ax.plot(
                 df_s["time"],
                 df_s[self.observable],
@@ -273,5 +274,4 @@ if __name__ == "__main__":
     )
 
     # FIXME: bias in the sampling
-    # FIXME: make work for multiple parameters
     # FIXME: make work for multiple observables
