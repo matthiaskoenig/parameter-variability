@@ -140,7 +140,8 @@ class SampleSimulator:
             dfs.append(df)
 
         # create xarray
-        dset = xr.concat([df.to_xarray() for df in dfs], dim="sim")
+        dset = xr.concat([df.to_xarray() for df in dfs],
+                         dim=pd.Index(np.arange(n_sim), name='sim'))
 
         return dset
 
