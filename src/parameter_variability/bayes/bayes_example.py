@@ -39,10 +39,10 @@ class BayesModel:
         pass
 
     def setup(
-        self, data: xr.Dataset, end: int, steps: int,
+        self, data: xr.Dataset, end: int, steps: int, plot_model: bool = True
     ) -> pm.Model:
         """Initialization of Priors and Likelihood"""
-        coords: Dict[str, ArrayLike] = {'sim': data['sim']}
+        coords: Dict[str, ArrayLike] = {'sim': data['sim'], 'time': data['time']}
         rr_model: roadrunner.RoadRunner = roadrunner.RoadRunner(self.sbml_model)
         # minimal selection
         rr_model.timeCourseSelections = [self.observable]
@@ -69,7 +69,8 @@ class BayesModel:
 
         with pm.Model(coords=coords) as model:
             # TODO: Add correlation matrix between priors and/or sims
-            sims = pm.ConstantData('sim_idx', data['sim'].values, dims='sim')
+            # Simulation array for forward modelling
+            simulations = pm.ConstantData('simulations', data['sim'], dims='sim')
             # prior distribution
             p_prior_dsns: Dict[str, np.ndarray] = {}
             for pid in self.prior_parameters:
@@ -81,21 +82,19 @@ class BayesModel:
                     mu=dsn_pars["loc"],
                     sigma=dsn_pars["s"],
                     initval=np.repeat(self.init_values[pid], data['sim'].size),
-                    # shape=(n_sim,),
+                    # shape=(data['sim'].size,),
                     dims="sim",
                 )
-
-                # p_prior_dsns[pid] = p_prior_dsns[pid][sims]
 
             # errors
             sigma = pm.HalfNormal("sigma", sigma=1)
 
             # ODE solution function
             theta: Sequence[pt.TensorLike] = \
-                [p_prior_dsns[pid][sims] for pid in self.prior_parameters]
+                [p_prior_dsns[pid] for pid in self.prior_parameters]
             theta_tensor: np.ndarray = pm.math.stack(theta, axis=1)
 
-            ode_soln = pytensor_forward_model_matrix(theta_tensor, sims)
+            ode_soln = pytensor_forward_model_matrix(theta_tensor, simulations)
 
             # likelihood
             pm.LogNormal(
@@ -103,7 +102,14 @@ class BayesModel:
                 mu=ode_soln,
                 sigma=sigma,
                 observed=data[self.observable].transpose('time', 'sim'),
+                dims=('time', 'sim')
             )
+
+        if plot_model:
+            pm.model_to_graphviz(model) \
+                .render(directory=RESULTS_DIR/'graph',
+                        filename='bayes_model_graph.gv',
+                        view=True)
 
         return model
 
@@ -205,7 +211,7 @@ def bayes_analysis(
     )
 
     console.rule(f"Setup Bayes model")
-    mod = bayes_model.setup(data_err, end, steps)
+    mod = bayes_model.setup(data_err, end, steps, plot_model=True)
     console.print(mod)
 
     console.rule(f"Sampling for {n=}") # FIXME: Save results to investigate later
