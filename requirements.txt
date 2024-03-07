@@ -15,3 +15,4 @@ mypy>=0.931
 pytest>=7.0.1
 rich
 xarray
+graphviz
