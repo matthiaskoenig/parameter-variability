@@ -39,7 +39,8 @@ class BayesModel:
         pass
 
     def setup(
-        self, data: xr.Dataset, end: int, steps: int, plot_model: bool = True
+        self, data: xr.Dataset, end: int, steps: int, plot_model: bool = True,
+        use_true_thetas: bool = False
     ) -> pm.Model:
         """Initialization of Priors and Likelihood"""
         coords: Dict[str, ArrayLike] = {'sim': data['sim'], 'time': data['time']}
@@ -77,11 +78,16 @@ class BayesModel:
                 dsn_pars = self.prior_parameters[pid]
                 dsn_f = self.f_prior_dsns[pid]
 
+                if use_true_thetas:
+                    init = self.init_values[pid]
+                else:
+                    init = np.repeat(self.init_values[pid], data['sim'].size)
+
                 p_prior_dsns[pid] = dsn_f(
                     pid,
                     mu=dsn_pars["loc"],
                     sigma=dsn_pars["s"],
-                    initval=np.repeat(self.init_values[pid], data['sim'].size),
+                    initval=init,
                     # shape=(data['sim'].size,),
                     dims="sim",
                 )
@@ -198,12 +204,13 @@ def bayes_analysis(
     bayes_model: BayesModel,
     sampler: Sampler,
     tune: int = 2000, draws: int = 4000, chains: int = 4,
-    n: int = 1, end: int = 20, steps: int = 100
+    n: int = 1, end: int = 20, steps: int = 100,
+    use_true_thetas: bool = False
 ) -> None:
 
     # Sampling of data (FIXME: make this work only with the data; )
     console.rule("Sampling", align="left", style="white")
-    data_err = sampling_analysis(
+    data_err, true_thetas = sampling_analysis(
         sampler=sampler,
         n=n,
         end=end,
@@ -211,7 +218,11 @@ def bayes_analysis(
     )
 
     console.rule(f"Setup Bayes model")
-    mod = bayes_model.setup(data_err, end, steps, plot_model=True)
+    if use_true_thetas:
+        bayes_model.init_values = true_thetas
+
+    mod = bayes_model.setup(data_err, end, steps, plot_model=True,
+                            use_true_thetas=use_true_thetas)
     console.print(mod)
 
     console.rule(f"Sampling for {n=}") # FIXME: Save results to investigate later
@@ -276,7 +287,8 @@ if __name__ == "__main__":
         draws=4000,
         chains=3,
         sampler=sampler,
-        n=5
+        n=5,
+        use_true_thetas=True
     )
 
     # FIXME: bias in the sampling

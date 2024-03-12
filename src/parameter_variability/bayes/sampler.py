@@ -213,7 +213,9 @@ class SampleSimulator:
         plt.show()
 
 
-def sampling_analysis(sampler: Sampler, n: int, end=20, steps=100, seed: Optional[int] = None) -> xr.Dataset:
+def sampling_analysis(
+    sampler: Sampler, n: int, end=20, steps=100, seed: Optional[int] = None
+) -> tuple[xr.Dataset, Dict[str, np.ndarray]]:
     """Creates samples from sampler with control plots."""
 
     # set seed for reproducibility
@@ -238,7 +240,7 @@ def sampling_analysis(sampler: Sampler, n: int, end=20, steps=100, seed: Optiona
     simulator.plot_data(
         data=data, data_err=data_err, variables=["[y_gut]", "[y_cent]", "[y_peri]"]
     )
-    return data_err
+    return data_err, thetas
 
 
 if __name__ == "__main__":
