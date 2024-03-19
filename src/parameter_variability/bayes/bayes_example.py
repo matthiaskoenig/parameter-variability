@@ -28,11 +28,16 @@ class BayesModel:
 
     Attributes
     ----------
-    sbml_model: path to the SBML xml file
-    observable: name of the compartment observed concentration e.g. [y_gut] or [y_cent]
-    init_values: initial values on where to start the MCMC samplers
-    f_prior_dsns: dict of PyMC prior distributions
-    prior_parameters: parameters for the PyMC prior distributions
+    sbml_model:
+        path to the SBML xml file
+    observable:
+        name of the compartment observed concentration e.g. [y_gut] or [y_cent]
+    init_values:
+        initial values on where to start the MCMC samplers
+    f_prior_dsns:
+        dict of PyMC prior distributions
+    prior_parameters:
+        parameters for the PyMC prior distributions
 
     """
     sbml_model: Union[str, Path]
@@ -80,6 +85,19 @@ class BayesModel:
             """ODE solution function.
 
             Run the forward simulation for the sampled parameters theta.
+
+            Parameters
+            ----------
+            theta:
+                draws coming from the MCMC sampler
+            sims:
+                amount of simulations in the data
+
+            Returns
+            -------
+            y:
+                forward simulation based on the SBML model
+
             """
             y = np.empty(shape=(steps+1, sims.size))
 
