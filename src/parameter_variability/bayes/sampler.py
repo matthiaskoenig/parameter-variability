@@ -39,9 +39,17 @@ class Sampler:
     distributions: List[DistDefinition]
 
     def sample(self, n: int) -> Dict[str, np.ndarray]:
-        """Sample from sampler.
+        """Sample from the random distributions to feed the SBML sampler
 
-        :param n: number of samples
+        Parameters
+        ----------
+        n:
+            amount of parameters to draw from the distributions
+
+        Returns
+        -------
+        samples:
+            dictionary with an array of shape n
         """
         samples: Dict[str, np.ndarray] = {}
         for dist in self.distributions:
@@ -54,7 +62,15 @@ class Sampler:
         thetas: Dict[str, np.ndarray],
         distributions: Optional[List[DistDefinition]] = None,
     ) -> Figure:
-        """Plot the samples"""
+        """Plot the samples
+
+        Parameters
+        ----------
+        thetas:
+            dictionary of the parameters sampled
+        distributions:
+
+        """
         n_pars = len(thetas)
 
         fontdict = {"fontweight": "bold"}

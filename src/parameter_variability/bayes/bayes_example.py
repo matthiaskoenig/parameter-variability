@@ -26,7 +26,19 @@ from parameter_variability.console import console
 class BayesModel:
     """Perform Bayesian Inference on Parameter of ODE model.
 
-    This is based on SBML as a model format.
+    Attributes
+    ----------
+    sbml_model:
+        path to the SBML xml file
+    observable:
+        name of the compartment observed concentration e.g. [y_gut] or [y_cent]
+    init_values:
+        initial values on where to start the MCMC samplers
+    f_prior_dsns:
+        dict of PyMC prior distributions
+    prior_parameters:
+        parameters for the PyMC prior distributions
+
     """
     sbml_model: Union[str, Path]
     observable: str  # FIXME: should be list
@@ -42,7 +54,27 @@ class BayesModel:
         self, data: xr.Dataset, end: int, steps: int, plot_model: bool = True,
         use_true_thetas: bool = False
     ) -> pm.Model:
-        """Initialization of Priors and Likelihood"""
+        """Initialization of Priors and Likelihood
+
+        Parameters
+        ----------
+        data:
+            simulations dataframe
+        end:
+            end of the SBML forward simulation
+        steps:
+            steps on the SBML forward simulation
+        plot_model:
+            PLot model diagram after set up
+        use_true_thetas:
+            Use the true thetas as initial values
+
+        Returns
+        -------
+        model:
+            PyMC-based Bayesian model ready to be smapled
+
+        """
         coords: Dict[str, ArrayLike] = {'sim': data['sim'], 'time': data['time']}
         rr_model: roadrunner.RoadRunner = roadrunner.RoadRunner(self.sbml_model)
         # minimal selection
@@ -53,6 +85,19 @@ class BayesModel:
             """ODE solution function.
 
             Run the forward simulation for the sampled parameters theta.
+
+            Parameters
+            ----------
+            theta:
+                draws coming from the MCMC sampler
+            sims:
+                amount of simulations in the data
+
+            Returns
+            -------
+            y:
+                forward simulation based on the SBML model
+
             """
             y = np.empty(shape=(steps+1, sims.size))
 
@@ -122,7 +167,25 @@ class BayesModel:
     def sampler(
         self, model: pm.Model, tune: int, draws: int, chains: int
     ) -> az.InferenceData:
-        """Definition of the Sampling Process"""
+        """Definition of the Sampling Process
+
+        Parameters
+        ----------
+        model:
+            PyMC-based Model
+        tune:
+            amount of draws to be initially discarded
+        draws:
+            amount of draws to keep
+        chains:
+            number of chains to draw samples from
+
+        Returns
+        -------
+        trace:
+            MCMC draws from the specified model
+
+        """
 
         vars_list = list(model.values_to_rvs.keys())[:-1]
         print(f"Variables: {vars_list}\n")
@@ -135,7 +198,19 @@ class BayesModel:
         return trace
 
     def plot_trace(self, trace: az.InferenceData) -> None:
-        """Trace plots of the parameters sampled"""
+        """Trace plots of the parameters sampled
+
+        Parameters
+        ----------
+        trace:
+            MCMC draws from the specified model
+
+        Returns
+        -------
+        plot:
+            Diagnostic plot of the samples
+
+        """
         console.print(az.summary(trace, stat_focus="median"))
         az.plot_trace(trace, compact=True, kind="trace")
         plt.suptitle("Trace plots")
@@ -146,7 +221,28 @@ class BayesModel:
         self, data: xr.Dataset, trace: az.InferenceData,
         num_samples: int, forward_end: int, forward_steps: int
     ) -> None:
-        """Plot observable with the simulations based on the MCMC samples"""
+        """Plot observable with the simulations based on the MCMC samples
+
+        Parameters
+        ----------
+        data:
+            simulations dataframe
+        trace:
+            MCMC draws from the specified model
+        num_samples:
+            amount of samples from the trace to be used on the SBML forward model
+        forward_end:
+            end of the SBML forward simulation
+        forward_steps:
+            steps on the SBML forward simulation
+
+        Returns
+        -------
+        plot:
+            Plot comparing the observed data with other possible simulations
+            based on the Bayesian sampler
+
+        """
 
         sims = data['sim'].values
         n_sim = data['sim'].size
@@ -207,6 +303,35 @@ def bayes_analysis(
     n: int = 1, end: int = 20, steps: int = 100,
     use_true_thetas: bool = False
 ) -> None:
+    """Wrap up for the Bayesian analysis
+
+    Parameters
+    ----------
+    bayes_model:
+        object with the PyMC setup
+    sampler:
+        object with the forward simulation
+    tune:
+        amount of draws to be initially discarded
+    draws:
+        amount of draws to keep
+    chains:
+        number of chains to draw samples from
+    n:
+        number of simulations to create for the toy example
+    end:
+        end of the SBML forward simulation
+    steps:
+        steps on the SBML forward simulation
+    use_true_thetas:
+            Use the true thetas as initial values
+
+    Returns
+    -------
+    result:
+        Result of the analysis
+
+    """
 
     # Sampling of data (FIXME: make this work only with the data; )
     console.rule("Sampling", align="left", style="white")
@@ -287,8 +412,7 @@ if __name__ == "__main__":
         draws=4000,
         chains=3,
         sampler=sampler,
-        n=5,
-        use_true_thetas=True
+        n=5
     )
 
     # FIXME: bias in the sampling
