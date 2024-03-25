@@ -37,6 +37,7 @@ class Sampler:
 
     model: Union[str, Path]
     distributions: List[DistDefinition]
+    seed: int = None
 
     def sample(self, n: int) -> Dict[str, np.ndarray]:
         """Sample from the random distributions to feed the SBML sampler
@@ -54,6 +55,8 @@ class Sampler:
         samples: Dict[str, np.ndarray] = {}
         for dist in self.distributions:
             dsn = dist.f_distribution(**dist.distribution_parameters)
+            if self.seed:
+                np.random.seed(self.seed)
             samples[dist.parameter] = dsn.rvs(size=n)
         return samples
 
@@ -90,12 +93,21 @@ class Sampler:
 
             theta_values = thetas[sid]
 
+            # plot the distribution
+
             # plot histogram
-            ax.hist(
+            ax_hist = ax.twinx()
+            ax_hist.hist(
                 theta_values,
                 color="tab:orange",
                 density=True,
+                alpha=0.5
             )
+
+            ax_hist.tick_params(axis='both',
+                           which='both',
+                           right=False,
+                           labelright=False)
 
             # plot values
             for kv, value in enumerate(theta_values):
@@ -112,8 +124,8 @@ class Sampler:
                     label=label,
                 )
 
-            # plot the distribution
             if distributions:
+
                 dist = distributions[k]
                 dsn = dist.f_distribution(**dist.distribution_parameters)
                 theta = np.linspace(dsn.ppf(0.001), dsn.ppf(0.999), 500)

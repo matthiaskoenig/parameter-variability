@@ -366,7 +366,7 @@ if __name__ == "__main__":
     # model definition
     bayes_model = BayesModel(
         sbml_model=MODEL_SIMPLE_PK,
-        observable="[y_gut]",  # FIXME: support multiple
+        observable="[y_gut]",  # Other options are '[y_cent]' and '[y_peri]'
         init_values={
             "k": 2.0,
             "CL": 1.0,
@@ -414,6 +414,3 @@ if __name__ == "__main__":
         sampler=sampler,
         n=5
     )
-
-    # FIXME: bias in the sampling
-    # FIXME: make work for multiple observables
