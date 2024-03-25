@@ -37,7 +37,7 @@ class Sampler:
 
     model: Union[str, Path]
     distributions: List[DistDefinition]
-    seed: int = 2001
+    seed: int = None
 
     def sample(self, n: int) -> Dict[str, np.ndarray]:
         """Sample from the random distributions to feed the SBML sampler
@@ -55,7 +55,8 @@ class Sampler:
         samples: Dict[str, np.ndarray] = {}
         for dist in self.distributions:
             dsn = dist.f_distribution(**dist.distribution_parameters)
-            np.random.seed(self.seed)
+            if self.seed:
+                np.random.seed(self.seed)
             samples[dist.parameter] = dsn.rvs(size=n)
         return samples
 
