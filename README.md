@@ -45,3 +45,28 @@ After the setup below, simply run the script `bayesian_example.py` on your favou
 ```bash
 (parameter-variability) python src/parameter_variability/bayes/bayes_example.py
 ```
+
+## Output example
+
+Plots of results for the analysis on the Gut compartment
+
+#### Figure 1: Sampling random parameters from "true" distribution
+
+<img src="img/01-parameter_sampling.png" alt="01-parameter_sampling" width="200"/>
+
+#### Figure 2: Toy Data simulated using values from the true distribution
+
+<img src="img/02-simulation_plotting.png" alt="02-simulation_plotting" width="200"/>
+
+#### Figure 3: Graph representing the Bayesian Model
+
+<img src="img/03-bayesian_model.png" alt="03-bayesian_model" width="200"/>
+
+#### Figure 4: Trace Plot of the parameters sampled from the Bayesian model
+
+<img src="img/04-trace_plot.png" alt="04-trace_plot" width="200"/>
+
+#### Figure 5: Proposed simulations sampled from the Bayesian Model
+
+<img src="img/05-bayesian_sample.png" alt="05-bayesian_sample" width="200"/>
+
