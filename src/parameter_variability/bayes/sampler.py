@@ -90,12 +90,21 @@ class Sampler:
 
             theta_values = thetas[sid]
 
+            # plot the distribution
+
             # plot histogram
-            ax.hist(
+            ax_hist = ax.twinx()
+            ax_hist.hist(
                 theta_values,
                 color="tab:orange",
                 density=True,
+                alpha=0.5
             )
+
+            ax_hist.tick_params(axis='both',
+                           which='both',
+                           right=False,
+                           labelright=False)
 
             # plot values
             for kv, value in enumerate(theta_values):
@@ -112,8 +121,8 @@ class Sampler:
                     label=label,
                 )
 
-            # plot the distribution
             if distributions:
+
                 dist = distributions[k]
                 dsn = dist.f_distribution(**dist.distribution_parameters)
                 theta = np.linspace(dsn.ppf(0.001), dsn.ppf(0.999), 500)
