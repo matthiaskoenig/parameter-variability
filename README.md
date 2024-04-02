@@ -28,7 +28,7 @@ mkvirtualenv parameter-variability --python=python3.10
 ## ODE model
 As an example PBPK model (see figure below), a simple PK model is implemented consisting of three compartments, `gut`, `central` and `peripheral`. The substance `y` can be transferred from the gut to the central compartment via `absorption`. The substance `y` can be distributed in the peripheral compartment via `R1` or return from the peripheral to the central compartment via `R2`. Substance 'y' is removed from the central compartment by `clearance`.
 
-![simple_pk model](./src/parameter_variability/models/sbml/simple_pk.png)
+<img src="./src/parameter_variability/models/sbml/simple_pk.png" alt="simple_pk model simulation" width="200"/>
 
 The SBML of the model is available from 
 [simple_pk.xml](./src/parameter_variability/models/sbml/simple_pk.xml).
@@ -68,8 +68,9 @@ d y_gut/dt = -ABSORPTION / Vgut  # [mmol/l/min]
 d y_peri/dt = R1 / Vperi - R2 / Vperi  # [mmol/l/min]
 ```
 
-An example output of the model is provided below
-![simple_pk model](./src/parameter_variability/models/sbml/simple_pk_simulation.png).
+An example output of the model is provided here
+
+<img src="./src/parameter_variability/models/sbml/simple_pk_simulation.png" alt="simple_pk simulation" width="250"/>
 
 
 ## Bayesian model
