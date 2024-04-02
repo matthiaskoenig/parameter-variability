@@ -1,4 +1,4 @@
-# Baysian models for ODE models in SBML 
+# Bayesian models for ODE models in SBML 
 
 This project implements Bayesian models using [PyMC](https://www.pymc.io) on top of ODE-based models encoded in the [Systems Biology Markup Language](https://sbml.org/) (SBML).
 
