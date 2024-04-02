@@ -68,6 +68,9 @@ d y_gut/dt = -ABSORPTION / Vgut  # [mmol/l/min]
 d y_peri/dt = R1 / Vperi - R2 / Vperi  # [mmol/l/min]
 ```
 
+An example output of the model is provided below
+![simple_pk model](./src/parameter_variability/models/sbml/simple_pk_simulation.png).
+
 
 ## Bayesian model
 To generate the toy example, the two-compartment model is fed draws from an idealized random distribution for each parameter. These are called `true_thetas'. 
@@ -86,7 +89,7 @@ To run the example Bayesian model execute the `bayes_example.py` script
 (parameter-variability) python src/parameter_variability/bayes/bayes_example.py
 ```
 
-## Example outputs
+### Outputs
 
 Plots of results for the analysis on the Gut compartment
 
