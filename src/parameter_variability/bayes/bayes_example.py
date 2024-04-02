@@ -1,7 +1,6 @@
-import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Union, Sequence
+from typing import Callable, Dict, Union, Sequence
 
 import arviz as az
 import numpy as np

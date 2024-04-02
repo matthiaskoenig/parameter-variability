@@ -9,46 +9,78 @@ This project implements Bayesian models using [PyMC](https://www.pymc.io) on top
 
 ## Installation
 
-Create a virtual environment and install the dependencies
-
 ### libraries
+Install graphviz library
+
 ```bash
 sudo apt-get -y install graphviz graphviz-dev
 ```
 
 ### virtual environment
+Create a virtual environment and install the dependencies defined in the `requirements.txt`
+
 ```bash
 mkvirtualenv parameter-variability --python=python3.10
 (parameter-variability) pip install -r requirements.txt
 ```
 
-
 # Example
+## ODE model
+As an example PBPK model (see figure below), a simple PK model is implemented consisting of three compartments, `gut`, `central` and `peripheral`. The substance `y` can be transferred from the gut to the central compartment via `absorption`. The substance `y` can be distributed in the peripheral compartment via `R1` or return from the peripheral to the central compartment via `R2`. Substance 'y' is removed from the central compartment by `clearance`.
 
-In this particular case, [a simple two compartment model](src/parameter_variability/models/sbml/simple_pk.md)
+![simple_pk model](./src/parameter_variability/models/sbml/simple_pk.png)
 
+The SBML of the model is available from 
+[simple_pk.xml](./src/parameter_variability/models/sbml/simple_pk.xml).
 
-To generate the toy example, the two compartment model is fed draws from an idealized random distribution for each parameter. They are called the `true_thetas`. 
-Then a forward simulation is performed to generate a run simulation for each theta. 
+The resulting ODEs of the model are
+```bash
+time: [min]
+substance: [mmol]
+extent: [mmol]
+volume: [l]
+area: [m^2]
+length: [m]
 
-After adding noise to the simulation(s), a Bayesian model fits the data and draw sample from a posterior distribution. 
-The empirical distribution of those samples should contain the `true_thetas`.
+# Parameters `p`
+CL = 1.0  # [l/min] 
+Q = 1.0  # [l/min] 
+Vcent = 1.0  # [l] 
+Vgut = 1.0  # [l] 
+Vperi = 1.0  # [l] 
+k = 1.0  # [l/min] 
 
-## Example ODEs
+# Initial conditions `x0`
+y_cent = 0.0  # [mmol/l] Vcent
+y_gut = 1.0  # [mmol/l] Vgut
+y_peri = 0.0  # [mmol/l] Vperi
+
+# ODE system
+# y
+ABSORPTION = k * y_gut  # [mmol/min]
+CLEARANCE = CL * y_cent  # [mmol/min]
+R1 = Q * y_cent  # [mmol/min]
+R2 = Q * y_peri  # [mmol/min]
+
+# odes
+d y_cent/dt = (ABSORPTION / Vcent - CLEARANCE / Vcent - R1 / Vcent) + R2 / Vcent  # [mmol/l/min]
+d y_gut/dt = -ABSORPTION / Vgut  # [mmol/l/min]
+d y_peri/dt = R1 / Vperi - R2 / Vperi  # [mmol/l/min]
 ```
 
 
-```
+## Bayesian model
+To generate the toy example, the two-compartment model is fed draws from an idealized random distribution for each parameter. These are called `true_thetas'. 
+A forward simulation is then run to generate a run simulation for each theta. 
 
+After adding noise to the simulation(s), a Bayesian model fits the data and draws samples from a posterior distribution. 
+The empirical distribution of these samples should contain the `true_thetas'.
 
-## Current modelled parameters
+Current modelled parameters:
 - `k`: Absorption constant
 - `CL` Clearance constant
 
-
-## Running the model
-
-After the setup below, simply run the script `bayesian_example.py` on your favourite IDE or run it in the command line from the main directory as follows
+To run the example Bayesian model execute the `bayes_example.py` script
 
 ```bash
 (parameter-variability) python src/parameter_variability/bayes/bayes_example.py
