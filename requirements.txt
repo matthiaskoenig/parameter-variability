@@ -1,5 +1,5 @@
 # probably due to M1 (check if this can be relaxed)
-numpy<1.26
+numpy>=1.26.4
 
 sbmlutils>=0.8.7
 libroadrunner>=2.2.2
@@ -7,6 +7,12 @@ pytensor==2.10.1
 pymc==5.1.2
 pandas
 matplotlib
+petab>=0.2.9
+pypesto>=0.5.1
+amici>=0.24.0
+# mkl>=2024.1.0
+# mkl-service>=2.4.1.0
+# sudo apt-get -y install libmkl-full-dev
 
 # testing
 black>=22.1.0
@@ -16,3 +22,4 @@ pytest>=7.0.1
 rich
 xarray
 graphviz
+
