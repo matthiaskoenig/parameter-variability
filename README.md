@@ -20,7 +20,7 @@ sudo apt-get -y install graphviz graphviz-dev
 Create a virtual environment and install the dependencies defined in the `requirements.txt`
 
 ```bash
-mkvirtualenv parameter-variability --python=python3.10
+mkvirtualenv parameter-variability --python=python3.12
 (parameter-variability) pip install -r requirements.txt
 ```
 
