@@ -7,15 +7,36 @@ from sbmlutils.cytoscape import visualize_sbml
 from sbmlutils.factory import *
 from sbmlutils.metadata import *
 
+
+class U(Units):
+    """UnitDefinitions."""
+
+    m2 = UnitDefinition("m2", "meter^2")
+    m3 = UnitDefinition("m3", "meter^3")
+    m3_per_s = UnitDefinition("m3_per_s", "meter^3/s")
+    mM = UnitDefinition("mole_per_m3", "mole/m^3")
+    mole_per_s = UnitDefinition("mole_per_s", "mole/s")
+
+
 _m = Model(
     sid="simple_chain",
     name="Model Simple Chain",
     notes="""Simple S1 -> S2 conversion for testing.""",
+    units=U,
+    model_units=ModelUnits(
+        time=U.second,
+        extent=U.mole,
+        substance=U.mole,
+        length=U.meter,
+        area=U.m2,
+        volume=U.m3,
+    ),
 )
 _m.compartments = [
     Compartment(
         sid="liver",
         value=1.0,
+        unit=U.m3
     )
 ]
 
@@ -25,16 +46,18 @@ _m.species = [
         name="S1",
         compartment="liver",
         initialConcentration=1.0,
+        substanceUnit=U.mole
     ),
     Species(
         sid="S2",
         name="S2",
         compartment="liver",
         initialConcentration=0.0,
+        substanceUnit=U.mole
     ),
 ]
 
-_m.parameters = [Parameter(sid="k1", value=1.0)]
+_m.parameters = [Parameter(sid="k1", value=1.0, unit=U.m3_per_s)]
 
 _m.reactions = [
     Reaction(
@@ -57,7 +80,7 @@ if __name__ == "__main__":
         filepath=MODELS_DIR / f"{_m.sid}.xml",
         sbml_level=3,
         sbml_version=2,
-        validation_options=ValidationOptions(units_consistency=False),
+        validation_options=ValidationOptions(units_consistency=True),
     )
 
     # create differential equations
