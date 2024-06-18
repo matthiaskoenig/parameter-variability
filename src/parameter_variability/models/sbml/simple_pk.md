@@ -16,7 +16,7 @@ Q = 1.0  # [l/min]
 Vcent = 1.0  # [l] 
 Vgut = 1.0  # [l] 
 Vperi = 1.0  # [l] 
-k = 1.0  # [l/min] 
+kabs = 1.0  # [l/min] 
 ```
 
 ## Initial conditions `x0`
@@ -29,7 +29,7 @@ y_peri = 0.0  # [mmol/l] Vperi
 ## ODE system
 ```
 # y
-ABSORPTION = k * y_gut  # [mmol/min]
+ABSORPTION = kabs * y_gut  # [mmol/min]
 CLEARANCE = CL * y_cent  # [mmol/min]
 R1 = Q * y_cent  # [mmol/min]
 R2 = Q * y_peri  # [mmol/min]

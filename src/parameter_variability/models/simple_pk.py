@@ -119,7 +119,7 @@ _m.reactions = [
         sid="ABSORPTION",
         name="absorption",
         equation="y_gut -> y_cent",
-        formula="k * y_gut",
+        formula="kabs * y_gut",
         sboTerm=SBO.BIOCHEMICAL_REACTION,
         notes="""
         [mmole/min]
@@ -127,7 +127,7 @@ _m.reactions = [
         """,
         pars=[
             Parameter(
-                sid="k",
+                sid="kabs",
                 name="absorption rate",
                 value=1.0,
                 unit=U.l_per_min,
