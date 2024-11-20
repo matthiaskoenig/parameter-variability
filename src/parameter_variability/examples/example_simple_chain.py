@@ -28,7 +28,7 @@ def example_simulation_chain() -> None:
     f, ax = plt.subplots(nrows=1, ncols=1)
     for sid in ["[S1]", "[S2]"]:
         for df in results:
-            ax.plot_samples(
+            ax.plot(
                 df.time,
                 df[sid],
                 label=sid,
@@ -37,7 +37,7 @@ def example_simulation_chain() -> None:
                 markeredgecolor="black",
             )
         # ax.legend()
-
+    f.suptitle("Parameter scan k1")
     ax.set_xlabel("time [A.U.]")
     ax.set_ylabel("concentration [substance_units/compartment_units]")
     plt.show()
