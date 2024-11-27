@@ -1,0 +1,11 @@
+format_version: 1
+parameter_file: parameters_simple_pk.tsv
+problems:
+- condition_files:
+  - conditions_simple_pk.tsv
+  measurement_files:
+  - measurements_simple_pk.tsv
+  observable_files:
+  - observables_simple_pk.tsv
+  sbml_files:
+  - simple_pk.xml

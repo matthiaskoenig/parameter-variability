@@ -1,5 +1,5 @@
 # probably due to M1 (check if this can be relaxed)
-numpy<1.26
+numpy>=1.26
 
 sbmlutils>=0.8.7
 libroadrunner>=2.2.2
@@ -7,6 +7,8 @@ pytensor==2.10.1
 pymc==5.1.2
 pandas
 matplotlib
+pypesto>=0.5.1
+petab>=0.2.9
 
 # testing
 black>=22.1.0
