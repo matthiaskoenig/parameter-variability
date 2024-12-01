@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 from pathlib import Path
 import roadrunner
 import pandas as pd
@@ -135,7 +135,8 @@ class ODESimulation:
                  model_path: Path,
                  samples: List[Dict[str, np.array]],
                  pop_vars: Dict[str, List[str]],
-                 compartment_starting_values: Dict[str, int]
+                 compartment_starting_values: Dict[str, int],
+                 paramaters_var: Union[List[str], str]
                  ):
         self.model_path = model_path
         self.r: roadrunner.RoadRunner = roadrunner.RoadRunner(str(model_path))
@@ -147,6 +148,10 @@ class ODESimulation:
         self.samples = samples
         self.pop_vars = pop_vars
         self.compartment_starting_values = compartment_starting_values
+
+        if isinstance(paramaters_var, str):
+            paramaters_var = [paramaters_var]
+        self.parameters_var = paramaters_var
 
     def sim(self,
             sim_start: int = 0,
@@ -196,14 +201,22 @@ class ODESimulation:
 
             sim_df = sim_dfs.sel(gender=gen)
 
+            condition_ls.append({
+                'conditionId': gen,
+                'conditionName': '',
+                'kabs': f'kabs_{gen}'
+
+            })
+
+            for par in self.parameters_var:
+                condition_ls[-1].update({par: f'{par}_{gen}'})
+
+            for col in ['y_gut', 'y_cent', 'y_peri']:
+                condition_ls[-1].update({col: self.compartment_starting_values[col]})
+
             for sim in sim_df['sim'].values:
                 df_s = sim_df.isel(sim=sim).to_dataframe().reset_index()
                 unique_measurement = []
-
-                condition_ls.append({
-                    'conditionId': f'model{j}_data{sim}',
-                    'conditionName': ''
-                })
 
                 for col in ['y_gut', 'y_cent', 'y_peri']:
                     if sim == sim_df['sim'].values[0] and j == 0:
@@ -216,17 +229,15 @@ class ODESimulation:
                             'observableTransformation': 'lin',
                             'observableUnit': 'mmol/l'
                         })
-
-                    condition_ls[-1].update({col: self.compartment_starting_values[col]})
                     col_brackets = '[' + col + ']'
                     for k, row in df_s.iterrows():
                         unique_measurement.append({
                             "observableId": f"{col}_observable",
                             "preequilibrationConditionId": None,
-                            "simulationConditionId": f"model{j}_data{sim}",
-                            "measurement": row[col_brackets], # !
+                            "simulationConditionId": gen,  # f"model{j}_data{sim}",
+                            "measurement": row[col_brackets],  # !
                             MEASUREMENT_UNIT_COLUMN: "mmole/l",
-                            "time": row["time"], # !
+                            "time": row["time"],  # !
                             MEASUREMENT_TIME_UNIT_COLUMN: "second",
                             "observableParameters": None,
                             "noiseParameters": None,
@@ -242,16 +253,30 @@ class ODESimulation:
         parameters: List[str] = list(self.samples[0].keys())
 
         for par in parameters:
-            parameter_ls.append({
-                'parameterId': par,
-                'parameterName': par,
-                'parameterScale': 'log10',
-                'lowerBound': 0.01,
-                'upperBound': 100,
-                'nominalValue': 1,
-                'estimate': 1,
-                'parameterUnit': 'l/min'
-            })
+            if par in self.parameters_var:
+                for gen in sim_dfs['gender'].values:
+                    parameter_ls.append({
+                        'parameterId': f'{par}_{gen}',
+                        'parameterName': f'{par}_{gen}',
+                        'parameterScale': 'log10',
+                        'lowerBound': 0.01,
+                        'upperBound': 100,
+                        'nominalValue': 1,
+                        'estimate': 1,
+                        'parameterUnit': 'l/min'
+                    })
+
+            else:
+                parameter_ls.append({
+                    'parameterId': par,
+                    'parameterName': par,
+                    'parameterScale': 'log10',
+                    'lowerBound': 0.01,
+                    'upperBound': 100,
+                    'nominalValue': 1,
+                    'estimate': 1,
+                    'parameterUnit': 'l/min'
+                })
 
         measurement_df = pd.concat(measurement_ls)
         condition_df = pd.DataFrame(condition_ls)
@@ -310,7 +335,8 @@ if __name__ == "__main__":
     ode_sim = ODESimulation(model_path=MODEL_PATH,
                             samples=[samples_male, samples_female],
                             pop_vars={'gender': ['male', 'female']},
-                            compartment_starting_values=compartment_starting_values)
+                            compartment_starting_values=compartment_starting_values,
+                            paramaters_var='kabs')
     synth_dset: xr.Dataset = ode_sim.sim()
     console.print(synth_dset)
 
