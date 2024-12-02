@@ -1,3 +1,4 @@
 parameterId	parameterName	parameterScale	lowerBound	upperBound	nominalValue	estimate	parameterUnit
-kabs	kabs	log10	0.01	100	1	1	l/min
+kabs_male	kabs_male	log10	0.01	100	1	1	l/min
+kabs_female	kabs_female	log10	0.01	100	1	1	l/min
 CL	CL	log10	0.01	100	1	1	l/min
