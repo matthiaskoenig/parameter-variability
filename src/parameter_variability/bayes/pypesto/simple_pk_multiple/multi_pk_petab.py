@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Callable
 from pathlib import Path
 import roadrunner
 import pandas as pd
@@ -18,7 +18,18 @@ _LOG_2PI = np.log(2 * np.pi)
 
 
 class BivariateLogNormal:
+    """
+    Bivariate log normal distribution
 
+    Attributes
+    ----------
+    parameter_names:
+        names of the variables for each dimension
+    mean:
+        array of mean values
+    cov:
+        covariate matrix
+    """
     def __init__(self,
                  parameter_names: List[str],
                  mean: np.array,
@@ -32,6 +43,22 @@ class BivariateLogNormal:
             size: int,
             seed: Optional[int]
             ) -> Dict[str, np.array]:
+        """
+        Sample from the defined distribution
+
+        Parameters
+        ----------
+        size:
+            number of samples
+        seed:
+            defined for reproducibility
+
+        Returns
+        -------
+        result:
+            array with random sample
+
+        """
 
         if seed:
             np.random.seed(seed)
@@ -48,6 +75,17 @@ class BivariateLogNormal:
     def logpdf(self,
                x: np.array
                ) -> np.array:
+        """
+        Logarithm of the original probability density function
+        Parameters
+        ----------
+        x:
+            array with values in [0,1]
+
+        Returns
+        -------
+            probability density values in the log scale
+        """
 
         log_det_cov, rank = self.cov.log_pdet, self.cov.rank
         dev = np.log(x) - self.mean
@@ -61,10 +99,41 @@ class BivariateLogNormal:
     def pdf(self,
             x: np.array
             ) -> np.array:
+        """
+        Probability Density Function on the original scale
+
+        Parameters
+        ----------
+        x:
+            array with values in [0,1]
+
+        Returns
+        -------
+            probability density values
+
+        """
         return np.exp(self.logpdf(x))
 
     @staticmethod
-    def plot_distributions(dsns, samples: List[Dict[str, np.array]]) -> None:
+    def plot_distributions(dsns,
+                           samples: List[Dict[str, np.array]],
+                           log_scale: bool = True) -> None:
+        """
+        Plot the Bivariate Log Normal Distribution(s) with their samples
+
+        Parameters
+        ----------
+        dsns:
+            list of distributions to plot with logpdf or pdf method
+        samples:
+            array of samples from the distribution
+        log_scale:
+            determines the axes of the samples and the pdf to draw the contours from
+
+        Returns
+        -------
+            matplotlib plot
+        """
 
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 6))
 
@@ -130,13 +199,30 @@ class BivariateLogNormal:
 # Create class for simulation
 
 class ODESimulation:
+    """
+    Create simulation using the samples from a multivariate normal distribution
+
+    Parameters
+    ----------
+    model_path:
+        SBML-based model path location
+    samples:
+        sample from a multivariate normal distribution with their names
+    pop_vars:
+        name of the variable and its levels
+    compartment_starting_values:
+        initial values to start the simulations
+    parameters_var:
+        parameters in the SBML model to
+
+    """
 
     def __init__(self,
                  model_path: Path,
                  samples: List[Dict[str, np.array]],
                  pop_vars: Dict[str, List[str]],
                  compartment_starting_values: Dict[str, int],
-                 paramaters_var: Union[List[str], str]
+                 parameters_var: Union[List[str], str]
                  ):
         self.model_path = model_path
         self.r: roadrunner.RoadRunner = roadrunner.RoadRunner(str(model_path))
@@ -149,15 +235,35 @@ class ODESimulation:
         self.pop_vars = pop_vars
         self.compartment_starting_values = compartment_starting_values
 
-        if isinstance(paramaters_var, str):
-            paramaters_var = [paramaters_var]
-        self.parameters_var = paramaters_var
+        if isinstance(parameters_var, str):
+            parameters_var = [parameters_var]
+        self.parameters_var = parameters_var
 
     def sim(self,
             sim_start: int = 0,
             sim_end: int = 10,
             sim_steps: int = 100,
             **kwargs) -> xr.Dataset:
+        """
+        Run the Roadrunner simulation
+
+        Parameters
+        ----------
+        sim_start:
+            timestamp to start the simulation
+        sim_end:
+            timestamp to end the simulaiton
+        sim_steps:
+            number of samples to get from the simulation
+        kwargs:
+            Extra parameters for the Roadrunner simulation
+
+        Returns
+        -------
+        result:
+            simulation output
+
+        """
 
         dsets: List[xr.Dataset] = []
 
@@ -188,7 +294,17 @@ class ODESimulation:
         return result
 
     def to_petab(self,
-                 sim_dfs: xr.Dataset):
+                 sim_dfs: xr.Dataset) -> None:
+        """
+        From dataframe to PETAB format
+
+        Parameters
+        ----------
+        sim_dfs:
+            dataframe input
+
+
+        """
 
         measurement_ls: List[pd.DataFrame] = []
         condition_ls: List[Dict[str, Optional[str, float, int]]] = []
@@ -336,7 +452,7 @@ if __name__ == "__main__":
                             samples=[samples_male, samples_female],
                             pop_vars={'gender': ['male', 'female']},
                             compartment_starting_values=compartment_starting_values,
-                            paramaters_var='kabs')
+                            parameters_var='kabs')
     synth_dset: xr.Dataset = ode_sim.sim()
     console.print(synth_dset)
 
