@@ -66,12 +66,9 @@ if __name__ == "__main__":
     ode_factory.to_markdown(md_file=md_path)
 
     console.rule(style="white")
-    from rich.markdown import Markdown
-
     with open(md_path, "r") as f:
         md_str = f.read()
-        md = Markdown(md_str)
-        console.print(md)
+        console.print(md_str)
     console.rule(style="white")
 
     visualize_sbml(sbml_path=results.sbml_path)

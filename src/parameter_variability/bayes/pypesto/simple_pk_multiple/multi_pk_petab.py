@@ -413,7 +413,7 @@ class ODESimulation:
 
 
 if __name__ == "__main__":
-    seed = None # 1234
+    seed = None  # 1234
     n_samples = 100
 
     # sampling from distribution
