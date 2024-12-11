@@ -204,8 +204,8 @@ if __name__ == '__main__':
         {
             Category.MALE: LognormParameters(mu=1.5, sigma=1.0, n=50),
             Category.FEMALE: LognormParameters(mu=3.0, sigma=0.5, n=100),
-            Category.OLD: LognormParameters(mu=10.0, sigma=3, n=20),
-            Category.YOUNG: LognormParameters(mu=1.5, sigma=1, n=40),
+            # Category.OLD: LognormParameters(mu=10.0, sigma=3, n=20),
+            # Category.YOUNG: LognormParameters(mu=1.5, sigma=1, n=40),
         }
     )
     plot_samples(samples_k1)
