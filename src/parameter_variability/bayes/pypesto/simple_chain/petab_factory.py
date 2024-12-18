@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Union
 
 import xarray
 from matplotlib import pyplot as plt
@@ -83,7 +83,7 @@ def plot_samples(samples: dict[Category, np.ndarray]):
     ax.set_xlabel("parameter")
     ax.set_ylabel("density")
     ax.legend()
-    plt.show()
+    # plt.show()
 
 class ODESampleSimulator:
     """Performs simulations with given model and samples."""
@@ -127,6 +127,7 @@ class ODESampleSimulator:
 def plot_simulations(dsets: dict[Category, xarray.Dataset]):
     """Plot simulations."""
     console.print(dsets)
+    console.print(list(dsets[list(dsets.keys())[0]].data_vars))
 
     # plot distributions
     f, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, dpi=300, layout="constrained")
@@ -153,51 +154,169 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset]):
     ax2.set_ylabel("[S2]")
     for ax in ax1, ax2:
         ax.set_xlabel("time")
-    plt.show()
+    # plt.show()
 
 
-def create_petab_example(model_path: Path, fig_path: Path):
-    # TODO: create the complete PETab problem
+def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
+                         param: Union[str, List[str]], compartment_starting_values: dict[str, int]):
     # Create all files and copy all the files
-    shutils.copy()
 
+    measurement_ls: List[pd.DataFrame] = []
+    condition_ls: List[dict[str, Optional[str, float, int]]] = []
+    parameter_ls: List[dict[str, Optional[str, float, int]]] = []
+    observable_ls: List[dict[str, Optional[str, float, int]]] = []
 
-    # create the measurement table from given data !
-    df = example_simulation(model_path, fig_path)
+    if isinstance(param, str):
+        param = [param]
 
-    data = []
-    for k, row in df.iterrows():
-        for col in ['y_gut', 'y_cent', 'y_peri']:
-            data.append({
-                "observableId": f"{col}_observable",
-                "preequilibrationConditionId": None,
-                "simulationConditionId": "model1_data1",
-                "measurement": 	row[f"{col}_data"],
-                MEASUREMENT_UNIT_COLUMN: "mmole/l",
-                "time": row["time"],
-                MEASUREMENT_TIME_UNIT_COLUMN: "second",
-                "observableParameters": None,
-                "noiseParameters": None,
+    #for j, gen in enumerate(sim_dfs['gender'].values):
+    for j, (cat, data) in enumerate(dfs.items()):
+
+        measurement_pop: List[pd.DataFrame] = []
+
+        sim_df = data
+
+        condition_ls.append({
+            'conditionId': cat.name,
+            'conditionName': '',
+            # 'k1': f'k1_{cat.name}'
+
+        })
+
+        for par in param:
+            condition_ls[-1].update({par: f'{par}_{cat.name}'})
+
+        data_names = [name[1:-1] for name in list(data.data_vars)]
+
+        for col in data_names:
+            condition_ls[-1].update({col: compartment_starting_values[col]})
+
+        for sim in sim_df['sim'].values:
+            df_s = sim_df.isel(sim=sim).to_dataframe().reset_index()
+            unique_measurement = []
+
+            for col in data_names:
+                if sim == sim_df['sim'].values[0] and j == 0:
+                    observable_ls.append({
+                        'observableId': f'{col}_observable',
+                        'observableFormula': col,
+                        'observableName': col,
+                        'noiseDistribution': 'normal',
+                        'noiseFormula': 1,
+                        'observableTransformation': 'lin',
+                        'observableUnit': 'mmol/l'
+                    })
+                col_brackets = '[' + col + ']'
+                for k, row in df_s.iterrows():
+                    unique_measurement.append({
+                        "observableId": f"{col}_observable",
+                        "preequilibrationConditionId": None,
+                        "simulationConditionId": cat.name,  # f"model{j}_data{sim}",
+                        "measurement": row[col_brackets],  # !
+                        MEASUREMENT_UNIT_COLUMN: "mmole/l",
+                        "time": row["time"],  # !
+                        MEASUREMENT_TIME_UNIT_COLUMN: "second",
+                        "observableParameters": None,
+                        "noiseParameters": None,
+                    })
+
+            measurement_sim_df = pd.DataFrame(unique_measurement)
+
+            measurement_pop.append(measurement_sim_df)
+
+        measurement_df = pd.concat(measurement_pop)
+        measurement_ls.append(measurement_df)
+
+    parameters: List[str] = [name[1:-1]
+                             for name in
+                             list(dsets[list(dsets.keys())[0]].data_vars)]
+
+    for par in parameters:
+        if par in param:
+            for cat in dfs.keys():
+                parameter_ls.append({
+                    'parameterId': f'{par}_{cat.name}',
+                    'parameterName': f'{par}_{cat.name}',
+                    'parameterScale': 'log10',
+                    'lowerBound': 0.01,
+                    'upperBound': 100,
+                    'nominalValue': 1,
+                    'estimate': 1,
+                    'parameterUnit': 'l/min'
+                })
+
+        else:
+            parameter_ls.append({
+                'parameterId': par,
+                'parameterName': par,
+                'parameterScale': 'log10',
+                'lowerBound': 0.01,
+                'upperBound': 100,
+                'nominalValue': 1,
+                'estimate': 1,
+                'parameterUnit': 'l/min'
             })
-    measurement_df = pd.DataFrame(data)
-    measurement_df.to_csv(model_path.parent / "measurements_simple_pk.tsv", sep="\t", index=False)
 
-    model_path: Path = Path(__file__).parent / "simple_pk.xml"
-    fig_path: Path = Path(__file__).parent / "results"
-    fig_path.mkdir(exist_ok=True)
-    create_petab_example(model_path, fig_path)
+    measurement_df = pd.concat(measurement_ls)
+    condition_df = pd.DataFrame(condition_ls)
+    parameter_df = pd.DataFrame(parameter_ls)
+    observable_df = pd.DataFrame(observable_ls)
 
-    import petab
+    measurement_df.to_csv(petab_path / "measurements_multi_pk.tsv",
+                          sep="\t", index=False)
 
-    yaml_path = BAYES_DIR / "pypesto" / "simple_pk" / "simple_pk.yaml"
-    problem: petab.Problem = petab.Problem.from_yaml(yaml_path)
-    console.print(problem)
-    errors_exist = petab.lint.lint_problem(problem)
-    console.print(f"PEtab errors: {errors_exist}")
+    condition_df.to_csv(petab_path / "conditions_multi_pk.tsv",
+                        sep="\t", index=False)
+
+    parameter_df.to_csv(petab_path / "parameters_multi_pk.tsv",
+                        sep='\t', index=False)
+
+    observable_df.to_csv(petab_path / "observables_multi_pk.tsv",
+                         sep='\t', index=False)
+
+
+    # # create the measurement table from given data !
+    # df = example_simulation(model_path, fig_path)
+    #
+    # data = []
+    # for k, row in df.iterrows():
+    #     for col in ['y_gut', 'y_cent', 'y_peri']:
+    #         data.append({
+    #             "observableId": f"{col}_observable",
+    #             "preequilibrationConditionId": None,
+    #             "simulationConditionId": "model1_data1",
+    #             "measurement": 	row[f"{col}_data"],
+    #             MEASUREMENT_UNIT_COLUMN: "mmole/l",
+    #             "time": row["time"],
+    #             MEASUREMENT_TIME_UNIT_COLUMN: "second",
+    #             "observableParameters": None,
+    #             "noiseParameters": None,
+    #         })
+    # measurement_df = pd.DataFrame(data)
+    # measurement_df.to_csv(model_path.parent / "measurements_simple_pk.tsv", sep="\t", index=False)
+    #
+    # model_path: Path = Path(__file__).parent / "simple_pk.xml"
+    # fig_path: Path = Path(__file__).parent / "results"
+    # fig_path.mkdir(exist_ok=True)
+    # create_petab_example(model_path, fig_path)
+    #
+    # import petab
+    #
+    # yaml_path = BAYES_DIR / "pypesto" / "simple_pk" / "simple_pk.yaml"
+    # problem: petab.Problem = petab.Problem.from_yaml(yaml_path)
+    # console.print(problem)
+    # errors_exist = petab.lint.lint_problem(problem)
+    # console.print(f"PEtab errors: {errors_exist}")
 
 
 if __name__ == '__main__':
     from parameter_variability import MODEL_SIMPLE_CHAIN
+
+    fig_path: Path = Path(__file__).parent / "results"
+    fig_path.mkdir(parents=True, exist_ok=True)
+
+    petab_path = fig_path / "petab"
+    petab_path.mkdir(parents=True, exist_ok=True)
 
     # samples
     samples_k1: dict[Category, np.ndarray] = create_male_female_samples(
@@ -209,6 +328,7 @@ if __name__ == '__main__':
         }
     )
     plot_samples(samples_k1)
+    plt.savefig(str(fig_path) + '/01-plot_samples.png')
 
     # simulations
     simulator = ODESampleSimulator(model_path=MODEL_SIMPLE_CHAIN)
@@ -221,16 +341,7 @@ if __name__ == '__main__':
         dsets[category] = dset
 
     plot_simulations(dsets)
+    plt.savefig(str(fig_path) + '/02-plot_simulations.png')
 
-
-
-
-
-
-
-
-
-
-
-
-
+    create_petab_example(petab_path, dsets, param='k1',
+                         compartment_starting_values={'S1': 1, 'S2': 0})
