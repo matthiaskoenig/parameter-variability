@@ -229,7 +229,7 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
 
     parameters: List[str] = [name[1:-1]
                              for name in
-                             list(dsets[list(dsets.keys())[0]].data_vars)]
+                             list(dsets[list(dsets.keys())[0]].data_vars)]  # FIXME: add the SBML parameters
 
     for par in parameters:
         if par in param:
@@ -262,16 +262,16 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
     parameter_df = pd.DataFrame(parameter_ls)
     observable_df = pd.DataFrame(observable_ls)
 
-    measurement_df.to_csv(petab_path / "measurements_multi_pk.tsv",
+    measurement_df.to_csv(petab_path / "measurements_simple_chain.tsv",
                           sep="\t", index=False)
 
-    condition_df.to_csv(petab_path / "conditions_multi_pk.tsv",
+    condition_df.to_csv(petab_path / "conditions_simple_chain.tsv",
                         sep="\t", index=False)
 
-    parameter_df.to_csv(petab_path / "parameters_multi_pk.tsv",
+    parameter_df.to_csv(petab_path / "parameters_simple_chain.tsv",
                         sep='\t', index=False)
 
-    observable_df.to_csv(petab_path / "observables_multi_pk.tsv",
+    observable_df.to_csv(petab_path / "observables_simple_chain.tsv",
                          sep='\t', index=False)
 
 
