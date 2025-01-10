@@ -91,6 +91,7 @@ class ODESampleSimulator:
     def __init__(self, model_path: Path, abs_tol: float = 1E-6, rel_tol: float = 1E-6):
         """Load model and integrator settings."""
         self.r: roadrunner.RoadRunner = roadrunner.RoadRunner(str(model_path))
+        console.print(self.r.getInfo())
         integrator: roadrunner.Integrator = self.r.integrator
         integrator.setSetting("absolute_tolerance", abs_tol)
         integrator.setSetting("relative_tolerance", rel_tol)
@@ -227,10 +228,8 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
         measurement_df = pd.concat(measurement_pop)
         measurement_ls.append(measurement_df)
 
-    parameters: List[str] = [name[1:-1]
-                             for name in
-                             list(dsets[list(dsets.keys())[0]].data_vars)]
-
+    parameters: List[str] = ['k1']  # FIXME: add the SBML parameters
+    console.print(parameters)
     for par in parameters:
         if par in param:
             for cat in dfs.keys():
@@ -262,16 +261,16 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
     parameter_df = pd.DataFrame(parameter_ls)
     observable_df = pd.DataFrame(observable_ls)
 
-    measurement_df.to_csv(petab_path / "measurements_multi_pk.tsv",
+    measurement_df.to_csv(petab_path / "measurements_simple_chain.tsv",
                           sep="\t", index=False)
 
-    condition_df.to_csv(petab_path / "conditions_multi_pk.tsv",
+    condition_df.to_csv(petab_path / "conditions_simple_chain.tsv",
                         sep="\t", index=False)
 
-    parameter_df.to_csv(petab_path / "parameters_multi_pk.tsv",
+    parameter_df.to_csv(petab_path / "parameters_simple_chain.tsv",
                         sep='\t', index=False)
 
-    observable_df.to_csv(petab_path / "observables_multi_pk.tsv",
+    observable_df.to_csv(petab_path / "observables_simple_chain.tsv",
                          sep='\t', index=False)
 
 
