@@ -2,6 +2,7 @@
 import petab
 from pathlib import Path
 import numpy as np
+from pypesto import petab as pt
 import pypesto
 from parameter_variability.console import console
 from matplotlib import pyplot as plt
@@ -10,7 +11,7 @@ import logging
 console.rule("Load PEtab", style="white")
 petab_yaml: Path = Path(__file__).parent / "petab.yaml"
 petab_problem = petab.Problem.from_yaml(petab_yaml)
-importer = pypesto.petab.PetabImporter(petab_problem)
+importer = pt.PetabImporter(petab_problem)
 problem = importer.create_problem(verbose=True)
 
 # check tbe observables df
@@ -108,7 +109,7 @@ sampler = pypesto.sample.AdaptiveMetropolisSampler()
 result = pypesto.sample.sample(
     problem=problem,
     sampler=sampler,
-    n_samples=5000,
+    n_samples=10_000,
     result=result,
 )
 
@@ -133,3 +134,21 @@ plt.savefig(str(fig_path) + '/08_cis.png')
 pypesto.visualize.sampling_1d_marginals(result)
 plt.savefig(str(fig_path) + '/09_marginals.png')
 plt.show()
+
+
+for i in range(result.sample_result.trace_x.shape[2]):
+    trace = result.sample_result.trace_x[:, :, i]
+    sigma_ln = np.var(trace)
+
+    transformed_trace = np.exp(trace + sigma_ln/2)
+    result.sample_result.trace_x[:, :, i] = transformed_trace
+
+pypesto.visualize.sampling_parameter_cis(result, alpha=[99, 95, 90], size=(10, 5))
+plt.savefig(str(fig_path) + '/08_cis_t.png')
+
+pypesto.visualize.sampling_1d_marginals(result)
+plt.savefig(str(fig_path) + '/09_marginals_t.png')
+plt.show()
+
+# Get results and transform them
+
