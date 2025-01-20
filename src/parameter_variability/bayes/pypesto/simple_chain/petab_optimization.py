@@ -12,6 +12,14 @@ console.rule("Load PEtab", style="white")
 petab_yaml: Path = Path(__file__).parent / "petab.yaml"
 petab_problem = petab.Problem.from_yaml(petab_yaml)
 importer = pt.PetabImporter(petab_problem)
+
+
+# TODO: Create an AggregatedObjective and added to the problem
+#   Prior creation in create_problem https://github.com/ICB-DCM/pyPESTO/blob/main/pypesto/petab/importer.py and
+#   Prior definition https://pypesto.readthedocs.io/en/latest/example/prior_definition.html
+# factory = importer.create_objective_creator()
+# obj = factory.create_objective()
+
 problem = importer.create_problem(verbose=True)
 
 # check tbe observables df
