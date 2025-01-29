@@ -12,6 +12,12 @@ console.rule("Load PEtab", style="white")
 petab_yaml: Path = Path(__file__).parent / "petab.yaml"
 petab_problem = petab.Problem.from_yaml(petab_yaml)
 importer = pt.PetabImporter(petab_problem)
+
+
+# TODO: Create an AggregatedObjective and added to the problem
+#   Prior creation in create_problem https://github.com/ICB-DCM/pyPESTO/blob/main/pypesto/petab/importer.py and
+#   Prior definition https://pypesto.readthedocs.io/en/latest/example/prior_definition.html
+
 problem = importer.create_problem(verbose=True)
 
 # check tbe observables df
@@ -28,16 +34,15 @@ console.print(petab_problem.condition_df)
 
 # change things in the model
 console.rule(style="white")
-console.print(problem.objective.amici_model.requireSensitivitiesForAllParameters())
+# console.print(problem.objective.amici_model.requireSensitivitiesForAllParameters())
 
-print(
-    f"Absolute tolerance before change: {problem.objective.amici_solver.getAbsoluteTolerance()}"
-)
-problem.objective.amici_solver.setAbsoluteTolerance(1e-15)
-print(
-    f"Absolute tolerance after change: {problem.objective.amici_solver.getAbsoluteTolerance()}"
-)
-
+# print(
+#     f"Absolute tolerance before change: {problem.objective.amici_solver.getAbsoluteTolerance()}"
+# )
+# problem.objective.amici_solver.setAbsoluteTolerance(1e-15)
+# print(
+#     f"Absolute tolerance after change: {problem.objective.amici_solver.getAbsoluteTolerance()}"
+# )
 
 optimizer_options = {"maxiter": 1e4, "fatol": 1e-12, "frtol": 1e-12}
 
