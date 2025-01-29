@@ -159,7 +159,8 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset]):
 
 
 def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
-                         param: Union[str, List[str]], compartment_starting_values: dict[str, int]):
+                         param: Union[str, List[str]], compartment_starting_values: dict[str, int],
+                         prior_par: dict[str, List[float]]):
     # Create all files and copy all the files
 
     measurement_ls: List[pd.DataFrame] = []
@@ -241,7 +242,9 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
                     'upperBound': 100,
                     'nominalValue': 1,
                     'estimate': 1,
-                    'parameterUnit': 'l/min'
+                    'parameterUnit': 'l/min',
+                    'objectivePriorType': 'parameterScaleNormal',
+                    'objectivePriorParameters': f"{prior_par[f'{par}_{cat.name}'][0]};{prior_par[f'{par}_{cat.name}'][1]}"
                 })
 
         else:
@@ -320,8 +323,8 @@ if __name__ == '__main__':
     # samples
     samples_k1: dict[Category, np.ndarray] = create_male_female_samples(
         {
-            Category.MALE: LognormParameters(mu=1.5, sigma=1.0, n=50),
-            Category.FEMALE: LognormParameters(mu=3.0, sigma=0.5, n=100),
+            Category.MALE: LognormParameters(mu=1.5, sigma=1.0, n=50),  # mu_ln=0.2216, sigma_ln=0.60640
+            Category.FEMALE: LognormParameters(mu=3.0, sigma=0.5, n=100),  # mu_ln=1.0849, sigma_ln=0.16552
             # Category.OLD: LognormParameters(mu=10.0, sigma=3, n=20),
             # Category.YOUNG: LognormParameters(mu=1.5, sigma=1, n=40),
         }
@@ -343,4 +346,5 @@ if __name__ == '__main__':
     plt.savefig(str(fig_path) + '/02-plot_simulations.png')
 
     create_petab_example(petab_path, dsets, param='k1',
-                         compartment_starting_values={'S1': 1, 'S2': 0})
+                         compartment_starting_values={'S1': 1, 'S2': 0},
+                         prior_par={'k1_MALE': [1.5, 1.0], 'k1_FEMALE': [3.0, 0.5]})

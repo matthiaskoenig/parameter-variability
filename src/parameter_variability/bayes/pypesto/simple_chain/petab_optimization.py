@@ -17,8 +17,6 @@ importer = pt.PetabImporter(petab_problem)
 # TODO: Create an AggregatedObjective and added to the problem
 #   Prior creation in create_problem https://github.com/ICB-DCM/pyPESTO/blob/main/pypesto/petab/importer.py and
 #   Prior definition https://pypesto.readthedocs.io/en/latest/example/prior_definition.html
-# factory = importer.create_objective_creator()
-# obj = factory.create_objective()
 
 problem = importer.create_problem(verbose=True)
 
@@ -45,7 +43,6 @@ problem.objective.amici_solver.setAbsoluteTolerance(1e-15)
 print(
     f"Absolute tolerance after change: {problem.objective.amici_solver.getAbsoluteTolerance()}"
 )
-
 
 optimizer_options = {"maxiter": 1e4, "fatol": 1e-12, "frtol": 1e-12}
 
