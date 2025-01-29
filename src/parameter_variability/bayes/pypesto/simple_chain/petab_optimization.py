@@ -2,15 +2,17 @@
 import petab
 from pathlib import Path
 import numpy as np
+from petab.v1 import Problem
 from pypesto import petab as pt
 import pypesto
 from parameter_variability.console import console
 from matplotlib import pyplot as plt
+from copy import deepcopy
 import logging
 
 console.rule("Load PEtab", style="white")
 petab_yaml: Path = Path(__file__).parent / "petab.yaml"
-petab_problem = petab.Problem.from_yaml(petab_yaml)
+petab_problem: Problem = petab.Problem.from_yaml(petab_yaml)
 importer = pt.PetabImporter(petab_problem)
 
 
@@ -70,8 +72,37 @@ result = pypesto.optimize.minimize(
     engine=engine,
     options=opt_options,
 )
-console.rule("results", style="white")
-console.print(result.summary())
+
+def print_optimization_results(result):
+    """Print output of the optimization results."""
+
+    console.rule("results", style="white")
+    console.print(result.summary())
+
+    # match to parameters
+    console.print("Parameters:")
+    console.print(petab_problem.parameter_df)
+    parameter_names = petab_problem.parameter_df.parameterName
+
+    # best fit
+    console.print("Best fit:")
+    best_fit: dict = result.optimize_result.list[0]
+    console.print(best_fit)
+    popts = deepcopy(best_fit["x"])
+    for k, scale in enumerate(petab_problem.parameter_df.parameterScale):
+        # backtransformations
+        if scale == "lin":
+            continue
+        elif scale == "log10":
+            popts[k] = 10 ** popts[k]
+        elif scale == "log":
+            popts[k] = np.exp(popts[k])
+
+    console.print(dict(zip(parameter_names, popts)))
+
+print_optimization_results(result)
+
+
 fig_path: Path = Path(__file__).parents[5] / "results" / "simple_chain"
 
 # see https://pypesto.readthedocs.io/en/latest/example/amici.html#2.-Optimization
@@ -108,13 +139,13 @@ plt.savefig(str(fig_path) + '/04_opt_scatter.png')
 
 
 
-
 console.rule("Bayesian Sampler", style="white")
 sampler = pypesto.sample.AdaptiveMetropolisSampler()
 result = pypesto.sample.sample(
     problem=problem,
     sampler=sampler,
     n_samples=10_000,
+    # n_samples=1_000,
     result=result,
 )
 
@@ -156,4 +187,3 @@ plt.savefig(str(fig_path) + '/09_marginals_t.png')
 plt.show()
 
 # Get results and transform them
-

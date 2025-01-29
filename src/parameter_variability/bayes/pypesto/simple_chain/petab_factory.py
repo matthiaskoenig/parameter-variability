@@ -237,14 +237,15 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
                 parameter_ls.append({
                     'parameterId': f'{par}_{cat.name}',
                     'parameterName': f'{par}_{cat.name}',
-                    'parameterScale': 'log10',
+                    # 'parameterScale': 'log10',
+                    'parameterScale': 'lin',
                     'lowerBound': 0.01,
                     'upperBound': 100,
                     'nominalValue': 1,
                     'estimate': 1,
                     'parameterUnit': 'l/min',
-                    'objectivePriorType': 'parameterScaleNormal',
-                    'objectivePriorParameters': f"{prior_par[f'{par}_{cat.name}'][0]};{prior_par[f'{par}_{cat.name}'][1]}"
+                    # 'objectivePriorType': 'parameterScaleNormal',
+                    # 'objectivePriorParameters': f"{prior_par[f'{par}_{cat.name}'][0]};{prior_par[f'{par}_{cat.name}'][1]}"
                 })
 
         else:
@@ -320,11 +321,17 @@ if __name__ == '__main__':
     petab_path = fig_path / "petab"
     petab_path.mkdir(parents=True, exist_ok=True)
 
+    # prior_par = {'k1_MALE': [1.5, 1.0], 'k1_FEMALE': [3.0, 0.5]}
+    prior_par = {'k1_MALE': [1.0, 0.2], 'k1_FEMALE': [10.0, 0.2]}
+
     # samples
     samples_k1: dict[Category, np.ndarray] = create_male_female_samples(
         {
-            Category.MALE: LognormParameters(mu=1.5, sigma=1.0, n=50),  # mu_ln=0.2216, sigma_ln=0.60640
-            Category.FEMALE: LognormParameters(mu=3.0, sigma=0.5, n=100),  # mu_ln=1.0849, sigma_ln=0.16552
+            # Category.MALE: LognormParameters(mu=1.5, sigma=1.0, n=50),  # mu_ln=0.2216, sigma_ln=0.60640
+            # Category.FEMALE: LognormParameters(mu=3.0, sigma=0.5, n=100),  # mu_ln=1.0849, sigma_ln=0.16552
+            Category.MALE: LognormParameters(mu=prior_par["k1_MALE"][0], sigma=prior_par["k1_MALE"][1], n=100),
+            Category.FEMALE: LognormParameters(mu=prior_par["k1_FEMALE"][0], sigma=prior_par["k1_FEMALE"][1], n=100),
+
             # Category.OLD: LognormParameters(mu=10.0, sigma=3, n=20),
             # Category.YOUNG: LognormParameters(mu=1.5, sigma=1, n=40),
         }
@@ -347,4 +354,4 @@ if __name__ == '__main__':
 
     create_petab_example(petab_path, dsets, param='k1',
                          compartment_starting_values={'S1': 1, 'S2': 0},
-                         prior_par={'k1_MALE': [1.5, 1.0], 'k1_FEMALE': [3.0, 0.5]})
+                         prior_par=prior_par)
