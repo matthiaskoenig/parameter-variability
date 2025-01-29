@@ -34,15 +34,15 @@ console.print(petab_problem.condition_df)
 
 # change things in the model
 console.rule(style="white")
-console.print(problem.objective.amici_model.requireSensitivitiesForAllParameters())
+# console.print(problem.objective.amici_model.requireSensitivitiesForAllParameters())
 
-print(
-    f"Absolute tolerance before change: {problem.objective.amici_solver.getAbsoluteTolerance()}"
-)
-problem.objective.amici_solver.setAbsoluteTolerance(1e-15)
-print(
-    f"Absolute tolerance after change: {problem.objective.amici_solver.getAbsoluteTolerance()}"
-)
+# print(
+#     f"Absolute tolerance before change: {problem.objective.amici_solver.getAbsoluteTolerance()}"
+# )
+# problem.objective.amici_solver.setAbsoluteTolerance(1e-15)
+# print(
+#     f"Absolute tolerance after change: {problem.objective.amici_solver.getAbsoluteTolerance()}"
+# )
 
 optimizer_options = {"maxiter": 1e4, "fatol": 1e-12, "frtol": 1e-12}
 
