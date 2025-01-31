@@ -244,8 +244,8 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
                     'nominalValue': 1,
                     'estimate': 1,
                     'parameterUnit': 'l/min',
-                    # 'objectivePriorType': 'parameterScaleNormal',
-                    # 'objectivePriorParameters': f"{prior_par[f'{par}_{cat.name}'][0]};{prior_par[f'{par}_{cat.name}'][1]}"
+                    'objectivePriorType': 'parameterScaleNormal',
+                    'objectivePriorParameters': f"{prior_par[f'{par}_{cat.name}'][0]};{prior_par[f'{par}_{cat.name}'][1]}"
                 })
 
         else:
@@ -352,6 +352,7 @@ if __name__ == '__main__':
     plot_simulations(dsets)
     plt.savefig(str(fig_path) + '/02-plot_simulations.png')
 
+    prior_par = {'k1_MALE': [0.0, 10.0], 'k1_FEMALE': [0.0, 10.0]}
     create_petab_example(petab_path, dsets, param='k1',
                          compartment_starting_values={'S1': 1, 'S2': 0},
                          prior_par=prior_par)

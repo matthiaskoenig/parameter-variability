@@ -172,18 +172,18 @@ plt.savefig(str(fig_path) + '/09_marginals.png')
 plt.show()
 
 
-for i in range(result.sample_result.trace_x.shape[2]):
-    trace = result.sample_result.trace_x[:, :, i]
-    sigma_ln = np.var(trace)
-
-    transformed_trace = np.exp(trace + sigma_ln/2)
-    result.sample_result.trace_x[:, :, i] = transformed_trace
-
-pypesto.visualize.sampling_parameter_cis(result, alpha=[99, 95, 90], size=(10, 5))
-plt.savefig(str(fig_path) + '/08_cis_t.png')
-
-pypesto.visualize.sampling_1d_marginals(result)
-plt.savefig(str(fig_path) + '/09_marginals_t.png')
-plt.show()
+# for i in range(result.sample_result.trace_x.shape[2]):
+#     trace = result.sample_result.trace_x[:, :, i]
+#     sigma_ln = np.var(trace)
+#
+#     transformed_trace = np.exp(trace + sigma_ln/2)
+#     result.sample_result.trace_x[:, :, i] = transformed_trace
+#
+# pypesto.visualize.sampling_parameter_cis(result, alpha=[99, 95, 90], size=(10, 5))
+# plt.savefig(str(fig_path) + '/08_cis_t.png')
+#
+# pypesto.visualize.sampling_1d_marginals(result)
+# plt.savefig(str(fig_path) + '/09_marginals_t.png')
+# plt.show()
 
 # Get results and transform them
