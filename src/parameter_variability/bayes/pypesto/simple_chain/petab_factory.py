@@ -356,3 +356,5 @@ if __name__ == '__main__':
     create_petab_example(petab_path, dsets, param='k1',
                          compartment_starting_values={'S1': 1, 'S2': 0},
                          prior_par=prior_par)
+
+    plt.show()

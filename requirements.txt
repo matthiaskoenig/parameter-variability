@@ -1,23 +1,14 @@
-# probably due to M1 (check if this can be relaxed)
-numpy>=1.26
-sbmlutils>=0.8.7
-libroadrunner>=2.7.0
-pandas
-matplotlib
-pypesto>=0.5.4
+numpy>=2.2.2
+sbmlutils>=0.9.0
+libroadrunner>=2.8.0
+pandas>=2.2.3
+matplotlib>=3.10.0
+pypesto>=0.5.5
 pypesto[fides]
 fides>=0.7.8
-petab>=0.2.9
+petab>=0.5.0
 amici>=0.30.0
-
-# pytensor==2.10.1
-# pymc==5.1.2
-
-# testing
-black>=22.1.0
-isort>=5.10
-mypy>=0.931
-pytest>=7.0.1
-rich
-xarray
+arviz>=0.20.0
+rich>=13.9.4
+xarray>=2025.1.2
 graphviz

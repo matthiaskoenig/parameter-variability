@@ -147,16 +147,20 @@ class PyPestoSampler:
         plt.show()
 
     def get_posterior_hdi(self) -> xr.Dataset:
+        """High density interval (HDI).
+
+        Interval of high density using arviz, an open source project aiming to
+        provide tools for Exploratory Analysis of Bayesian Models that do
+        not depend on the inference library used.
+        """
         # TODO: Fix arviz data ingestion
-        console.print()
+
         trace_ = self.result.sample_result.trace_x
         # ds = xr.Dataset(trace_)#,
                         # coords={'chain': np.arange(trace_.shape[0]),
                         #         'draw': np.arange(trace_.shape[1]),
                         #         'k1': self.petab_problem.parameter_df.parameterName.array})
-        trace = az.convert_to_inference_data(
-            trace_
-        )
+        trace = az.convert_to_inference_data(trace_)
         trace.posterior = trace.posterior.rename({'x_dim_0': 'parameter'})
         trace.posterior['parameter'] = self.petab_problem.parameter_df.parameterName.array
         return az.hdi(trace)
