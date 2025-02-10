@@ -72,7 +72,7 @@ class PyPestoSampler:
             # best fit
             console.print("Best fit:")
             best_fit: dict = result.optimize_result.list[0]
-            console.print(best_fit)
+            # console.print(best_fit)
             popts = deepcopy(best_fit["x"])
             for k, scale in enumerate(self.petab_problem.parameter_df.parameterScale):
                 # backtransformations
