@@ -21,12 +21,12 @@ class PyPestoSampler:
     """Create Petab Problem based on yaml"""
     yaml_file: Path
     fig_path: Path
-    petab_problem: petab.Problem = None
+    petab_problem: petab.v1.Problem = None
     pypesto_problem: pypesto.Problem = None
     result: pypesto.Result = None
 
     def load_problem(self):
-        self.petab_problem: Problem = petab.Problem.from_yaml(self.yaml_file)
+        self.petab_problem: Problem = petab.v1.Problem.from_yaml(self.yaml_file)
         importer = pt.PetabImporter(self.petab_problem)
         self.pypesto_problem = importer.create_problem(verbose=True)
 
@@ -162,7 +162,7 @@ class PyPestoSampler:
                         #         'k1': self.petab_problem.parameter_df.parameterName.array})
         trace = az.convert_to_inference_data(trace_)
         trace.posterior = trace.posterior.rename({'x_dim_0': 'parameter'})
-        trace.posterior['parameter'] = self.petab_problem.parameter_df.parameterName.array
+        trace.posterior['parameter'] = self.petab_problem.parameter_df.parameterName.values
         return az.hdi(trace)
 
     def results_hdi(self):
