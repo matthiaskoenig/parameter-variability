@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Optional, List, Union
-
+import yaml
 import xarray
 from matplotlib import pyplot as plt
 import roadrunner
@@ -160,7 +160,8 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset]):
 
 def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
                          param: Union[str, List[str]], compartment_starting_values: dict[str, int],
-                         prior_par: dict[str, List[float]]):
+                         prior_par: dict[str, List[float]],
+                         sbml_path: Path):
     # Create all files and copy all the files
 
     measurement_ls: List[pd.DataFrame] = []
@@ -277,6 +278,20 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
     observable_df.to_csv(petab_path / "observables_simple_chain.tsv",
                          sep='\t', index=False)
 
+    # Create Petab YAML
+    petab_path_rel = petab_path.relative_to(Path(__file__).parent)
+    petab_yaml: dict[str, Optional[str, List[dict[str, List]]]] = {}
+    petab_yaml['format_version'] = 1
+    petab_yaml['parameter_file'] = str(petab_path_rel / "parameters_simple_chain.tsv")
+    petab_yaml['problems'] = [{
+        'condition_files': [str(petab_path_rel / "conditions_simple_chain.tsv")],
+        'measurement_files': [str(petab_path_rel / "measurements_simple_chain.tsv")],
+        'observable_files': [str(petab_path_rel / "observables_simple_chain.tsv")],
+        'sbml_files': [str(sbml_path)]
+    }]
+
+    with open('petab.yaml', 'w') as outfile:
+        yaml.dump(petab_yaml, outfile, default_flow_style=False)
 
     # # create the measurement table from given data !
     # df = example_simulation(model_path, fig_path)
@@ -320,6 +335,7 @@ if __name__ == '__main__':
 
     petab_path = fig_path / "petab"
     petab_path.mkdir(parents=True, exist_ok=True)
+    sbml_path = Path("../../../models/sbml/simple_chain.xml")
 
     # prior_par = {'k1_MALE': [1.5, 1.0], 'k1_FEMALE': [3.0, 0.5]}
     prior_par = {'k1_MALE': [1.0, 0.2], 'k1_FEMALE': [10.0, 0.2]}
@@ -355,6 +371,6 @@ if __name__ == '__main__':
     prior_par = {'k1_MALE': [0.0, 10.0], 'k1_FEMALE': [0.0, 10.0]}
     create_petab_example(petab_path, dsets, param='k1',
                          compartment_starting_values={'S1': 1, 'S2': 0},
-                         prior_par=prior_par)
+                         prior_par=prior_par,
+                         sbml_path=sbml_path)
 
-    plt.show()
