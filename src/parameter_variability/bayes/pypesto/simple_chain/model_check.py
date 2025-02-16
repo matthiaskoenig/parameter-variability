@@ -36,9 +36,10 @@ if __name__ == '__main__':
         res_path: Path = main_path / "results" / "simple_chain" / f"xp_{i}"
         res_path.mkdir(parents=True, exist_ok=True)
 
-        sbml_path: Path = ((main_path / "models" / "simple_chain.xml")
+        sbml_path: Path = ((main_path / "src" / "parameter_variability"
+                            / "models" / "sbml" / "simple_chain.xml")
                            .relative_to(main_path))
-        sbml_path = Path(f"../../{str(sbml_path)}")
+        sbml_path = Path(f"../../../{str(sbml_path)}")
 
         petab_path = res_path / "petab"
         petab_path.mkdir(parents=True, exist_ok=True)
