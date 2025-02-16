@@ -279,7 +279,7 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
                          sep='\t', index=False)
 
     # Create Petab YAML
-    petab_path_rel = petab_path.relative_to(Path(__file__).parent)
+    petab_path_rel = petab_path.relative_to(petab_path.parents[0])
     petab_yaml: dict[str, Optional[str, List[dict[str, List]]]] = {}
     petab_yaml['format_version'] = 1
     petab_yaml['parameter_file'] = str(petab_path_rel / "parameters_simple_chain.tsv")
@@ -290,7 +290,8 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
         'sbml_files': [str(sbml_path)]
     }]
 
-    with open('petab.yaml', 'w') as outfile:
+    yaml_dest = petab_path.parents[0] / 'petab.yaml'
+    with open(yaml_dest, 'w') as outfile:
         yaml.dump(petab_yaml, outfile, default_flow_style=False)
 
     # # create the measurement table from given data !

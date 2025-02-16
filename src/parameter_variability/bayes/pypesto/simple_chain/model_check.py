@@ -11,7 +11,7 @@ from parameter_variability import MODEL_SIMPLE_CHAIN
 
 
 if __name__ == '__main__':
-    prior_pars = {
+    experiments = {
         'exact': {'k1_MALE':   [1.0, 0.2],
                   'k1_FEMALE': [10.0, 0.2]},
         'uninformative': {'real': {'k1_MALE':   [1.0, 0.2],
@@ -28,21 +28,27 @@ if __name__ == '__main__':
                              'k1_FEMALE': [1.0, 0.2]}}
     }
 
-    fig_path: Path = Path(__file__).parent / "results"
-    fig_path.mkdir(parents=True, exist_ok=True)
+    for i, xp in enumerate(experiments):
+        setting = experiments[xp]
 
-    petab_path = fig_path / "petab"
-    petab_path.mkdir(parents=True, exist_ok=True)
+        main_path: Path = Path(__file__).parents[5]
 
-    for par in prior_pars:
-        prior_p = prior_pars[par]
+        res_path: Path = main_path / "results" / "simple_chain" / f"xp_{i}"
+        res_path.mkdir(parents=True, exist_ok=True)
 
-        if par == 'exact':
-            prior_real = prior_estim = prior_p
+        sbml_path: Path = ((main_path / "models" / "simple_chain.xml")
+                           .relative_to(main_path))
+        sbml_path = Path(f"../../{str(sbml_path)}")
+
+        petab_path = res_path / "petab"
+        petab_path.mkdir(parents=True, exist_ok=True)
+
+        if xp == 'exact':
+            prior_real = prior_estim = setting
 
         else:
-            prior_real = prior_p['real']
-            prior_estim = prior_p['estim']
+            prior_real = setting['real']
+            prior_estim = setting['estim']
 
         samples_k1: dict[pf.Category, np.ndarray] = pf.create_male_female_samples(
             {
@@ -74,11 +80,13 @@ if __name__ == '__main__':
 
         pf.create_petab_example(petab_path, dsets, param='k1',
                                 compartment_starting_values={'S1': 1, 'S2': 0},
-                                prior_par=prior_estim)
+                                prior_par=prior_estim,
+                                sbml_path=sbml_path)
+
 
         pypesto_sampler = PyPestoSampler(
-            yaml_file=Path(__file__).parent / "petab.yaml",
-            fig_path=Path(__file__).parents[5] / "results" / "simple_chain"
+            yaml_file=res_path / "petab.yaml",
+            fig_path=res_path / "figs"
         )
 
         pypesto_sampler.load_problem()
