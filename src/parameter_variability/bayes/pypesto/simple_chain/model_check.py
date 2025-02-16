@@ -96,6 +96,8 @@ if __name__ == '__main__':
 
         pypesto_sampler.bayesian_sampler(n_samples=1000)
 
+        pypesto_sampler.results_hdi()
+
         # Save results
         # res = {}
         # res['real_mean'] = prior_real[]

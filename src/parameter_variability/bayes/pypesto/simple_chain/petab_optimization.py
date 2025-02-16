@@ -30,6 +30,8 @@ class PyPestoSampler:
         importer = pt.PetabImporter(self.petab_problem)
         self.pypesto_problem = importer.create_problem(verbose=True)
 
+        self.fig_path.mkdir(parents=True, exist_ok=True)
+
     def optimizer(self, plot: bool = True):
         optimizer_options = {"maxiter": 1e4, "fatol": 1e-12, "frtol": 1e-12}
 
@@ -94,7 +96,7 @@ class PyPestoSampler:
                 result=self.result,
                 pypesto_problem=self.pypesto_problem
             )
-            plt.show()
+            # plt.show()
             pypesto.visualize.waterfall(self.result)
             plt.savefig(str(self.fig_path) + '/01_waterfall.png')
 
@@ -144,7 +146,7 @@ class PyPestoSampler:
 
         pypesto.visualize.sampling_1d_marginals(self.result)
         plt.savefig(str(self.fig_path) + '/09_marginals.png')
-        plt.show()
+        # plt.show()
 
     def get_posterior_hdi(self) -> xr.Dataset:
         """High density interval (HDI).
