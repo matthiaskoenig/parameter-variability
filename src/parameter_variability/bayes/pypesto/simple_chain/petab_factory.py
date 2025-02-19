@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Optional, List, Union
 import yaml
+import shutil
 import xarray
 from matplotlib import pyplot as plt
 import roadrunner
@@ -91,7 +92,7 @@ class ODESampleSimulator:
     def __init__(self, model_path: Path, abs_tol: float = 1E-6, rel_tol: float = 1E-6):
         """Load model and integrator settings."""
         self.r: roadrunner.RoadRunner = roadrunner.RoadRunner(str(model_path))
-        console.print(self.r.getInfo())
+        # console.print(self.r.getInfo())
         integrator: roadrunner.Integrator = self.r.integrator
         integrator.setSetting("absolute_tolerance", abs_tol)
         integrator.setSetting("relative_tolerance", rel_tol)
@@ -125,10 +126,10 @@ class ODESampleSimulator:
         return dset
 
 
-def plot_simulations(dsets: dict[Category, xarray.Dataset]):
+def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[Path] = None):
     """Plot simulations."""
-    console.print(dsets)
-    console.print(list(dsets[list(dsets.keys())[0]].data_vars))
+    # console.print(dsets)
+    # console.print(list(dsets[list(dsets.keys())[0]].data_vars))
 
     # plot distributions
     f, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, dpi=300, layout="constrained")
@@ -155,15 +156,23 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset]):
     ax2.set_ylabel("[S2]")
     for ax in ax1, ax2:
         ax.set_xlabel("time")
-    # plt.show()
+    if fig_path is not None:
+        plt.show()
+        f.savefig(fig_path, bbox_inches="tight")
 
 
 def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
                          param: Union[str, List[str]], compartment_starting_values: dict[str, int],
                          prior_par: dict[str, List[float]],
-                         sbml_path: Path):
-    # Create all files and copy all the files
+                         sbml_path: Path) -> Path:
+    """Create PETab problem for given information.
 
+    Returns path to petab yaml.
+    """
+    # ensure output folder exists
+    petab_path.mkdir(parents=True, exist_ok=True)
+
+    # Create all files and copy all the files
     measurement_ls: List[pd.DataFrame] = []
     condition_ls: List[dict[str, Optional[str, float, int]]] = []
     parameter_ls: List[dict[str, Optional[str, float, int]]] = []
@@ -280,14 +289,18 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
 
     # Create Petab YAML
     petab_path_rel = petab_path.relative_to(petab_path.parents[0])
+
     petab_yaml: dict[str, Optional[str, List[dict[str, List]]]] = {}
     petab_yaml['format_version'] = 1
     petab_yaml['parameter_file'] = str(petab_path_rel / "parameters_simple_chain.tsv")
+
+    # copy model
+    shutil.copy(sbml_path, petab_path / sbml_path.name)
     petab_yaml['problems'] = [{
         'condition_files': [str(petab_path_rel / "conditions_simple_chain.tsv")],
         'measurement_files': [str(petab_path_rel / "measurements_simple_chain.tsv")],
         'observable_files': [str(petab_path_rel / "observables_simple_chain.tsv")],
-        'sbml_files': [str(sbml_path)]
+        'sbml_files': [str(petab_path_rel / sbml_path.name)],
     }]
 
     yaml_dest = petab_path.parents[0] / 'petab.yaml'
@@ -326,6 +339,8 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
     # console.print(problem)
     # errors_exist = petab.lint.lint_problem(problem)
     # console.print(f"PEtab errors: {errors_exist}")
+
+    return yaml_dest
 
 
 if __name__ == '__main__':
