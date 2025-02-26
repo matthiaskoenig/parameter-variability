@@ -20,7 +20,7 @@ import xarray as xr
 class PyPestoSampler:
     """Create Petab Problem based on yaml"""
     yaml_file: Path
-    fig_path: Path
+    fig_path: Path = None
     petab_problem: petab.v1.Problem = None
     pypesto_problem: pypesto.Problem = None
     result: pypesto.Result = None
@@ -30,6 +30,7 @@ class PyPestoSampler:
         importer = pt.PetabImporter(self.petab_problem)
         self.pypesto_problem = importer.create_problem(verbose=True)
 
+        self.fig_path = self.yaml_file.parents[0] / "figs"
         self.fig_path.mkdir(parents=True, exist_ok=True)
 
     def optimizer(self, plot: bool = True):

@@ -163,7 +163,7 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[P
 
 def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
                          param: Union[str, List[str]], compartment_starting_values: dict[str, int],
-                         prior_par: dict[str, List[float]],
+                         prior_par: dict[str, dict[str, float]],
                          sbml_path: Path) -> Path:
     """Create PETab problem for given information.
 
@@ -255,7 +255,8 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
                     'estimate': 1,
                     'parameterUnit': 'l/min',
                     'objectivePriorType': 'parameterScaleNormal',
-                    'objectivePriorParameters': f"{prior_par[f'{par}_{cat.name}'][0]};{prior_par[f'{par}_{cat.name}'][1]}"
+                    'objectivePriorParameters': f"{prior_par[f'{par}_{cat.name}']['loc']};"
+                                                f"{prior_par[f'{par}_{cat.name}']['scale']}"
                 })
 
         else:

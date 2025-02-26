@@ -2,7 +2,7 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 import pandas as pd
-
+import yaml
 
 import parameter_variability.bayes.pypesto.simple_chain.petab_factory as pf
 from parameter_variability.bayes.pypesto.simple_chain.petab_optimization import (
@@ -12,7 +12,10 @@ from parameter_variability.console import console
 from parameter_variability import MODEL_SIMPLE_CHAIN
 from parameter_variability import RESULTS_DIR, MODELS
 
-def create_petab_for_experiment(model_id: str, xp_key: str, xp_settings: dict[str, dict]):
+def create_petab_for_experiment(model_id: str,
+                                xp_key: str,
+                                xp_settings: dict[str, dict],
+                                n_samples: dict[str, int] = None):
     """Create all the petab problems for the given model and experiment."""
 
     # create results directory
@@ -25,24 +28,26 @@ def create_petab_for_experiment(model_id: str, xp_key: str, xp_settings: dict[st
     # TODO: save the settings as JSON
     console.print(f"{xp_settings=}")
 
-
     if xp_key == 'exact':
         prior_real = prior_estim = xp_settings
     else:
         prior_real = xp_settings['real']
         prior_estim = xp_settings['estim']
 
+    if n_samples is None:
+        n_samples = {"k1_MALE": 100, "k1_FEMALE": 100}
+
     # create samples
     samples_k1: dict[pf.Category, np.ndarray] = pf.create_male_female_samples(
         {
             # Category.MALE: LognormParameters(mu=1.5, sigma=1.0, n=50),  # mu_ln=0.2216, sigma_ln=0.60640
             # Category.FEMALE: LognormParameters(mu=3.0, sigma=0.5, n=100),  # mu_ln=1.0849, sigma_ln=0.16552
-            pf.Category.MALE: pf.LognormParameters(mu=prior_real["k1_MALE"][0],
-                                                   sigma=prior_real["k1_MALE"][1],
-                                                   n=100),
-            pf.Category.FEMALE: pf.LognormParameters(mu=prior_real["k1_FEMALE"][0],
-                                                     sigma=prior_real["k1_FEMALE"][1],
-                                                     n=100),
+            pf.Category.MALE: pf.LognormParameters(mu=prior_real["k1_MALE"]['loc'],
+                                                   sigma=prior_real["k1_MALE"]['scale'],
+                                                   n=n_samples["k1_MALE"]),
+            pf.Category.FEMALE: pf.LognormParameters(mu=prior_real["k1_FEMALE"]['loc'],
+                                                     sigma=prior_real["k1_FEMALE"]['scale'],
+                                                     n=n_samples["k1_FEMALE"]),
 
             # Category.OLD: LognormParameters(mu=10.0, sigma=3, n=20),
             # Category.YOUNG: LognormParameters(mu=1.5, sigma=1, n=40),
@@ -83,7 +88,7 @@ if __name__ == '__main__':
     model_id: str = "simple_chain"
 
     # 1. large collection of petab problems
-    # TODO: vary number of samples (for ode) [1, 5, 10, 20, }
+    # TODO: vary number of samples (for ode) [1, 5, 10, 20, ]
     # TODO: unbalanced samples (10, 100)
     # TODO: vary number of timepoints (for ode) [3, 20}
     # TODO: vary the noise;
@@ -110,11 +115,38 @@ if __name__ == '__main__':
                              'k1_FEMALE': [1.0, 0.2]}}
     }
 
-    yaml_files: dict[str, Path] = {}
-    for xp_key, xp_settings in experiments.items():
-        console.rule(title=xp_key, style="bold white")
-        xp_key, yaml_file = create_petab_for_experiment(model_id=model_id, xp_key=xp_key, xp_settings=xp_settings)
-        yaml_files[xp_key] = yaml_file
+    xps_file_path = Path(__file__).parents[0] / 'xps.yaml'
+    with open(xps_file_path, "r") as xps_file:
+        xps = yaml.safe_load(xps_file)
+
+    console.print(xps)
+
+    for xp in xps:
+        experiments = xps[xp]
+        if xp == 'prior_test':
+
+            yaml_files: dict[str, Path] = {}
+            for xp_key, xp_settings in experiments.items():
+                console.rule(title=xp_key, style="bold white")
+                xp_key, yaml_file = create_petab_for_experiment(model_id=model_id,
+                                                                xp_key=xp_key,
+                                                                xp_settings=xp_settings)
+                yaml_files[xp_key] = yaml_file
+
+                pypesto_sampler = PyPestoSampler(
+                    yaml_file=yaml_file
+                )
+
+                pypesto_sampler.load_problem()
+
+                pypesto_sampler.optimizer()
+
+                pypesto_sampler.bayesian_sampler(n_samples=1000)
+
+                pypesto_sampler.results_hdi()
+
+        else:
+            console.print(experiments)
 
     console.print(yaml_files)
 
@@ -123,22 +155,11 @@ if __name__ == '__main__':
         # experiment_key =
         # => petab_file
 
-        # # sampling
-        # pypesto_sampler = PyPestoSampler(
-        #     yaml_file=xp_path / "petab.yaml",
-        #     fig_path=xp_path / "figs"
-        # )
-        #
-        # pypesto_sampler.load_problem()
-        #
-        # pypesto_sampler.optimizer()
-        #
-        # pypesto_sampler.bayesian_sampler(n_samples=1000)
-        #
-        # pypesto_sampler.results_hdi()
-        #
-        # # Save results
-        # # res = {}
-        # # res['real_mean'] = prior_real[]
+    # sampling
+
+
+    # Save results
+    # res = {}
+    # res['real_mean'] = prior_real[]
 
 

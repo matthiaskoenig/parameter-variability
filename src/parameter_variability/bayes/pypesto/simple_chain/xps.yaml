@@ -1,0 +1,73 @@
+sample_size:
+    n_samples:
+        - 1
+        - 5
+        - 10
+        - 20
+    prior_same: True
+
+unbalanced_samples:
+    n_samples:
+        k1_MALE: 5
+        k1_FEMALE: 10
+
+ode_timesteps:
+    time:
+        - 3
+        - 10
+        - 20
+
+prior_test:
+    exact:
+        k1_MALE:
+            loc: 1.0
+            scale: 0.2
+        k1_FEMALE:
+            loc: 10.0
+            scale: 0.2
+    uninformative:
+        real:
+            k1_MALE:
+                loc: 1.0
+                scale: 0.2
+            k1_FEMALE:
+                loc: 10.0
+                scale: 0.2
+        estim:
+            k1_MALE:
+                loc: 0.0
+                scale: 1
+            k1_FEMALE:
+                loc: 0.0
+                scale: 1
+    high_variance:
+        real:
+            k1_MALE:
+                loc: 1.0
+                scale: 0.2
+            k1_FEMALE:
+                loc: 10.0
+                scale: 0.4
+        estim:
+            k1_MALE:
+                loc: 0
+                scale: 100
+            k1_FEMALE:
+                loc: 0
+                scale: 100
+    biased:
+        real:
+            k1_MALE:
+                loc: 1.0
+                scale: 0.2
+            k1_FEMALE:
+                loc: 10.0
+                scale: 0.2
+        estim:
+            k1_MALE:
+                loc: 10.0
+                scale: 0.2
+            k1_FEMALE:
+                loc: 1.0
+                scale: 0.2
+
