@@ -12,3 +12,6 @@ arviz>=0.20.0
 rich>=13.9.4
 xarray>=2025.1.2
 graphviz
+pydantic
+pydantic-yaml
+

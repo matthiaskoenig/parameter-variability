@@ -1,0 +1,36 @@
+id: uninformative
+model: simple_chain
+groups:
+- id: MALE
+  sampling:
+    n_samples: 10
+    parameters:
+    - id: k1
+      distribution:
+        parameters:
+          loc: 1.0
+          scale: 0.2
+  estimation:
+    parameters:
+    - distribution:
+        parameters:
+          loc: 1.0
+          scale: 0.2
+      id: k1
+- id: FEMALE
+  sampling:
+    n_samples: 10
+    parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 10.0
+            scale: 0.2
+
+  estimation:
+    parameters:
+    - id: k1
+      distribution:
+        parameters:
+          loc: 10.0
+          scale: 0.2
