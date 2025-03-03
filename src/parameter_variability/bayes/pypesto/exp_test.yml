@@ -1,36 +1,173 @@
-id: uninformative
-model: simple_chain
-groups:
-- id: MALE
-  sampling:
-    n_samples: 10
-    parameters:
-    - id: k1
-      distribution:
-        parameters:
-          loc: 1.0
-          scale: 0.2
-  estimation:
-    parameters:
-    - distribution:
-        parameters:
-          loc: 1.0
-          scale: 0.2
-      id: k1
-- id: FEMALE
-  sampling:
-    n_samples: 10
-    parameters:
+experiments:
+- id: exact
+  model: simple_chain
+  groups:
+  - id: MALE
+    sampling:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 1.0
+            scale: 0.2
+          type: lognormal
+      n_samples: 10
+      steps: 20
+      tend: 100.0
+    estimation:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 1.0
+            scale: 0.2
+          type: lognormal
+  - id: FEMALE
+    sampling:
+      parameters:
       - id: k1
         distribution:
           parameters:
             loc: 10.0
             scale: 0.2
-
-  estimation:
-    parameters:
-    - id: k1
-      distribution:
-        parameters:
-          loc: 10.0
-          scale: 0.2
+          type: lognormal
+      n_samples: 10
+      steps: 20
+      tend: 100.0
+    estimation:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 10.0
+            scale: 0.2
+          type: lognormal
+- id: uninformative
+  model: simple_chain
+  groups:
+  - id: MALE
+    sampling:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 1.0
+            scale: 0.2
+          type: lognormal
+      n_samples: 10
+      steps: 20
+      tend: 100.0
+    estimation:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 1.0
+            scale: 0.2
+          type: lognormal
+  - id: FEMALE
+    sampling:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 10.0
+            scale: 0.2
+          type: lognormal
+      n_samples: 10
+      steps: 20
+      tend: 100.0
+    estimation:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 10.0
+            scale: 0.2
+          type: lognormal
+- id: high_variance
+  model: simple_chain
+  groups:
+  - id: MALE
+    sampling:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 1.0
+            scale: 0.2
+          type: lognormal
+      n_samples: 10
+      steps: 20
+      tend: 100.0
+    estimation:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 0.0
+            scale: 100.0
+          type: lognormal
+  - id: FEMALE
+    sampling:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 10.0
+            scale: 0.2
+          type: lognormal
+      n_samples: 10
+      steps: 20
+      tend: 100.0
+    estimation:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 0.0
+            scale: 100.0
+          type: lognormal
+- id: high_variance
+  model: simple_chain
+  groups:
+  - id: MALE
+    sampling:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 1.0
+            scale: 0.2
+          type: lognormal
+      n_samples: 10
+      steps: 20
+      tend: 100.0
+    estimation:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 10.0
+            scale: 0.2
+          type: lognormal
+  - id: FEMALE
+    sampling:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 10.0
+            scale: 0.2
+          type: lognormal
+      n_samples: 10
+      steps: 20
+      tend: 100.0
+    estimation:
+      parameters:
+      - id: k1
+        distribution:
+          parameters:
+            loc: 1.0
+            scale: 0.2
+          type: lognormal
