@@ -23,6 +23,7 @@ ode_timesteps:
 """
 from enum import Enum
 from pathlib import Path
+from typing import Optional
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Field, ValidationError, validator
@@ -79,6 +80,17 @@ class PETabExperiment(BaseModel):
     id: str
     model: str
     groups: list[Group]
+
+    @property
+    def group_ids(self) -> list[str]:
+        return [g.id for g in self.groups]
+
+    def group_by_id(self, id: str) -> Optional[Group]:
+        """Get group by id, return None if not found."""
+        for g in self.groups:
+            if g.id == id:
+                return g
+        return None
 
 class PETabExperimentList(BaseModel):
     """PETab experiment list."""
@@ -157,3 +169,8 @@ if __name__ == "__main__":
     yml = to_yaml_str(exp_uninformative)
     console.print(yml)
     console.rule(style="white")
+
+    e_new: PETabExperiment = parse_yaml_raw_as(PETabExperiment, yml)
+    console.print(e_new)
+    console.print(e_new.group_ids)
+
