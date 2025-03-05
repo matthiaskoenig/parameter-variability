@@ -178,7 +178,7 @@ if __name__ == "__main__":
     exps_m = exps.model_dump(mode='json')
 
     # This parses YAML as the MyModel type
-    with open(Path(__file__).parent / "exp_test.yml", "w") as f:
+    with open(Path(__file__).parent / "xps.yaml", "w") as f:
         # yml = f.read()
         # exp_test = parse_yaml_raw_as(PETabExperimentList, yml)
         # json = exp_test.model_dump_json(indent=2)

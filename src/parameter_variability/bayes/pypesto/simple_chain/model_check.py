@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List, Union
 import numpy as np
 import xarray as xr
 import pandas as pd
@@ -13,54 +14,56 @@ from parameter_variability import MODEL_SIMPLE_CHAIN
 from parameter_variability import RESULTS_DIR, MODELS
 
 def create_petab_for_experiment(model_id: str,
-                                xp_key: str,
-                                xp_settings: dict[str, dict],
+                                experiment: dict[str, Union[str, List, dict]],
+                                xp_settings: dict[str, dict] = None,
                                 n_samples: dict[str, int] = None):
     """Create all the petab problems for the given model and experiment."""
 
     # create results directory
-    xp_path: Path = RESULTS_DIR / model_id / f"xp_{xp_key}"
+    xp_path: Path = RESULTS_DIR / experiment['model'] / f"xp_{experiment['id']}"
     xp_path.mkdir(parents=True, exist_ok=True)
 
     # get absolute model path
-    sbml_path: Path = MODELS[model_id]
+    sbml_path: Path = MODELS[experiment['model']]
 
     # TODO: save the settings as JSON
-    console.print(f"{xp_settings=}")
+    console.print(f"{experiment['groups']}")
 
-    if xp_key == 'exact':
-        prior_real = prior_estim = xp_settings
-    else:
-        prior_real = xp_settings['real']
-        prior_estim = xp_settings['estim']
+    # if xp_key == 'exact':
+    #     prior_real = prior_estim = xp_settings
+    # else:
+    # prior_real = xp_settings['real']
+    # prior_estim = xp_settings['estim']
 
-    if n_samples is None:
-        n_samples = {"k1_MALE": 100, "k1_FEMALE": 100}
+    # if n_samples is None:
+    #     n_samples = {"k1_MALE": 100, "k1_FEMALE": 100}
 
     # create samples
-    samples_k1: dict[pf.Category, np.ndarray] = pf.create_male_female_samples(
-        {
-            # Category.MALE: LognormParameters(mu=1.5, sigma=1.0, n=50),  # mu_ln=0.2216, sigma_ln=0.60640
-            # Category.FEMALE: LognormParameters(mu=3.0, sigma=0.5, n=100),  # mu_ln=1.0849, sigma_ln=0.16552
-            pf.Category.MALE: pf.LognormParameters(mu=prior_real["k1_MALE"]['loc'],
-                                                   sigma=prior_real["k1_MALE"]['scale'],
-                                                   n=n_samples["k1_MALE"]),
-            pf.Category.FEMALE: pf.LognormParameters(mu=prior_real["k1_FEMALE"]['loc'],
-                                                     sigma=prior_real["k1_FEMALE"]['scale'],
-                                                     n=n_samples["k1_FEMALE"]),
+    groups: List[dict] = experiment['groups']
+    samples_dsn: dict[pf.Category, pf.LognormParameters] = {}
+    for group in groups:
+        samples = pf.LognormParameters(
+            mu=group['sampling']['parameters'][0]['distribution']['parameters']['loc'],
+            sigma=group['sampling']['parameters'][0]['distribution']['parameters']['scale'],
+            n=group['sampling']['n_samples']
+        )
+        samples_dsn[pf.Category[group['id']]] = samples
 
-            # Category.OLD: LognormParameters(mu=10.0, sigma=3, n=20),
-            # Category.YOUNG: LognormParameters(mu=1.5, sigma=1, n=40),
-        }
-    )
+    samples_k1 = pf.create_male_female_samples(samples_dsn)
+
+    console.print(samples_k1)
     # TODO: plot the samples
 
     # simulate samples to get data for measurement table
     simulator = pf.ODESampleSimulator(model_path=MODEL_SIMPLE_CHAIN)
-    sim_settings = pf.SimulationSettings(start=0.0, end=20.0, steps=300)
     dsets: dict[pf.Category, xr.Dataset] = {}
     for category, data in samples_k1.items():
         # simulate samples for category
+
+        group = list(filter(lambda cat: cat['id'] == category.name, groups))[0]
+        sim_settings = pf.SimulationSettings(start=0.0,
+                                             end=group['sampling']['tend'],
+                                             steps=group['sampling']['steps'])
         parameters = pd.DataFrame({"k1": data})
         dset = simulator.simulate_samples(parameters,
                                           simulation_settings=sim_settings)
@@ -73,12 +76,14 @@ def create_petab_for_experiment(model_id: str,
     # save the plot
     pf.plot_simulations(dsets, fig_path=xp_path / "simulations.png")
 
+    exit()
+
     # create petab path
     petab_path = xp_path / "petab"
     yaml_file = pf.create_petab_example(petab_path, dsets, param='k1',
-                            compartment_starting_values={'S1': 1, 'S2': 0},
-                            prior_par=prior_estim,
-                            sbml_path=sbml_path)
+                                        compartment_starting_values={'S1': 1, 'S2': 0},
+                                        prior_par=prior_estim,
+                                        sbml_path=sbml_path)
 
     return xp_key, yaml_file
 
@@ -117,36 +122,34 @@ if __name__ == '__main__':
 
     xps_file_path = Path(__file__).parents[0] / 'xps.yaml'
     with open(xps_file_path, "r") as xps_file:
-        xps = yaml.safe_load(xps_file)
+        exps: dict[str, List[dict]] = yaml.safe_load(xps_file)
 
-    console.print(xps)
+    console.print(exps)
+    for xps in exps:
+        xp: List[dict] = exps[xps]
 
-    for xp in xps:
-        experiments = xps[xp]
-        if xp == 'prior_test':
+        for x in xp:
 
             yaml_files: dict[str, Path] = {}
-            for xp_key, xp_settings in experiments.items():
-                console.rule(title=xp_key, style="bold white")
-                xp_key, yaml_file = create_petab_for_experiment(model_id=model_id,
-                                                                xp_key=xp_key,
-                                                                xp_settings=xp_settings)
-                yaml_files[xp_key] = yaml_file
+            console.print(x)
 
-                pypesto_sampler = PyPestoSampler(
-                    yaml_file=yaml_file
-                )
+            console.rule(title=x['id'], style="bold white")
+            console.print(type(pf.Category['MALE']))
+            xp_key, yaml_file = create_petab_for_experiment(model_id=model_id,
+                                                            experiment=x,)
+            yaml_files[xp_key] = yaml_file
 
-                pypesto_sampler.load_problem()
+            pypesto_sampler = PyPestoSampler(
+                yaml_file=yaml_file
+            )
 
-                pypesto_sampler.optimizer()
+            pypesto_sampler.load_problem()
 
-                pypesto_sampler.bayesian_sampler(n_samples=1000)
+            pypesto_sampler.optimizer()
 
-                pypesto_sampler.results_hdi()
+            pypesto_sampler.bayesian_sampler(n_samples=1000)
 
-        else:
-            console.print(experiments)
+            pypesto_sampler.results_hdi()
 
     console.print(yaml_files)
 
