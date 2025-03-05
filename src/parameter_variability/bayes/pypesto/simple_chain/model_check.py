@@ -79,6 +79,7 @@ def create_petab_for_experiment(model_id: str,
     exit()
 
     # create petab path
+    # TODO: feed prior_estim from the new format
     petab_path = xp_path / "petab"
     yaml_file = pf.create_petab_example(petab_path, dsets, param='k1',
                                         compartment_starting_values={'S1': 1, 'S2': 0},
