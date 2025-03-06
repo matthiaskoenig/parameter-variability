@@ -23,7 +23,7 @@ ode_timesteps:
 """
 from enum import Enum
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Field, ValidationError, validator
@@ -58,6 +58,12 @@ class Estimation(BaseModel):
     """Priors used for sampling or estimation."""
     parameters: list[Parameter]
 
+    def get_dsn_parameter(self, parameter: str) -> Optional[dict[str, float]]:
+        for par in self.parameters:
+            if par.id == parameter:
+                return par.distribution.parameters
+        return None
+
 
 class Sampling(BaseModel):
     """Priors used for sampling or estimation."""
@@ -67,12 +73,24 @@ class Sampling(BaseModel):
     tend: float = 100
     # FIXME: error settings, ...
 
+    def get_dsn_parameter(self, parameter: str) -> Optional[dict[str, float]]:
+        for par in self.parameters:
+            if par.id == parameter:
+                return par.distribution.parameters
+        return None
+
 
 class Group(BaseModel):
     """Group for stratification of model."""
     id: str
     sampling: Sampling
     estimation: Estimation
+
+    def get_parameter(self, type: str, parameter: str, dsn_par: str) -> float:
+        strat: Union[Sampling, Estimation] = getattr(self, type)
+        dsn_parameters = strat.get_dsn_parameter(parameter)
+
+        return dsn_parameters[dsn_par]
 
 
 class PETabExperiment(BaseModel):

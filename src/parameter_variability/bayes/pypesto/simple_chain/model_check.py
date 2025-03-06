@@ -4,30 +4,34 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 import yaml
+from pydantic_yaml import parse_yaml_raw_as
 
 import parameter_variability.bayes.pypesto.simple_chain.petab_factory as pf
 from parameter_variability.bayes.pypesto.simple_chain.petab_optimization import (
     PyPestoSampler
 )
+
+from parameter_variability.bayes.pypesto.simple_chain.experiment_factory import (
+    PETabExperimentList, PETabExperiment, Group)
 from parameter_variability.console import console
 from parameter_variability import MODEL_SIMPLE_CHAIN
 from parameter_variability import RESULTS_DIR, MODELS
 
 def create_petab_for_experiment(model_id: str,
-                                experiment: dict[str, Union[str, List, dict]],
+                                experiment: PETabExperiment,
                                 xp_settings: dict[str, dict] = None,
                                 n_samples: dict[str, int] = None):
     """Create all the petab problems for the given model and experiment."""
 
     # create results directory
-    xp_path: Path = RESULTS_DIR / experiment['model'] / f"xp_{experiment['id']}"
+    xp_path: Path = RESULTS_DIR / experiment.model / f"xp_{experiment.id}"
     xp_path.mkdir(parents=True, exist_ok=True)
 
     # get absolute model path
-    sbml_path: Path = MODELS[experiment['model']]
+    sbml_path: Path = MODELS[experiment.model]
 
     # TODO: save the settings as JSON
-    console.print(f"{experiment['groups']}")
+    console.print(experiment.groups)
 
     # if xp_key == 'exact':
     #     prior_real = prior_estim = xp_settings
@@ -39,31 +43,29 @@ def create_petab_for_experiment(model_id: str,
     #     n_samples = {"k1_MALE": 100, "k1_FEMALE": 100}
 
     # create samples
-    groups: List[dict] = experiment['groups']
+    groups: List[Group] = experiment.groups
     samples_dsn: dict[pf.Category, pf.LognormParameters] = {}
     for group in groups:
         samples = pf.LognormParameters(
-            mu=group['sampling']['parameters'][0]['distribution']['parameters']['loc'],
-            sigma=group['sampling']['parameters'][0]['distribution']['parameters']['scale'],
-            n=group['sampling']['n_samples']
+            mu=group.get_parameter('sampling', 'k1', 'loc'),
+            sigma=group.get_parameter('sampling', 'k1', 'scale'),
+            n=group.sampling.n_samples
         )
-        samples_dsn[pf.Category[group['id']]] = samples
+        samples_dsn[pf.Category[group.id]] = samples
 
     samples_k1 = pf.create_male_female_samples(samples_dsn)
 
     console.print(samples_k1)
     # TODO: plot the samples
-
     # simulate samples to get data for measurement table
     simulator = pf.ODESampleSimulator(model_path=MODEL_SIMPLE_CHAIN)
     dsets: dict[pf.Category, xr.Dataset] = {}
-    for category, data in samples_k1.items():
+    for (category, data), group in zip(samples_k1.items(), groups):
         # simulate samples for category
 
-        group = list(filter(lambda cat: cat['id'] == category.name, groups))[0]
         sim_settings = pf.SimulationSettings(start=0.0,
-                                             end=group['sampling']['tend'],
-                                             steps=group['sampling']['steps'])
+                                             end=group.sampling.tend,
+                                             steps=group.sampling.steps)
         parameters = pd.DataFrame({"k1": data})
         dset = simulator.simulate_samples(parameters,
                                           simulation_settings=sim_settings)
@@ -76,17 +78,15 @@ def create_petab_for_experiment(model_id: str,
     # save the plot
     pf.plot_simulations(dsets, fig_path=xp_path / "simulations.png")
 
-    exit()
-
     # create petab path
     # TODO: feed prior_estim from the new format
     petab_path = xp_path / "petab"
     yaml_file = pf.create_petab_example(petab_path, dsets, param='k1',
                                         compartment_starting_values={'S1': 1, 'S2': 0},
-                                        prior_par=prior_estim,
+                                        groups=groups,
                                         sbml_path=sbml_path)
 
-    return xp_key, yaml_file
+    return yaml_file
 
 
 if __name__ == '__main__':
@@ -123,34 +123,34 @@ if __name__ == '__main__':
 
     xps_file_path = Path(__file__).parents[0] / 'xps.yaml'
     with open(xps_file_path, "r") as xps_file:
-        exps: dict[str, List[dict]] = yaml.safe_load(xps_file)
+        exps_str: str = xps_file.read()
 
-    console.print(exps)
-    for xps in exps:
-        xp: List[dict] = exps[xps]
+    exps: PETabExperimentList = parse_yaml_raw_as(
+        PETabExperimentList, exps_str
+    )
 
-        for x in xp:
+    for xps in exps.experiments:
 
-            yaml_files: dict[str, Path] = {}
-            console.print(x)
+        yaml_files: dict[str, Path] = {}
+        console.print(xps)
 
-            console.rule(title=x['id'], style="bold white")
-            console.print(type(pf.Category['MALE']))
-            xp_key, yaml_file = create_petab_for_experiment(model_id=model_id,
-                                                            experiment=x,)
-            yaml_files[xp_key] = yaml_file
+        console.rule(title=xps.id, style="bold white")
+        yaml_file = create_petab_for_experiment(model_id=xps.model,
+                                                experiment=xps)
+        yaml_files[xps.id] = yaml_file
 
-            pypesto_sampler = PyPestoSampler(
-                yaml_file=yaml_file
-            )
+        exit()
+        pypesto_sampler = PyPestoSampler(
+            yaml_file=yaml_file
+        )
 
-            pypesto_sampler.load_problem()
+        pypesto_sampler.load_problem()
 
-            pypesto_sampler.optimizer()
+        pypesto_sampler.optimizer()
 
-            pypesto_sampler.bayesian_sampler(n_samples=1000)
+        pypesto_sampler.bayesian_sampler(n_samples=1000)
 
-            pypesto_sampler.results_hdi()
+        pypesto_sampler.results_hdi()
 
     console.print(yaml_files)
 

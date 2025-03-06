@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import xarray as xr
 from parameter_variability import BAYES_DIR, MEASUREMENT_TIME_UNIT_COLUMN, MEASUREMENT_UNIT_COLUMN
 from parameter_variability.console import console
+from parameter_variability.bayes.pypesto.simple_chain.experiment_factory import Group
 from dataclasses import dataclass
 from enum import Enum
 from scipy.stats import lognorm
@@ -163,7 +164,7 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[P
 
 def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
                          param: Union[str, List[str]], compartment_starting_values: dict[str, int],
-                         prior_par: dict[str, dict[str, float]],
+                         groups: List[Group],
                          sbml_path: Path) -> Path:
     """Create PETab problem for given information.
 
@@ -243,7 +244,7 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
     console.print(parameters)
     for par in parameters:
         if par in param:
-            for cat in dfs.keys():
+            for cat, group in zip(dfs.keys(), groups):
                 parameter_ls.append({
                     'parameterId': f'{par}_{cat.name}',
                     'parameterName': f'{par}_{cat.name}',
@@ -255,8 +256,8 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
                     'estimate': 1,
                     'parameterUnit': 'l/min',
                     'objectivePriorType': 'parameterScaleNormal',
-                    'objectivePriorParameters': f"{prior_par[f'{par}_{cat.name}']['loc']};"
-                                                f"{prior_par[f'{par}_{cat.name}']['scale']}"
+                    'objectivePriorParameters': f"{group.get_parameter('estimation', par, 'loc')};"
+                                                f"{group.get_parameter('estimation', par, 'scale')}"
                 })
 
         else:
