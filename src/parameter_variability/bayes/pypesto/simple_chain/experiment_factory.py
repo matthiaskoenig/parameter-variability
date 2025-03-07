@@ -1,7 +1,8 @@
 """Factory to create the various experiments."""
 from parameter_variability.bayes.pypesto.experiment import *
 from pathlib import Path
-
+from pydantic_yaml import parse_yaml_file_as, to_yaml_str
+import yaml
 
 if __name__ == "__main__":
 
@@ -11,6 +12,7 @@ if __name__ == "__main__":
     console.print(PETabExperiment.model_json_schema())
     console.rule(style="white")
 
+    # Define the true values of the parameters for distribution sampling
     true_par: dict[str, Parameter] = {
         'MALE': Parameter(id="k1", distribution=Distribution(
             type=DistributionType.LOGNORMAL,
@@ -32,6 +34,7 @@ if __name__ == "__main__":
             parameters=[true_par['FEMALE']])
     }
 
+    # Define parameters for each experiment
     pars_uninformative: dict[str, Parameter] = {
         'MALE': Parameter(id="k1", distribution=Distribution(
                             type=DistributionType.LOGNORMAL,
@@ -80,6 +83,7 @@ if __name__ == "__main__":
         ]
     )
 
+    # Set up PETabExperiment with parameters dicts
     exp_uninformative = PETabExperiment(
         id="uninformative",
         model="simple_chain",
@@ -169,20 +173,12 @@ if __name__ == "__main__":
     console.print(json_)
     console.rule(style="white")
 
-    from pydantic_yaml import parse_yaml_file_as, to_yaml_str
-    import yaml
     yml = to_yaml_str(exps)
     console.print(yml)
     console.rule(style="white")
 
     exps_m = exps.model_dump(mode='json')
 
-    # This parses YAML as the MyModel type
+    # Dump PETabExperiments into YAML file
     with open(Path(__file__).parent / "xps.yaml", "w") as f:
-        # yml = f.read()
-        # exp_test = parse_yaml_raw_as(PETabExperimentList, yml)
-        # json = exp_test.model_dump_json(indent=2)
-        # console.print(json)
-        # console.rule(style="white")
-        # f.write(yml) # Works but not ordered
         yaml.dump(exps_m, f, sort_keys=False, indent=2)

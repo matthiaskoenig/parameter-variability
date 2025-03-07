@@ -39,6 +39,7 @@ class BaseModel(PydanticBaseModel):
     """Base model."""
     pass
 
+
 class Distribution(BaseModel):
     """Parameter dictionary for the priors.
 
@@ -52,6 +53,12 @@ class Parameter(BaseModel):
     """Priors used for sampling or estimation."""
     id: str
     distribution: Distribution
+
+# TODO: finish Compartment integration
+class Compartment(BaseModel):
+    """Compartment settings for sampling"""
+    id: str
+    starting_value: float
 
 
 class Estimation(BaseModel):
@@ -71,6 +78,7 @@ class Sampling(BaseModel):
     n_samples: int = 10
     steps: int = 20
     tend: float = 100
+    # compartments: list[Compartment]
     # FIXME: error settings, ...
 
     def get_dsn_parameter(self, parameter: str) -> Optional[dict[str, float]]:

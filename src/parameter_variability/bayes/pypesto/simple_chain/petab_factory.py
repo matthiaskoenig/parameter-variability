@@ -162,9 +162,11 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[P
         f.savefig(fig_path, bbox_inches="tight")
 
 
-def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
-                         param: Union[str, List[str]], compartment_starting_values: dict[str, int],
+def create_petab_example(dfs: dict[Category, xarray.Dataset],
                          groups: List[Group],
+                         petab_path: Path,
+                         param: Union[str, List[str]],
+                         compartment_starting_values: dict[str, int],
                          sbml_path: Path) -> Path:
     """Create PETab problem for given information.
 
@@ -308,39 +310,6 @@ def create_petab_example(petab_path: Path, dfs: dict[Category, xarray.Dataset],
     yaml_dest = petab_path.parents[0] / 'petab.yaml'
     with open(yaml_dest, 'w') as outfile:
         yaml.dump(petab_yaml, outfile, default_flow_style=False)
-
-    # # create the measurement table from given data !
-    # df = example_simulation(model_path, fig_path)
-    #
-    # data = []
-    # for k, row in df.iterrows():
-    #     for col in ['y_gut', 'y_cent', 'y_peri']:
-    #         data.append({
-    #             "observableId": f"{col}_observable",
-    #             "preequilibrationConditionId": None,
-    #             "simulationConditionId": "model1_data1",
-    #             "measurement": 	row[f"{col}_data"],
-    #             MEASUREMENT_UNIT_COLUMN: "mmole/l",
-    #             "time": row["time"],
-    #             MEASUREMENT_TIME_UNIT_COLUMN: "second",
-    #             "observableParameters": None,
-    #             "noiseParameters": None,
-    #         })
-    # measurement_df = pd.DataFrame(data)
-    # measurement_df.to_csv(model_path.parent / "measurements_simple_pk.tsv", sep="\t", index=False)
-    #
-    # model_path: Path = Path(__file__).parent / "simple_pk.xml"
-    # fig_path: Path = Path(__file__).parent / "results"
-    # fig_path.mkdir(exist_ok=True)
-    # create_petab_example(model_path, fig_path)
-    #
-    # import petab
-    #
-    # yaml_path = BAYES_DIR / "pypesto" / "simple_pk" / "simple_pk.yaml"
-    # problem: petab.Problem = petab.Problem.from_yaml(yaml_path)
-    # console.print(problem)
-    # errors_exist = petab.lint.lint_problem(problem)
-    # console.print(f"PEtab errors: {errors_exist}")
 
     return yaml_dest
 
