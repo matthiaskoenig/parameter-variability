@@ -107,6 +107,7 @@ class PETabExperiment(BaseModel):
     model: str
     groups: list[Group]
 
+
     @property
     def group_ids(self) -> list[str]:
         return [g.id for g in self.groups]

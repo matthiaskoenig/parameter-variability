@@ -64,8 +64,6 @@ def create_male_female_samples(parameters: dict[Category, LognormParameters], se
     return samples
 
 def plot_samples(samples: dict[Category, np.ndarray]):
-    console.print(samples_k1)
-
     # plot distributions
     f, ax = plt.subplots(dpi=300, layout="constrained")
     for category, data in samples.items():
@@ -128,9 +126,7 @@ class ODESampleSimulator:
 
 
 def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[Path] = None):
-    """Plot simulations."""
-    # console.print(dsets)
-    # console.print(list(dsets[list(dsets.keys())[0]].data_vars))
+    """Plot simulations which were used for the PETab problem."""
 
     # plot distributions
     f, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, dpi=300, layout="constrained")
@@ -140,23 +136,32 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[P
         color = colors[category]
         nsim = len(dset["sim"])
         for k in range(nsim):
+            kwargs = dict(
+                alpha=alpha,
+                color=color,
+                marker='o',
+                markeredgecolor="black",
+                label=category.name if k == 0 else "__nolabel__",
+            )
             ax1.plot(
                 dset["time"],
                 dset["[S1]"].isel(sim=k),
-                alpha=alpha,
-                color=color
+                **kwargs,
             )
             ax2.plot(
                 dset["time"],
                 dset["[S2]"].isel(sim=k),
                 alpha=alpha,
-                color=color
+                color=color,
+                marker='o',
+                label=category.name if k == 0 else "__nolabel__",
             )
 
     ax1.set_ylabel("[S1]")
     ax2.set_ylabel("[S2]")
     for ax in ax1, ax2:
         ax.set_xlabel("time")
+        ax.legend()
     if fig_path is not None:
         plt.show()
         f.savefig(fig_path, bbox_inches="tight")
@@ -166,7 +171,7 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
                          groups: List[Group],
                          petab_path: Path,
                          param: Union[str, List[str]],
-                         compartment_starting_values: dict[str, int],
+                         initial_values: dict[str, int],
                          sbml_path: Path) -> Path:
     """Create PETab problem for given information.
 
@@ -204,7 +209,7 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
         data_names = [name[1:-1] for name in list(data.data_vars)]
 
         for col in data_names:
-            condition_ls[-1].update({col: compartment_starting_values[col]})
+            condition_ls[-1].update({col: initial_values[col]})
 
         for sim in sim_df['sim'].values:
             df_s = sim_df.isel(sim=sim).to_dataframe().reset_index()
@@ -314,41 +319,40 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
     return yaml_dest
 
 
-if __name__ == '__main__':
-    from parameter_variability import MODEL_SIMPLE_CHAIN
+# if __name__ == '__main__':
+#     from parameter_variability import MODEL_SIMPLE_CHAIN
+#
+#     fig_path: Path = Path(__file__).parent / "results"
+#     fig_path.mkdir(parents=True, exist_ok=True)
+#
+#     petab_path = fig_path / "petab"
+#     petab_path.mkdir(parents=True, exist_ok=True)
+#     sbml_path = Path("../../../models/sbml/simple_chain.xml")
+#
+#
+#
+#     pid: str = "k1"
+#     prior_par = {f'{pid}_MALE': [1.0, 0.2], f'{pid}_FEMALE': [10.0, 0.2]}
+#
+#     # samples
+#     samples_k1: dict[Category, np.ndarray] = create_male_female_samples(
+#         {
+#             Category.MALE: LognormParameters(mu=prior_par["k1_MALE"][0], sigma=prior_par["k1_MALE"][1], n=100),
+#             Category.FEMALE: LognormParameters(mu=prior_par["k1_FEMALE"][0], sigma=prior_par["k1_FEMALE"][1], n=100),
+#         }
+#     )
+#     plot_samples(samples_k1)
+#     plt.savefig(str(fig_path) + '/01-plot_samples.png')
+#
+#     # simulations
+#     simulator = ODESampleSimulator(model_path=MODEL_SIMPLE_CHAIN)
+#     sim_settings = SimulationSettings(start=0.0, end=20.0, steps=300)
+#     dsets: dict[Category, xarray.Dataset] = {}
 
-    fig_path: Path = Path(__file__).parent / "results"
-    fig_path.mkdir(parents=True, exist_ok=True)
 
-    petab_path = fig_path / "petab"
-    petab_path.mkdir(parents=True, exist_ok=True)
-    sbml_path = Path("../../../models/sbml/simple_chain.xml")
-
-    # prior_par = {'k1_MALE': [1.5, 1.0], 'k1_FEMALE': [3.0, 0.5]}
-    prior_par = {'k1_MALE': [1.0, 0.2], 'k1_FEMALE': [10.0, 0.2]}
-
-    # samples
-    samples_k1: dict[Category, np.ndarray] = create_male_female_samples(
-        {
-            # Category.MALE: LognormParameters(mu=1.5, sigma=1.0, n=50),  # mu_ln=0.2216, sigma_ln=0.60640
-            # Category.FEMALE: LognormParameters(mu=3.0, sigma=0.5, n=100),  # mu_ln=1.0849, sigma_ln=0.16552
-            Category.MALE: LognormParameters(mu=prior_par["k1_MALE"][0], sigma=prior_par["k1_MALE"][1], n=100),
-            Category.FEMALE: LognormParameters(mu=prior_par["k1_FEMALE"][0], sigma=prior_par["k1_FEMALE"][1], n=100),
-
-            # Category.OLD: LognormParameters(mu=10.0, sigma=3, n=20),
-            # Category.YOUNG: LognormParameters(mu=1.5, sigma=1, n=40),
-        }
-    )
-    plot_samples(samples_k1)
-    plt.savefig(str(fig_path) + '/01-plot_samples.png')
-
-    # simulations
-    simulator = ODESampleSimulator(model_path=MODEL_SIMPLE_CHAIN)
-    sim_settings = SimulationSettings(start=0.0, end=20.0, steps=300)
-    dsets: dict[Category, xarray.Dataset] = {}
     for category, data in samples_k1.items():
         # simulate samples for category
-        parameters = pd.DataFrame({"k1": data})
+        parameters = pd.DataFrame({pid: data})
         dset = simulator.simulate_samples(parameters, simulation_settings=sim_settings)
         dsets[category] = dset
 
@@ -356,8 +360,10 @@ if __name__ == '__main__':
     plt.savefig(str(fig_path) + '/02-plot_simulations.png')
 
     prior_par = {'k1_MALE': [0.0, 10.0], 'k1_FEMALE': [0.0, 10.0]}
+
+
     create_petab_example(petab_path, dsets, param='k1',
-                         compartment_starting_values={'S1': 1, 'S2': 0},
+                         initial_values={'S1': 1, 'S2': 0},
                          prior_par=prior_par,
                          sbml_path=sbml_path)
 
