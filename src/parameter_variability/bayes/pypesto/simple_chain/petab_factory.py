@@ -46,7 +46,10 @@ class SimulationSettings:
     end: float
     steps: int
 
-def create_male_female_samples(parameters: dict[Category, LognormParameters], seed: Optional[int] = 1234):
+def create_male_female_samples(
+    parameters: dict[Category, LognormParameters],
+    seed: Optional[int] = 1234
+) -> dict[Category, np.ndarray]:
     """Create the male and female samples."""
     if seed is not None:
         np.random.seed(seed)
@@ -63,8 +66,10 @@ def create_male_female_samples(parameters: dict[Category, LognormParameters], se
 
     return samples
 
-def plot_samples(samples: dict[Category, np.ndarray]):
-    console.print(samples_k1)
+def plot_samples(
+    samples: dict[Category, np.ndarray],
+    fig_path: Optional[Path]
+) -> None:
 
     # plot distributions
     f, ax = plt.subplots(dpi=300, layout="constrained")
@@ -85,6 +90,8 @@ def plot_samples(samples: dict[Category, np.ndarray]):
     ax.set_xlabel("parameter")
     ax.set_ylabel("density")
     ax.legend()
+    if fig_path:
+        plt.savefig(str(fig_path))
     # plt.show()
 
 class ODESampleSimulator:

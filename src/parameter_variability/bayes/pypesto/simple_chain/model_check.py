@@ -41,6 +41,7 @@ def create_petab_for_experiment(experiment: PETabExperiment):
         samples_dsn[pf.Category[group.id]] = samples
 
     samples_k1 = pf.create_male_female_samples(samples_dsn)
+    pf.plot_samples(samples_k1, fig_path=xp_path / 'samples.png')
 
     console.print(samples_k1)
     # TODO: plot the samples
