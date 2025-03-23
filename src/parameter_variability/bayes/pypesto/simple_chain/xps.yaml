@@ -9,9 +9,9 @@ experiments:
         distribution:
           parameters:
             loc: 1.0
-            scale: 0.2
+            scale: 1.0
           type: lognormal
-      n_samples: 10
+      n_samples: 30
       steps: 20
       tend: 100.0
     estimation:
@@ -20,7 +20,7 @@ experiments:
         distribution:
           parameters:
             loc: 1.0
-            scale: 0.2
+            scale: 1.0
           type: lognormal
   - id: FEMALE
     sampling:
@@ -28,10 +28,10 @@ experiments:
       - id: k1
         distribution:
           parameters:
-            loc: 10.0
-            scale: 0.2
+            loc: 2.0
+            scale: 1.0
           type: lognormal
-      n_samples: 10
+      n_samples: 30
       steps: 20
       tend: 100.0
     estimation:
@@ -39,8 +39,8 @@ experiments:
       - id: k1
         distribution:
           parameters:
-            loc: 10.0
-            scale: 0.2
+            loc: 2.0
+            scale: 1.0
           type: lognormal
 - id: uninformative
   model: simple_chain
@@ -52,9 +52,9 @@ experiments:
         distribution:
           parameters:
             loc: 1.0
-            scale: 0.2
+            scale: 1.0
           type: lognormal
-      n_samples: 10
+      n_samples: 30
       steps: 20
       tend: 100.0
     estimation:
@@ -71,10 +71,10 @@ experiments:
       - id: k1
         distribution:
           parameters:
-            loc: 10.0
-            scale: 0.2
+            loc: 2.0
+            scale: 1.0
           type: lognormal
-      n_samples: 10
+      n_samples: 30
       steps: 20
       tend: 100.0
     estimation:
@@ -95,9 +95,9 @@ experiments:
         distribution:
           parameters:
             loc: 1.0
-            scale: 0.2
+            scale: 1.0
           type: lognormal
-      n_samples: 10
+      n_samples: 30
       steps: 20
       tend: 100.0
     estimation:
@@ -114,10 +114,10 @@ experiments:
       - id: k1
         distribution:
           parameters:
-            loc: 10.0
-            scale: 0.2
+            loc: 2.0
+            scale: 1.0
           type: lognormal
-      n_samples: 10
+      n_samples: 30
       steps: 20
       tend: 100.0
     estimation:
@@ -138,9 +138,9 @@ experiments:
         distribution:
           parameters:
             loc: 1.0
-            scale: 0.2
+            scale: 1.0
           type: lognormal
-      n_samples: 10
+      n_samples: 30
       steps: 20
       tend: 100.0
     estimation:
@@ -157,10 +157,10 @@ experiments:
       - id: k1
         distribution:
           parameters:
-            loc: 10.0
-            scale: 0.2
+            loc: 2.0
+            scale: 1.0
           type: lognormal
-      n_samples: 10
+      n_samples: 30
       steps: 20
       tend: 100.0
     estimation:

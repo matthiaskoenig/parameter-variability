@@ -16,20 +16,20 @@ if __name__ == "__main__":
     true_par: dict[str, Parameter] = {
         'MALE': Parameter(id="k1", distribution=Distribution(
             type=DistributionType.LOGNORMAL,
-            parameters={"loc": 1.0, "scale": 0.2})),
+            parameters={"loc": 1.0, "scale": 1})),
         'FEMALE': Parameter(id="k1", distribution=Distribution(
             type=DistributionType.LOGNORMAL,
-            parameters={"loc": 10.0, "scale": 0.2}))
+            parameters={"loc": 2.0, "scale": 1}))
     }
 
     true_sampling: dict[str, Sampling] = {
         'MALE': Sampling(
-            n_samples=10,
+            n_samples=30,
             steps=20,
             parameters=[true_par['MALE']]
         ),
         'FEMALE': Sampling(
-            n_samples=10,
+            n_samples=30,
             steps=20,
             parameters=[true_par['FEMALE']])
     }
