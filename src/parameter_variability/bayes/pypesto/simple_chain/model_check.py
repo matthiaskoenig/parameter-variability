@@ -72,7 +72,7 @@ def create_petab_for_experiment(experiment: PETabExperiment):
     yaml_file = pf.create_petab_example(dfs=dsets,
                                         groups=groups, petab_path=petab_path,
                                         param='k1',
-                                        compartment_starting_values={'S1': 1, 'S2': 0},
+                                        initial_values={'S1': 1, 'S2': 0},
                                         sbml_path=sbml_path)
 
     return yaml_file
@@ -81,6 +81,8 @@ def create_petab_for_experiment(experiment: PETabExperiment):
 if __name__ == '__main__':
     # model
     model_id: str = "simple_chain"
+
+
 
     # 1. large collection of petab problems
     # TODO: vary number of samples (for ode) [1, 5, 10, 20, ]
