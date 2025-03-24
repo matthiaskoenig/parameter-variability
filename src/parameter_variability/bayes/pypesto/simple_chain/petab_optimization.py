@@ -150,7 +150,7 @@ class PyPestoSampler:
         # plt.show()
 
     def get_posterior(self) -> az.InferenceData:
-        """High density interval (HDI).
+        """trace.
 
         Interval of high density using arviz, an open source project aiming to
         provide tools for Exploratory Analysis of Bayesian Models that do
@@ -168,12 +168,46 @@ class PyPestoSampler:
         trace.posterior['parameter'] = self.petab_problem.parameter_df.parameterName.values
         return trace
 
-    def results_hdi(self):
+    def results_hdi(self) -> dict:
         hdi = az.hdi(self.get_posterior())
         console.print('HDI for each parameter: ')
-        for par in hdi['parameter']:
-            console.print(par.to_numpy())
-            console.print(hdi.sel(parameter=par).data_vars.variables)
+        results = {}
+        for pid in hdi['parameter']:
+            # console.print(pid.to_numpy())
+            hdi_values = hdi.sel(parameter=pid).x.values
+            console.print(f"{pid.item()}: {hdi_values}")
+            results[pid.item()] = hdi_values
+        return results
+
+
+
+    def results_dict(self) -> dict:
+        dset: xr.Dataset = self.get_posterior().posterior
+        # get information on real parameter
+
+        # calculate statistics on posterior
+        results = {}
+        for pid in dset["parameter"]:
+            values: np.ndarray = dset.sel(parameter=pid).x.values
+            results[pid.item()] = {
+                "mean": float(np.mean(values)),
+                "std": float(np.std(values)),
+                "median": float(np.median(values)),
+                "values": values,
+            }
+
+        hdi = self.results_hdi()
+        for pid, hdi_values in hdi.items():
+            results[pid]["hdi_low"] = float(hdi_values[0])
+            results[pid]["hdi_high"] = float(hdi_values[1])
+
+        console.rule(style="blue bold")
+        console.print(results)
+        console.rule(style="blue bold")
+
+        return results
+
+
 
     # def results_median(self):
     #     medians = self.get_posterior().median()
