@@ -24,13 +24,13 @@ if __name__ == "__main__":
 
     true_sampling: dict[str, Sampling] = {
         'MALE': Sampling(
-            n_samples=10,
-            steps=20,
+            n_samples=20,
+            steps=100,
             parameters=[true_par['MALE']]
         ),
         'FEMALE': Sampling(
-            n_samples=10,
-            steps=20,
+            n_samples=20,
+            steps=100,
             parameters=[true_par['FEMALE']])
     }
 
@@ -38,10 +38,10 @@ if __name__ == "__main__":
     pars_uninformative: dict[str, Parameter] = {
         'MALE': Parameter(id="k1", distribution=Distribution(
                             type=DistributionType.LOGNORMAL,
-                            parameters={"loc": 1.0, "scale": 0.2})),
+                            parameters={"loc": 0.0, "scale": 10})),
         'FEMALE': Parameter(id="k1", distribution=Distribution(
                             type=DistributionType.LOGNORMAL,
-                            parameters={"loc": 10.0, "scale": 0.2}))
+                            parameters={"loc": 0.0, "scale": 10}))
     }
 
     pars_high_variance: dict[str, Parameter] = {
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     )
 
     exp_biased = PETabExperiment(
-        id="high_variance",
+        id="biased",
         model="simple_chain",
         groups=[
             Group(
