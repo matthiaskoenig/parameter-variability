@@ -73,10 +73,11 @@ def plot_samples(
 ) -> None:
     # plot distributions
     f, ax = plt.subplots(dpi=300, layout="constrained")
+
     for category, data in samples.items():
         ax.hist(
             data, density=True, bins='auto', histtype='stepfilled', alpha=0.5,
-            color=colors[category], label=f"hist {category.name}"
+            color=colors[category], label=f"{category.name} (n={len(data)})"
         )
     for category, data in samples.items():
         mean = np.mean(data)
@@ -145,26 +146,18 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[P
         color = colors[category]
         nsim = len(dset["sim"])
         for k in range(nsim):
+            t = dset["time"]
+            Nt = len(t)
             kwargs = dict(
                 alpha=alpha,
                 color=color,
                 marker='o',
                 markeredgecolor="black",
-                label=category.name if k == 0 else "__nolabel__",
+                label=f"{category.name} (n={nsim}, Nt={Nt})" if k == 0 else "__nolabel__",
             )
-            ax1.plot(
-                dset["time"],
-                dset["[S1]"].isel(sim=k),
-                **kwargs,
-            )
-            ax2.plot(
-                dset["time"],
-                dset["[S2]"].isel(sim=k),
-                alpha=alpha,
-                color=color,
-                marker='o',
-                label=category.name if k == 0 else "__nolabel__",
-            )
+
+            ax1.plot(t, dset["[S1]"].isel(sim=k), **kwargs)
+            ax2.plot(t, dset["[S2]"].isel(sim=k), **kwargs)
 
     ax1.set_ylabel("[S1]")
     ax2.set_ylabel("[S2]")
@@ -261,21 +254,27 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
     for par in parameters:
         if par in param:
             for cat, group in zip(dfs.keys(), groups):
-                parameter_ls.append({
+                # define parameters
+                p = {
                     'parameterId': f'{par}_{cat.name}',
                     'parameterName': f'{par}_{cat.name}',
                     # 'parameterScale': 'log10',
                     'parameterScale': 'lin',
-                    'lowerBound': 0.01,
-                    'upperBound': 100,
+                    'lowerBound': 0.0,
+                    'upperBound': 1E8,
                     'nominalValue': 1,
                     'estimate': 1,
                     'parameterUnit': 'l/min',
-                    'objectivePriorType': 'parameterScaleNormal',
-                    'objectivePriorParameters': f"{group.get_parameter('estimation', par, 'loc')};"
-                                                f"{group.get_parameter('estimation', par, 'scale')}"
-                })
+                }
+                # objective priors
+                if group.estimation.parameters:
+                    p['objectivePriorType'] = 'parameterScaleNormal'
 
+                    mean = group.get_parameter('estimation', par, 'loc')
+                    std = group.get_parameter('estimation', par, 'scale')
+                    p['objectivePriorParameters'] = f"{mean};{std}"
+
+                parameter_ls.append(p)
         else:
             parameter_ls.append({
                 'parameterId': par,

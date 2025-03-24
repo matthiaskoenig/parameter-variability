@@ -24,6 +24,7 @@ ode_timesteps:
 from enum import Enum
 from pathlib import Path
 from typing import Optional, Union
+import yaml
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Field, ValidationError, validator
@@ -122,6 +123,19 @@ class PETabExperiment(BaseModel):
 class PETabExperimentList(BaseModel):
     """PETab experiment list."""
     experiments: list[PETabExperiment]
+
+    def to_yaml(self, path: Path):
+        # json_ = self.model_dump_json(indent=2)
+        # console.print(json_)
+        # console.rule(style="white")
+        # yml = to_yaml_str(self)
+        # console.print(yml)
+        # console.rule(style="white")
+
+        # Dump PETabExperiments into YAML file
+        with open(path, "w") as f:
+            exps_m = self.model_dump(mode='json')
+            yaml.dump(exps_m, f, sort_keys=False, indent=2)
 
 
 __all__ = [

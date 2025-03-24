@@ -185,18 +185,18 @@ class PyPestoSampler:
     #         console.print(medians.sel(parameter=par).data_vars.variables)
 
 
-if __name__ == '__main__':
-    pypesto_sampler = PyPestoSampler(
-        yaml_file=Path(__file__).parent / "petab.yaml",
-        fig_path=Path(__file__).parents[5] / "results" / "simple_chain"
-    )
-
-    pypesto_sampler.load_problem()
-
-    pypesto_sampler.optimizer()
-
-    pypesto_sampler.bayesian_sampler(n_samples=1000)
-
-    pypesto_sampler.results_hdi()
-
-    console.print('end')
+# if __name__ == '__main__':
+#     pypesto_sampler = PyPestoSampler(
+#         yaml_file=Path(__file__).parent / "petab.yaml",
+#         fig_path=Path(__file__).parents[5] / "results" / "simple_chain"
+#     )
+#
+#     pypesto_sampler.load_problem()
+#
+#     pypesto_sampler.optimizer()
+#
+#     pypesto_sampler.bayesian_sampler(n_samples=1000)
+#
+#     pypesto_sampler.results_hdi()
+#
+#     console.print('end')
