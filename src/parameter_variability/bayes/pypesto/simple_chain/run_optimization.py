@@ -87,7 +87,9 @@ def visualize_timepoints_samples():
         for category in df.category.unique():
             df_cat = df[df.category == category]
             ax.errorbar(
-                x=df_cat[xp_key], y=df_cat["median"], yerr=[df_cat["hdi_low"], df_cat["hdi_high"]],
+                x=df_cat[xp_key], y=df_cat["median"],
+                yerr=df_cat["std"],
+                # yerr=[df_cat["hdi_low"], df_cat["hdi_high"]],
                 label=category,
                 marker="o",
                 color=colors[category],
@@ -125,7 +127,9 @@ def visualize_priors():
         for k, prior in enumerate(["exact", "biased"]):  # ["exact", "biased", "noprior"]
             df_cat = df[(df.prior == prior) & (df.category == category)]
             ax.errorbar(
-                x=prior, y=df_cat["median"], yerr=[df_cat["hdi_low"], df_cat["hdi_high"]],
+                x=prior, y=df_cat["median"],
+                yerr=df_cat["std"],
+                # yerr=[df_cat["hdi_low"], df_cat["hdi_high"]],
                 label=category,
                 marker="o",
                 color=colors[category],
