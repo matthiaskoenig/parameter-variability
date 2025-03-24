@@ -149,7 +149,7 @@ class PyPestoSampler:
         plt.savefig(str(self.fig_path) + '/09_marginals.png')
         # plt.show()
 
-    def get_posterior_hdi(self) -> xr.Dataset:
+    def get_posterior(self) -> az.InferenceData:
         """High density interval (HDI).
 
         Interval of high density using arviz, an open source project aiming to
@@ -166,14 +166,23 @@ class PyPestoSampler:
         trace = az.convert_to_inference_data(trace_)
         trace.posterior = trace.posterior.rename({'x_dim_0': 'parameter'})
         trace.posterior['parameter'] = self.petab_problem.parameter_df.parameterName.values
-        return az.hdi(trace)
+        return trace
 
     def results_hdi(self):
-        hdi = self.get_posterior_hdi()
+        hdi = az.hdi(self.get_posterior())
         console.print('HDI for each parameter: ')
         for par in hdi['parameter']:
             console.print(par.to_numpy())
             console.print(hdi.sel(parameter=par).data_vars.variables)
+
+    # def results_median(self):
+    #     medians = self.get_posterior().median()
+    #     console.print('Medians: ')
+    #     console.print(medians.sel(parameter='k1_MALE'))
+    #     exit()
+    #     for par in medians['parameter']:
+    #         console.print(par.to_numpy())
+    #         console.print(medians.sel(parameter=par).data_vars.variables)
 
 
 if __name__ == '__main__':

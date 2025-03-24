@@ -168,7 +168,7 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[P
 
     ax1.set_ylabel("[S1]")
     ax2.set_ylabel("[S2]")
-    for ax in ax1, ax2:
+    for ax in [ax1, ax2]:
         ax.set_xlabel("time")
         ax.legend()
     if fig_path is not None:

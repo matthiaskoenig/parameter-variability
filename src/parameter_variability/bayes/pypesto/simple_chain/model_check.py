@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
         pypesto_sampler.results_hdi()
 
-    console.print(yaml_files)
+        # pypesto_sampler.results_median()
 
         # model_id =
         # experiment_collection =
