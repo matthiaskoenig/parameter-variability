@@ -33,11 +33,15 @@ def reference_simulation(r: roadrunner.RoadRunner) -> None:
 
     # simulation
     r.resetAll()
-    s = r.simulate(start=0, end=10, steps=400)  # [min]
+
+    # set dose
+    r.setValue("IVDOSE_icg", 10)  # [mg]
+
+    s = r.simulate(start=0, end=30, steps=200)  # [min]
     df: pd.DataFrame = pd.DataFrame(s, columns=s.colnames)
 
     f.suptitle("Reference simulation")
-    for sid in ["[y_gut]", "[y_cent]", "[y_peri]"]:
+    for sid in ["[Cve_icg]"]:
         ax.plot(df.time, df[sid], label=sid)
 
         # ax.legend()
@@ -56,17 +60,18 @@ def parameter_scan(r: roadrunner.RoadRunner) -> None:
     """Scanning model parameters."""
     console.rule("Parameter scan", style="white")
 
-    ks = np.linspace(0, 10, num=11)
-    cls = np.linspace(0, 10, num=11)
-    qs = np.linspace(0, 10, num=11)
+    bw = np.linspace(50, 150, num=11)
+    vmax = np.linspace(0.01, 0.5, num=11)
+
 
     results = {}
 
-    for parameter, par_name in zip([ks, cls, qs], ["k", "CL", "Q"]):
+    for parameter, par_name in zip([bw, vmax], ["BW", "LI__ICGIM_Vmax"]):
         results_par = []
         for value in parameter:
             # reset to a clean state
             r.resetAll()
+            r.setValue("IVDOSE_icg", 10)  # [mg]
             r.setValue(par_name, value)
             s = r.simulate(start=0, end=10, steps=400)
             # pretty slow (memory copy)
@@ -76,9 +81,9 @@ def parameter_scan(r: roadrunner.RoadRunner) -> None:
 
         results[par_name] = results_par
 
-    f, axes = plt.subplots(nrows=3, ncols=1, figsize=(7, 13), dpi=300)
+    f, axes = plt.subplots(nrows=len(results), ncols=1, figsize=(7, 7*len(results)), dpi=300)
     for parameter, ax in zip(results, axes):
-        for sid in ["[y_cent]", "[y_gut]", "[y_peri]"]:
+        for sid in ["[Cve_icg]"]:  #  venous plasma concentration ICG
             for df in results[parameter]:
                 ax.plot(
                     df.time,
@@ -94,13 +99,13 @@ def parameter_scan(r: roadrunner.RoadRunner) -> None:
         ax.set_ylabel("concentration [mM]")
     plt.tight_layout()
     plt.show()
-    f.savefig(RESULTS_SIMPLE_PK / "simple_pk_scan.png", bbox_inches="tight")
+    f.savefig(RESULTS_SIMPLE_PK / "icg_scan.png", bbox_inches="tight")
 
 
 if __name__ == "__main__":
     # load_model
-    from parameter_variability import MODEL_SIMPLE_PK
+    from parameter_variability import MODEL_ICG
 
-    r: roadrunner.RoadRunner = roadrunner.RoadRunner(str(MODEL_SIMPLE_PK))
+    r: roadrunner.RoadRunner = roadrunner.RoadRunner(str(MODEL_ICG))
     reference_simulation(r)
     parameter_scan(r)

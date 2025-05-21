@@ -15,6 +15,9 @@ RESULTS_SIMPLE_PK = RESULTS_DIR / "simple_pk"
 RESULTS_SIMPLE_PK.mkdir(exist_ok=True, parents=True)
 MODEL_SIMPLE_PK = MODELS_DIR / "simple_pk.xml"
 
+# icg model
+MODEL_ICG = MODELS_DIR / "icg_body_flat.xml"
+
 
 MODELS: dict[str, Path] = {
     "simple_chain": MODEL_SIMPLE_CHAIN,
