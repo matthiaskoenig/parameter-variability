@@ -17,8 +17,6 @@ from pydantic_yaml import parse_yaml_raw_as
 
 import parameter_variability.bayes.pypesto.simple_chain.petab_factory as pf
 
-from parameter_variability.bayes.pypesto.simple_chain.experiment_factory import (
-    PETabExperimentList, PETabExperiment, Group)
 from parameter_variability.console import console
 from parameter_variability import MODEL_SIMPLE_CHAIN, RESULTS_SIMPLE_CHAIN
 from parameter_variability import RESULTS_DIR, MODELS
