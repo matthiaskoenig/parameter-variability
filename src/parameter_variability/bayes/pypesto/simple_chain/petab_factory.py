@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import xarray as xr
 from parameter_variability import BAYES_DIR, MEASUREMENT_TIME_UNIT_COLUMN, MEASUREMENT_UNIT_COLUMN
 from parameter_variability.console import console
-from parameter_variability.bayes.pypesto.simple_chain.experiment_factory import Group
+from parameter_variability.bayes.pypesto.experiment import Group
 from dataclasses import dataclass
 from enum import Enum
 from scipy.stats import lognorm
