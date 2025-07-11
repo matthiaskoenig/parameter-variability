@@ -95,6 +95,11 @@ class Group(BaseModel):
     sampling: Sampling
     estimation: Estimation
 
+    def get_parameter_list(self, type: str) -> list[Parameter]:
+        strat: Union[Sampling, Estimation] = getattr(self, type)
+        return strat.parameters
+
+
     def get_parameter(self, type: str, parameter: str, dsn_par: str) -> float:
         strat: Union[Sampling, Estimation] = getattr(self, type)
         dsn_parameters = strat.get_dsn_parameter(parameter)
