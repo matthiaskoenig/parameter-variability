@@ -54,19 +54,18 @@ def create_petab_for_experiment(experiment: PETabExperiment,
 
     samples_pkpd_par = pf.create_samples_parameters(samples_dsn)
     pf.plot_samples(samples_pkpd_par, fig_path=xp_path / 'samples.png')
-    exit()
 
     console.print(samples_pkpd_par)
     # simulate samples to get data for measurement table
     simulator = pf.ODESampleSimulator(model_path=MODEL_ICG)
     dsets: dict[pf.Category, xr.Dataset] = {}
-    for (category, data), group in zip(samples_k1.items(), groups):
+    for (category, data), group in zip(samples_pkpd_par.items(), groups):
         # simulate samples for category
 
         sim_settings = pf.SimulationSettings(start=0.0,
                                              end=group.sampling.tend,
                                              steps=group.sampling.steps)
-        parameters = pd.DataFrame({"k1": data})
+        parameters = pd.DataFrame({par_id: samples for par_id, samples in data.items()}) # TODO: get parameter names in this df
         dset = simulator.simulate_samples(parameters,
                                           simulation_settings=sim_settings)
         dsets[category] = dset
@@ -74,10 +73,10 @@ def create_petab_for_experiment(experiment: PETabExperiment,
         # serialize to netCDF
         dset.to_netcdf(xp_path / f"{category}.nc")
 
-
+    console.print(list(dsets[pf.Category['MALE']].data_vars))
     # save the plot
     pf.plot_simulations(dsets, fig_path=xp_path / "simulations.png")
-
+    exit()
     # create petab path
     # TODO: Put Compartment starting value to the experiment class
     petab_path = xp_path / "petab"

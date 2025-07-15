@@ -149,9 +149,10 @@ class ODESampleSimulator:
 
 def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[Path] = None):
     """Plot simulations which were used for the PETab problem."""
-
+    vars = dsets[next(iter(dsets))].data_vars
     # plot distributions
-    f, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, dpi=300, layout="constrained")
+    f, axs = plt.subplots(nrows=len(vars), ncols=1, figsize=(4, 4*len(vars)),
+                          dpi=300, layout="constrained")
 
     alpha = 0.7
     for category, dset in dsets.items():
@@ -167,15 +168,12 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[P
                 markeredgecolor="black",
                 label=f"{category.name} (n={nsim}, Nt={Nt})" if k == 0 else "__nolabel__",
             )
+            for var, ax in zip(vars, axs):
+                ax.plot(t, dset[var].isel(sim=k), **kwargs)
+                ax.set_ylabel(var)
+                ax.set_xlabel("time")
+                ax.legend()
 
-            ax1.plot(t, dset["[S1]"].isel(sim=k), **kwargs)
-            ax2.plot(t, dset["[S2]"].isel(sim=k), **kwargs)
-
-    ax1.set_ylabel("[S1]")
-    ax2.set_ylabel("[S2]")
-    for ax in [ax1, ax2]:
-        ax.set_xlabel("time")
-        ax.legend()
     if fig_path is not None:
         plt.show()
         f.savefig(fig_path, bbox_inches="tight")
