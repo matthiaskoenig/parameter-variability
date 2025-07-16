@@ -111,6 +111,7 @@ class PETabExperiment(BaseModel):
     """PETab experiment."""
     id: str
     model: str
+    # model_changes: dict[str, float];   model_changes = {"IVDOSE_icg", 10}
     groups: list[Group]
 
 

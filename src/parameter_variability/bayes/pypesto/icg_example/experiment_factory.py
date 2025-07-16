@@ -90,15 +90,15 @@ def create_petab_for_experiment(experiment: PETabExperiment,
 true_par: dict[str, Parameter] = {
     'MALE_BW': Parameter(id="BW", distribution=Distribution(
         type=DistributionType.LOGNORMAL,
-        parameters={"loc": 1.0, "scale": 1})),
+        parameters={"loc": 75.0, "scale": 10})),  # bodyweight [kg] (loc: mean;
     'MALE_LI__ICGIM_Vmax': Parameter(id="LI__ICGIM_Vmax", distribution=Distribution(
         type=DistributionType.LOGNORMAL,
-        parameters={"loc": 1.0, "scale": 1}))
+        parameters={"loc": 0.0369598840327503, "scale": 0.01}))
 }
 
 true_sampling: dict[str, Sampling] = {
     'MALE': Sampling(
-        n_samples=20,
+        n_samples=100,
         steps=20,
         parameters=[true_par['MALE_BW'],
                     true_par['MALE_LI__ICGIM_Vmax']]
@@ -111,7 +111,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     # exact prior
     exp_exact = PETabExperiment(
         id='prior_exact',
-        model='simple_chain',
+        model='simple_chain',  # FIXME: icg
         groups=[
             Group(
                 id='MALE',
@@ -127,7 +127,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     # No prior
     exp_noprior = PETabExperiment(
         id="prior_noprior",
-        model="simple_chain",
+        model='simple_chain',  # FIXME: icg
         groups=[
             Group(
                 id="MALE",
