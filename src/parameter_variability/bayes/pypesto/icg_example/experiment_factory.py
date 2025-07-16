@@ -34,7 +34,6 @@ def create_petab_for_experiment(experiment: PETabExperiment,
 
 
     # create samples
-    # FOR ICG: there are 2 parameters two sample. LI__ICGIM_Vmax and BW
     groups: List[Group] = experiment.groups
     samples_dsn: dict[pf.Category, dict[pf.PKPDParameters, pf.LognormParameters]] = {}
     for group in groups:
@@ -46,8 +45,6 @@ def create_petab_for_experiment(experiment: PETabExperiment,
                 sigma=group.get_parameter('sampling', par.id, 'scale'),
                 n=group.sampling.n_samples
             )
-            #TODO: Figure out how to store the samples for each parameters.
-            # Dict[par.id, np.array] ?
             samples_par[pf.PKPDParameters[par.id]] = samples
 
         samples_dsn[pf.Category[group.id]] = samples_par
@@ -73,7 +70,6 @@ def create_petab_for_experiment(experiment: PETabExperiment,
         # serialize to netCDF
         dset.to_netcdf(xp_path / f"{category}.nc")
 
-    console.print(list(dsets[pf.Category['MALE']].data_vars))
     # save the plot
     # FIXME: Simulations are not correct. Perhaps parameter samples are out of range ?
     pf.plot_simulations(dsets, fig_path=xp_path / "simulations.png")
