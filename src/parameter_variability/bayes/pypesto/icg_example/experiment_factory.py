@@ -65,7 +65,7 @@ def create_petab_for_experiment(experiment: PETabExperiment,
         sim_settings = pf.SimulationSettings(start=0.0,
                                              end=group.sampling.tend,
                                              steps=group.sampling.steps)
-        parameters = pd.DataFrame({par_id: samples for par_id, samples in data.items()}) # TODO: get parameter names in this df
+        parameters = pd.DataFrame({par_id: samples for par_id, samples in data.items()})
         dset = simulator.simulate_samples(parameters,
                                           simulation_settings=sim_settings)
         dsets[category] = dset
@@ -75,6 +75,7 @@ def create_petab_for_experiment(experiment: PETabExperiment,
 
     console.print(list(dsets[pf.Category['MALE']].data_vars))
     # save the plot
+    # FIXME: Simulations are not correct. Perhaps parameter samples are out of range ?
     pf.plot_simulations(dsets, fig_path=xp_path / "simulations.png")
     exit()
     # create petab path
