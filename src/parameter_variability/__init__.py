@@ -24,6 +24,7 @@ MODEL_ICG = MODELS_DIR / "icg_body_flat.xml"
 MODELS: dict[str, Path] = {
     "simple_chain": MODEL_SIMPLE_CHAIN,
     "simple_pk": MODEL_SIMPLE_PK,
+    "icg_body_flat": MODEL_ICG,
 }
 
 BASE_DIR: Path = Path(__file__).parent.parent.parent
