@@ -111,7 +111,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     # exact prior
     exp_exact = PETabExperiment(
         id='prior_exact',
-        model='simple_chain',  # FIXME: icg
+        model='icg_body_flat',  # FIXME: icg
         groups=[
             Group(
                 id='MALE',
@@ -127,7 +127,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     # No prior
     exp_noprior = PETabExperiment(
         id="prior_noprior",
-        model='simple_chain',  # FIXME: icg
+        model='icg_body_flat',  # FIXME: icg
         groups=[
             Group(
                 id="MALE",
@@ -150,7 +150,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     }
     exp_biased = PETabExperiment(
         id="prior_biased",
-        model="simple_chain",
+        model="icg_body_flat",
         groups=[
             Group(
                 id="MALE",
@@ -176,7 +176,7 @@ def create_samples_experiments(xps_path: Path) -> PETabExperimentList:
     """Create experiments to check for number of samples n effect."""
     exp = PETabExperiment(
         id='n',
-        model='simple_chain',
+        model='icg_body_flat',
         groups=[
             Group(
                 id='MALE',
@@ -207,7 +207,7 @@ def create_timepoints_experiments(xps_path: Path) -> PETabExperimentList:
     """Create experiments to check for number of timepoints Nt effect."""
     exp = PETabExperiment(
         id='Nt',
-        model='simple_chain',
+        model='icg_body_flat',
         groups=[
             Group(
                 id='MALE',
