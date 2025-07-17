@@ -111,9 +111,8 @@ class PETabExperiment(BaseModel):
     """PETab experiment."""
     id: str
     model: str
-    # model_changes: dict[str, float];   model_changes = {"IVDOSE_icg", 10}
+    model_changes: Optional[dict[str, float]] # ;   model_changes = {"IVDOSE_icg": 10}
     groups: list[Group]
-
 
     @property
     def group_ids(self) -> list[str]:

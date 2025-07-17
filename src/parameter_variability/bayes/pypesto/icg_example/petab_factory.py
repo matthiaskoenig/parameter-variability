@@ -51,6 +51,7 @@ class SimulationSettings:
     start: float
     end: float
     steps: int
+    model_changes: Optional[dict[str, float]]
 
 def create_samples_parameters(
     parameters: dict[Category, dict[PKPDParameters, LognormParameters]],
@@ -127,6 +128,10 @@ class ODESampleSimulator:
         for _, row in parameters.iterrows():
             self.r.resetAll()
 
+            if simulation_settings.model_changes:
+                for key, value in simulation_settings.model_changes.items():
+                    self.r.setValue(key, value)
+
             # set the parameter values
             for pid in pids:
                 value = row[pid]
@@ -152,9 +157,9 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[P
     vars = dsets[next(iter(dsets))].data_vars
     # plot distributions
     f, axs = plt.subplots(nrows=len(vars), ncols=1, figsize=(4, 4*len(vars)),
-                          dpi=300, layout="constrained")
+                          dpi=200, layout="constrained")
 
-    alpha = 0.7
+    alpha = 0.5
     for category, dset in dsets.items():
         color = colors[category]
         nsim = len(dset["sim"])

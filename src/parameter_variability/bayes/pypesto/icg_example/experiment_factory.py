@@ -61,7 +61,8 @@ def create_petab_for_experiment(experiment: PETabExperiment,
 
         sim_settings = pf.SimulationSettings(start=0.0,
                                              end=group.sampling.tend,
-                                             steps=group.sampling.steps)
+                                             steps=group.sampling.steps,
+                                             model_changes=experiment.model_changes)
         parameters = pd.DataFrame({par_id: samples for par_id, samples in data.items()})
         dset = simulator.simulate_samples(parameters,
                                           simulation_settings=sim_settings)
@@ -71,11 +72,11 @@ def create_petab_for_experiment(experiment: PETabExperiment,
         dset.to_netcdf(xp_path / f"{category}.nc")
 
     # save the plot
-    # FIXME: Simulations are not correct. Perhaps parameter samples are out of range ?
     pf.plot_simulations(dsets, fig_path=xp_path / "simulations.png")
     exit()
     # create petab path
-    # TODO: Put Compartment starting value to the experiment class
+    # TODO: Feed the param and the sbml_path inputs accordingly.
+    #   perhaps initial values does not make sense anymore (?)
     petab_path = xp_path / "petab"
     yaml_file = pf.create_petab_example(dfs=dsets,
                                         groups=groups, petab_path=petab_path,
@@ -111,7 +112,8 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     # exact prior
     exp_exact = PETabExperiment(
         id='prior_exact',
-        model='icg_body_flat',  # FIXME: icg
+        model='icg_body_flat',
+        model_changes= {"IVDOSE_icg": 10.0},
         groups=[
             Group(
                 id='MALE',
@@ -127,7 +129,8 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     # No prior
     exp_noprior = PETabExperiment(
         id="prior_noprior",
-        model='icg_body_flat',  # FIXME: icg
+        model='icg_body_flat',
+        model_changes= {"IVDOSE_icg": 10.0},
         groups=[
             Group(
                 id="MALE",
@@ -151,6 +154,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     exp_biased = PETabExperiment(
         id="prior_biased",
         model="icg_body_flat",
+        model_changes= {"IVDOSE_icg": 10.0},
         groups=[
             Group(
                 id="MALE",
@@ -177,6 +181,7 @@ def create_samples_experiments(xps_path: Path) -> PETabExperimentList:
     exp = PETabExperiment(
         id='n',
         model='icg_body_flat',
+        model_changes= {"IVDOSE_icg": 10.0},
         groups=[
             Group(
                 id='MALE',
@@ -208,6 +213,7 @@ def create_timepoints_experiments(xps_path: Path) -> PETabExperimentList:
     exp = PETabExperiment(
         id='Nt',
         model='icg_body_flat',
+        model_changes= {"IVDOSE_icg": 10.0},
         groups=[
             Group(
                 id='MALE',
