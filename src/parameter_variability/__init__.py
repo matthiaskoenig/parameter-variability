@@ -16,7 +16,7 @@ RESULTS_SIMPLE_PK.mkdir(exist_ok=True, parents=True)
 MODEL_SIMPLE_PK = MODELS_DIR / "simple_pk.xml"
 
 # icg model
-RESULTS_ICG = RESULTS_DIR / "icg_body_flat_chain"
+RESULTS_ICG = RESULTS_DIR / "icg_body_flat"
 RESULTS_ICG.mkdir(exist_ok=True, parents=True)
 MODEL_ICG = MODELS_DIR / "icg_body_flat.xml"
 

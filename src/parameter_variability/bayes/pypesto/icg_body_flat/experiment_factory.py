@@ -14,7 +14,7 @@ import pandas as pd
 import yaml
 from pydantic_yaml import parse_yaml_raw_as
 
-import parameter_variability.bayes.pypesto.icg_example.petab_factory as pf
+import parameter_variability.bayes.pypesto.icg_body_flat.petab_factory as pf
 
 from parameter_variability.console import console
 from parameter_variability import MODEL_ICG, RESULTS_ICG
