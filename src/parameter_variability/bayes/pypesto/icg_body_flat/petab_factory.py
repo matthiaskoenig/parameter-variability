@@ -118,6 +118,7 @@ class ODESampleSimulator:
         integrator: roadrunner.Integrator = self.r.integrator
         integrator.setSetting("absolute_tolerance", abs_tol)
         integrator.setSetting("relative_tolerance", rel_tol)
+        self.ids: List[str] = self.r.getIds()
 
 
     def simulate_samples(self, parameters: pd.DataFrame, simulation_settings: SimulationSettings) -> xr.Dataset:
@@ -226,13 +227,16 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
         data_names = [name[1:-1] for name in list(data.data_vars)]
 
         for col in data_names:
-            condition_ls[-1].update({col: initial_values[col]})
+            try:
+                condition_ls[-1].update({col: initial_values[col]})
+            except KeyError:
+                continue
 
         for sim in sim_df['sim'].values:
             df_s = sim_df.isel(sim=sim).to_dataframe().reset_index()
             unique_measurement = []
 
-            for col in data_names:
+            for col in initial_values.keys():
                 if sim == sim_df['sim'].values[0] and j == 0:
                     observable_ls.append({
                         'observableId': f'{col}_observable',
@@ -264,7 +268,7 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
         measurement_df = pd.concat(measurement_pop)
         measurement_ls.append(measurement_df)
 
-    parameters: List[str] = ['k1']  # FIXME: add the SBML parameters
+    parameters: List[str] = ['k1']  # FIXME: add the SBML parameters from the sbml_path (?)
     console.print(parameters)
     for par in parameters:
         if par in param:

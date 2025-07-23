@@ -54,7 +54,7 @@ def create_petab_for_experiment(experiment: PETabExperiment,
 
     console.print(samples_pkpd_par)
     # simulate samples to get data for measurement table
-    simulator = pf.ODESampleSimulator(model_path=MODEL_ICG)
+    simulator = pf.ODESampleSimulator(model_path=sbml_path)
     dsets: dict[pf.Category, xr.Dataset] = {}
     for (category, data), group in zip(samples_pkpd_par.items(), groups):
         # simulate samples for category
@@ -73,14 +73,17 @@ def create_petab_for_experiment(experiment: PETabExperiment,
 
     # save the plot
     pf.plot_simulations(dsets, fig_path=xp_path / "simulations.png")
+    print(simulator.ids)
     exit()
     # create petab path
     # TODO: Feed the param and the sbml_path inputs accordingly.
-    #   perhaps initial values does not make sense anymore (?)
+    #   feed the model_icg inside to get all the model parameters r.getIds
+    #   https://libroadrunner.readthedocs.io/en/latest/PythonAPIReference/cls_RoadRunner.html#RoadRunner.getIds
     petab_path = xp_path / "petab"
+    params = [par.id for par in experiment.groups[0].get_parameter_list('sampling')]
     yaml_file = pf.create_petab_example(dfs=dsets,
                                         groups=groups, petab_path=petab_path,
-                                        param='k1',
+                                        param=params,
                                         initial_values={'S1': 1, 'S2': 0},
                                         sbml_path=sbml_path)
 
