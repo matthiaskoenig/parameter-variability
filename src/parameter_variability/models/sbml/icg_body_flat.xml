@@ -87,7 +87,7 @@ FOR A PARTICULAR PURPOSE.</p></body>
           <bqbiol:hasTaxon>
             <rdf:Bag>
               <rdf:li rdf:resource="http://identifiers.org/VTO:0011993"/>
-              <rdf:li rdf:resource="http://identifiers.org/snomed/337915000"/>
+              <rdf:li rdf:resource="http://identifiers.org/snomedct/337915000"/>
             </rdf:Bag>
           </bqbiol:hasTaxon>
           <bqbiol:isDescribedBy>
@@ -711,6 +711,19 @@ FOR A PARTICULAR PURPOSE.</p></body>
           </rdf:RDF>
         </annotation>
       </compartment>
+      <compartment metaid="LI__meta_Vbil" sboTerm="SBO:0000290" id="LI__Vbil" name="bilirubin compartment" spatialDimensions="3" size="1" units="litre" constant="true">
+        <annotation>
+          <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:vCard4="http://www.w3.org/2006/vcard/ns#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">
+            <rdf:Description rdf:about="#LI__meta_Vbil">
+              <bqbiol:is>
+                <rdf:Bag>
+                  <rdf:li rdf:resource="http://identifiers.org/SBO:0000290"/>
+                </rdf:Bag>
+              </bqbiol:is>
+            </rdf:Description>
+          </rdf:RDF>
+        </annotation>
+      </compartment>
     </listOfCompartments>
     <listOfSpecies>
       <species metaid="meta_Cre_plasma_icg" sboTerm="SBO:0000247" id="Cre_plasma_icg" name="icg (rest)" compartment="Vre_plasma" initialConcentration="0" substanceUnits="mmole" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false">
@@ -857,27 +870,6 @@ FOR A PARTICULAR PURPOSE.</p></body>
           </rdf:RDF>
         </annotation>
       </species>
-      <species metaid="LI__meta_bil_ext" sboTerm="SBO:0000247" id="LI__bil_ext" name="bilirubin (extern)" compartment="Vli_plasma" initialConcentration="0.01" substanceUnits="LI__mmole" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="true">
-        <notes>
-          <body xmlns="http://www.w3.org/1999/xhtml">
-            <p>Reference range: 0.01 [mmole/l] (~ 1 mg/dl)</p>
-          </body>
-        </notes>
-        <annotation>
-          <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:vCard4="http://www.w3.org/2006/vcard/ns#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">
-            <rdf:Description rdf:about="#LI__meta_bil_ext">
-              <bqbiol:is>
-                <rdf:Bag>
-                  <rdf:li rdf:resource="http://identifiers.org/SBO:0000247"/>
-                  <rdf:li rdf:resource="http://identifiers.org/inchikey/BPYKTIZUTYGOLE-IFADSCNNSA-N"/>
-                  <rdf:li rdf:resource="http://identifiers.org/CHEBI:16990"/>
-                  <rdf:li rdf:resource="http://identifiers.org/ncit/C305"/>
-                </rdf:Bag>
-              </bqbiol:is>
-            </rdf:Description>
-          </rdf:RDF>
-        </annotation>
-      </species>
       <species metaid="LI__meta_icg" sboTerm="SBO:0000247" id="LI__icg" name="icg (liver)" compartment="Vli_tissue" initialConcentration="0" substanceUnits="LI__mmole" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false">
         <annotation>
           <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:vCard4="http://www.w3.org/2006/vcard/ns#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">
@@ -904,6 +896,27 @@ FOR A PARTICULAR PURPOSE.</p></body>
                   <rdf:li rdf:resource="http://identifiers.org/inchikey/MOFVSTNWEDAEEK-UHFFFAOYSA-M"/>
                   <rdf:li rdf:resource="http://identifiers.org/CHEBI:31696"/>
                   <rdf:li rdf:resource="http://identifiers.org/ncit/C65913"/>
+                </rdf:Bag>
+              </bqbiol:is>
+            </rdf:Description>
+          </rdf:RDF>
+        </annotation>
+      </species>
+      <species metaid="LI__meta_bil_ext" sboTerm="SBO:0000247" id="LI__bil_ext" name="bilirubin (extern)" compartment="LI__Vbil" initialConcentration="0.01" substanceUnits="LI__mmole" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <p>Reference range: 0.01 [mmole/l] (~ 1 mg/dl)</p>
+          </body>
+        </notes>
+        <annotation>
+          <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:vCard4="http://www.w3.org/2006/vcard/ns#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">
+            <rdf:Description rdf:about="#LI__meta_bil_ext">
+              <bqbiol:is>
+                <rdf:Bag>
+                  <rdf:li rdf:resource="http://identifiers.org/SBO:0000247"/>
+                  <rdf:li rdf:resource="http://identifiers.org/inchikey/BPYKTIZUTYGOLE-IFADSCNNSA-N"/>
+                  <rdf:li rdf:resource="http://identifiers.org/CHEBI:16990"/>
+                  <rdf:li rdf:resource="http://identifiers.org/ncit/C305"/>
                 </rdf:Bag>
               </bqbiol:is>
             </rdf:Description>
@@ -1529,23 +1542,6 @@ percent range). This parameter describes this fraction.</p>
                 <rdf:Bag>
                   <rdf:li rdf:resource="http://identifiers.org/SBO:0000002"/>
                   <rdf:li rdf:resource="http://identifiers.org/ncit/C94916"/>
-                </rdf:Bag>
-              </bqbiol:is>
-            </rdf:Description>
-          </rdf:RDF>
-        </annotation>
-      </parameter>
-      <parameter metaid="meta_cum_dose_icg" sboTerm="SBO:0000002" id="cum_dose_icg" name="Cumulative dose due to infusion icg" value="0" units="mg" constant="false">
-        <annotation>
-          <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:vCard4="http://www.w3.org/2006/vcard/ns#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">
-            <rdf:Description rdf:about="#meta_cum_dose_icg">
-              <bqbiol:is>
-                <rdf:Bag>
-                  <rdf:li rdf:resource="http://identifiers.org/SBO:0000002"/>
-                  <rdf:li rdf:resource="http://identifiers.org/ncit/C94394"/>
-                  <rdf:li rdf:resource="http://identifiers.org/inchikey/MOFVSTNWEDAEEK-UHFFFAOYSA-M"/>
-                  <rdf:li rdf:resource="http://identifiers.org/CHEBI:31696"/>
-                  <rdf:li rdf:resource="http://identifiers.org/ncit/C65913"/>
                 </rdf:Bag>
               </bqbiol:is>
             </rdf:Description>
@@ -2278,11 +2274,6 @@ handling division by zero with very small offset</p>
             </apply>
             <ci> Ri_icg </ci>
           </apply>
-        </math>
-      </rateRule>
-      <rateRule name="cumulative injected dose" variable="cum_dose_icg">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <ci> Ri_icg </ci>
         </math>
       </rateRule>
     </listOfRules>

@@ -81,11 +81,16 @@ def create_petab_for_experiment(experiment: PETabExperiment,
     #   https://libroadrunner.readthedocs.io/en/latest/PythonAPIReference/cls_RoadRunner.html#RoadRunner.getIds
     petab_path = xp_path / "petab"
     params = [par.id for par in experiment.groups[0].get_parameter_list('sampling')]
-    yaml_file = pf.create_petab_example(dfs=dsets,
-                                        groups=groups, petab_path=petab_path,
-                                        param=params,
-                                        initial_values={'S1': 1, 'S2': 0},
-                                        sbml_path=sbml_path)
+    yaml_file = pf.create_petab_example(
+        dfs=dsets,
+        groups=groups,
+        petab_path=petab_path,
+        param=params,
+        initial_values={
+
+        },
+        sbml_path=sbml_path
+    )
 
     return yaml_file
 
@@ -108,7 +113,6 @@ true_sampling: dict[str, Sampling] = {
                     true_par['MALE_LI__ICGIM_Vmax']]
     )
 }
-
 
 def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     """Create experiments to check for prior effect."""
@@ -262,7 +266,9 @@ def create_petabs(exps: PETabExperimentList, directory: Path) -> list[Path]:
 
 
 if __name__ == "__main__":
-    PARAMETERS = ['LI__ICGIM_Vmax','BW']
+    # FIXME: what subset should be written in the measurements table [Cve_icg], [LI__icg_bi],
+
+    PARAMETERS = ['LI__ICGIM_Vmax', 'BW']
     # vary priors
     xps_prior = create_prior_experiments(xps_path=RESULTS_ICG / "xps_prior.yaml")
     create_petabs(xps_prior, directory=RESULTS_ICG / "prior")
