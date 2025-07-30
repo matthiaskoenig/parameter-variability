@@ -189,8 +189,8 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
                          groups: List[Group],
                          petab_path: Path,
                          param: Union[str, List[str]],
-                         initial_values: dict[str, int],
-                         sbml_path: Path) -> Path:
+                         sbml_path: Path,
+                         initial_values: Optional[dict[str, int]] = None) -> Path:
     """Create PETab problem for given information.
 
     Returns path to petab yaml.
@@ -224,19 +224,29 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
         for par in param:
             condition_ls[-1].update({par: f'{par}_{cat.name}'})
 
-        data_names = [name[1:-1] for name in list(data.data_vars)]
+        data_names = []
+
+        for name in list(data.data_vars):
+            if name[0] == '[':
+                data_names.append(name[1:-1])
+            else:
+                data_names.append(name)
 
         for col in data_names:
-            try:
-                condition_ls[-1].update({col: initial_values[col]})
-            except KeyError:
-                continue
+            if initial_values:
+                try:
+                    condition_ls[-1].update({col: initial_values[col]})
+                except KeyError:
+                    continue
+            else:
+                condition_ls[-1].update({col: 0.0})
 
         for sim in sim_df['sim'].values:
             df_s = sim_df.isel(sim=sim).to_dataframe().reset_index()
             unique_measurement = []
 
-            for col in initial_values.keys():
+            for col in data_names:
+
                 if sim == sim_df['sim'].values[0] and j == 0:
                     observable_ls.append({
                         'observableId': f'{col}_observable',
@@ -247,7 +257,11 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
                         'observableTransformation': 'lin',
                         'observableUnit': 'mmol/l'
                     })
-                col_brackets = '[' + col + ']'
+
+                if col in df_s.columns:
+                    col_brackets = col
+                else:
+                    col_brackets = '[' + col + ']'
                 for k, row in df_s.iterrows():
                     unique_measurement.append({
                         "observableId": f"{col}_observable",
@@ -268,7 +282,7 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
         measurement_df = pd.concat(measurement_pop)
         measurement_ls.append(measurement_df)
 
-    parameters: List[str] = ['k1']  # FIXME: add the SBML parameters from the sbml_path (?)
+    parameters = param
     console.print(parameters)
     for par in parameters:
         if par in param:
@@ -375,22 +389,22 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
 #     simulator = ODESampleSimulator(model_path=MODEL_SIMPLE_CHAIN)
 #     sim_settings = SimulationSettings(start=0.0, end=20.0, steps=300)
 #     dsets: dict[Category, xarray.Dataset] = {}
-
-
-    for category, data in samples_k1.items():
-        # simulate samples for category
-        parameters = pd.DataFrame({pid: data})
-        dset = simulator.simulate_samples(parameters, simulation_settings=sim_settings)
-        dsets[category] = dset
-
-    plot_simulations(dsets)
-    plt.savefig(str(fig_path) + '/02-plot_simulations.png')
-
-    prior_par = {'k1_MALE': [0.0, 10.0], 'k1_FEMALE': [0.0, 10.0]}
-
-
-    create_petab_example(petab_path, dsets, param='k1',
-                         initial_values={'S1': 1, 'S2': 0},
-                         prior_par=prior_par,
-                         sbml_path=sbml_path)
+#
+#
+#     for category, data in samples_k1.items():
+#         # simulate samples for category
+#         parameters = pd.DataFrame({pid: data})
+#         dset = simulator.simulate_samples(parameters, simulation_settings=sim_settings)
+#         dsets[category] = dset
+#
+#     plot_simulations(dsets)
+#     plt.savefig(str(fig_path) + '/02-plot_simulations.png')
+#
+#     prior_par = {'k1_MALE': [0.0, 10.0], 'k1_FEMALE': [0.0, 10.0]}
+#
+#
+#     create_petab_example(petab_path, dsets, param='k1',
+#                          initial_values={'S1': 1, 'S2': 0},
+#                          prior_par=prior_par,
+#                          sbml_path=sbml_path)
 

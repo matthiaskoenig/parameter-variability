@@ -73,8 +73,6 @@ def create_petab_for_experiment(experiment: PETabExperiment,
 
     # save the plot
     pf.plot_simulations(dsets, fig_path=xp_path / "simulations.png")
-    print(simulator.ids)
-    exit()
     # create petab path
     # TODO: Feed the param and the sbml_path inputs accordingly.
     #   feed the model_icg inside to get all the model parameters r.getIds
@@ -86,10 +84,8 @@ def create_petab_for_experiment(experiment: PETabExperiment,
         groups=groups,
         petab_path=petab_path,
         param=params,
-        initial_values={
-
-        },
-        sbml_path=sbml_path
+        sbml_path=sbml_path,
+        initial_values=None
     )
 
     return yaml_file
