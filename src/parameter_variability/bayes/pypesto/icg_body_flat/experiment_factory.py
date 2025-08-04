@@ -52,7 +52,6 @@ def create_petab_for_experiment(experiment: PETabExperiment,
     samples_pkpd_par = pf.create_samples_parameters(samples_dsn)
     pf.plot_samples(samples_pkpd_par, fig_path=xp_path / 'samples.png')
 
-    console.print(samples_pkpd_par)
     # simulate samples to get data for measurement table
     simulator = pf.ODESampleSimulator(model_path=sbml_path)
     dsets: dict[pf.Category, xr.Dataset] = {}
@@ -249,7 +248,6 @@ def create_petabs(exps: PETabExperimentList, directory: Path) -> list[Path]:
     yaml_files: list[Path] = []
     for xp in exps.experiments:
         console.rule(title=xp.id, style="bold white")
-        console.print(xp)
         yaml_file = create_petab_for_experiment(experiment=xp, directory=directory)
         yaml_files.append(yaml_file)
 
@@ -264,7 +262,6 @@ def create_petabs(exps: PETabExperimentList, directory: Path) -> list[Path]:
 if __name__ == "__main__":
     # FIXME: what subset should be written in the measurements table [Cve_icg], [LI__icg_bi],
 
-    PARAMETERS = ['LI__ICGIM_Vmax', 'BW']
     # vary priors
     xps_prior = create_prior_experiments(xps_path=RESULTS_ICG / "xps_prior.yaml")
     create_petabs(xps_prior, directory=RESULTS_ICG / "prior")

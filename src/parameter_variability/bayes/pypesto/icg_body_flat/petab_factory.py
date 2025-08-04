@@ -283,7 +283,7 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
         measurement_ls.append(measurement_df)
 
     parameters = param
-    console.print(parameters)
+
     for par in parameters:
         if par in param:
             for cat, group in zip(dfs.keys(), groups):
@@ -325,16 +325,16 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
     parameter_df = pd.DataFrame(parameter_ls)
     observable_df = pd.DataFrame(observable_ls)
 
-    measurement_df.to_csv(petab_path / "measurements_simple_chain.tsv",
+    measurement_df.to_csv(petab_path / f"measurements_{sbml_path.stem}.tsv",
                           sep="\t", index=False)
 
-    condition_df.to_csv(petab_path / "conditions_simple_chain.tsv",
+    condition_df.to_csv(petab_path / f"conditions_{sbml_path.stem}.tsv",
                         sep="\t", index=False)
 
-    parameter_df.to_csv(petab_path / "parameters_simple_chain.tsv",
+    parameter_df.to_csv(petab_path / f"parameters_{sbml_path.stem}.tsv",
                         sep='\t', index=False)
 
-    observable_df.to_csv(petab_path / "observables_simple_chain.tsv",
+    observable_df.to_csv(petab_path / f"observables_{sbml_path.stem}.tsv",
                          sep='\t', index=False)
 
     # Create Petab YAML
@@ -342,14 +342,14 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
 
     petab_yaml: dict[str, Optional[str, List[dict[str, List]]]] = {}
     petab_yaml['format_version'] = 1
-    petab_yaml['parameter_file'] = str(petab_path_rel / "parameters_simple_chain.tsv")
+    petab_yaml['parameter_file'] = str(petab_path_rel / f"parameters_{sbml_path.stem}.tsv")
 
     # copy model
     shutil.copy(sbml_path, petab_path / sbml_path.name)
     petab_yaml['problems'] = [{
-        'condition_files': [str(petab_path_rel / "conditions_simple_chain.tsv")],
-        'measurement_files': [str(petab_path_rel / "measurements_simple_chain.tsv")],
-        'observable_files': [str(petab_path_rel / "observables_simple_chain.tsv")],
+        'condition_files': [str(petab_path_rel / f"conditions_{sbml_path.stem}.tsv")],
+        'measurement_files': [str(petab_path_rel / f"measurements_{sbml_path.stem}.tsv")],
+        'observable_files': [str(petab_path_rel / f"observables_{sbml_path.stem}.tsv")],
         'sbml_files': [str(petab_path_rel / sbml_path.name)],
     }]
 
