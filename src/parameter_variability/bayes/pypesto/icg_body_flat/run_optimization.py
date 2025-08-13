@@ -15,11 +15,13 @@ matplotlib.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 import pandas as pd
 from matplotlib import pyplot as plt
 from parameter_variability import RESULTS_ICG
-from parameter_variability.bayes.pypesto.simple_chain.petab_optimization import (
+from parameter_variability.bayes.pypesto.icg_body_flat.petab_optimization import (
     PyPestoSampler
 )
 from parameter_variability.console import console
-
+from parameter_variability.bayes.pypesto.icg_body_flat.experiment_factory import (
+    true_sampling
+)
 
 def optimize_petab_xp(yaml_file: Path) -> list[dict]:
     """Optimize single petab problem using PyPesto."""
@@ -111,7 +113,6 @@ def visualize_priors():
     df = pd.read_csv(RESULTS_ICG / f"xps_prior.tsv", sep="\t")
     df["category"] = df.pid.str.split("_").str[-1]
     df["prior"] = df.xp.str.split("_").str[-1]
-    console.print(df)
 
     # visualization
     from matplotlib import pyplot as plt
@@ -119,13 +120,22 @@ def visualize_priors():
 
     # plot the mean
     # FIXME: hard coded
-    ax.axhline(y=1.0, label="MALE (exact)", linestyle="--", color=colors["MALE"])
-    ax.axhline(y=2.0, label="FEMALE (exact)", linestyle="--", color=colors["FEMALE"])
+    console.print(df.head())
+    console.print(df['category'].unique())
+
+    for category in df.category.unique():
+        ax.axhline(y=, label=f"{category} (exact)", linestyle="--", color=colors[category])
+    # ax.axhline(y=2.0, label="FEMALE (exact)", linestyle="--", color=colors["FEMALE"])
 
     # plot the data
     for category in df.category.unique():
         for k, prior in enumerate(["exact", "biased"]):  # ["exact", "biased", "noprior"]
+            # TODO: plot x parameters in different subplots
             df_cat = df[(df.prior == prior) & (df.category == category)]
+            console.print(df_cat.info())
+            console.print(prior)
+            console.print(df_cat['median'])
+            exit()
             ax.errorbar(
                 x=prior, y=df_cat["median"],
                 yerr=df_cat["std"],
@@ -151,10 +161,10 @@ def visualize_priors():
 
 if __name__ == "__main__":
 
-    optimize_petab_xps(exp_type="prior")
+    # optimize_petab_xps(exp_type="prior")
     # optimize_petab_xps(exp_type="n")
     # optimize_petab_xps(exp_type="Nt")
 
-    visualize_timepoints_samples()
-    # visualize_priors()
+    # visualize_timepoints_samples() # Only for n and Nt exps
+    visualize_priors()
 
