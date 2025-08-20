@@ -77,6 +77,7 @@ def visualize_timepoints_samples():
         df["category"] = df.pid.str.split("_").str[-1]
         df["parameters"] = df.pid.str.split("_").str[:-1].str.join("_")  # FIXME: Category names edge cases
         df = df.sort_values(by=xp_key)
+        print
         console.print(df)
 
         # visulazation
@@ -90,7 +91,7 @@ def visualize_timepoints_samples():
                 ax.axhline(y=true_par[f"{par}_{cat}"].distribution.parameters['loc'],
                            label=f"{par} (exact)", linestyle="--", color=colors[cat])
 
-                df_cat = df[df.category == cat]
+                df_cat = df[(df['category'] == cat) & (df['parameters'] == par)]
                 ax.errorbar(
                     x=df_cat[xp_key], y=df_cat["median"],
                     yerr=df_cat["std"],
@@ -168,6 +169,6 @@ if __name__ == "__main__":
     # optimize_petab_xps(exp_type="n")
     # optimize_petab_xps(exp_type="Nt")
 
-    # visualize_timepoints_samples() # Only for n and Nt exps
+    visualize_timepoints_samples() # Only for n and Nt exps
     # visualize_priors()
 
