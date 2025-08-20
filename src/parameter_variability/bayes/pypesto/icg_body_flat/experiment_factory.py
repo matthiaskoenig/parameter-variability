@@ -92,10 +92,10 @@ def create_petab_for_experiment(experiment: PETabExperiment,
 
 # Define the true values of the parameters for distribution sampling
 true_par: dict[str, Parameter] = {
-    'MALE_BW': Parameter(id="BW", distribution=Distribution(
+    'BW_MALE': Parameter(id="BW", distribution=Distribution(
         type=DistributionType.LOGNORMAL,
         parameters={"loc": 75.0, "scale": 10})),  # bodyweight [kg] (loc: mean;
-    'MALE_LI__ICGIM_Vmax': Parameter(id="LI__ICGIM_Vmax", distribution=Distribution(
+    'LI__ICGIM_Vmax_MALE': Parameter(id="LI__ICGIM_Vmax", distribution=Distribution(
         type=DistributionType.LOGNORMAL,
         parameters={"loc": 0.0369598840327503, "scale": 0.01}))
 }
@@ -104,8 +104,8 @@ true_sampling: dict[str, Sampling] = {
     'MALE': Sampling(
         n_samples=100,
         steps=20,
-        parameters=[true_par['MALE_BW'],
-                    true_par['MALE_LI__ICGIM_Vmax']]
+        parameters=[true_par['BW_MALE'],
+                    true_par['LI__ICGIM_Vmax_MALE']]
     )
 }
 
@@ -121,8 +121,8 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
                 id='MALE',
                 sampling=true_sampling['MALE'],
                 estimation=Estimation(
-                    parameters=[true_par['MALE_BW'],
-                                true_par['MALE_LI__ICGIM_Vmax']]
+                    parameters=[true_par['BW_MALE'],
+                                true_par['LI__ICGIM_Vmax_MALE']]
                 )
             )
         ]
@@ -146,10 +146,10 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
 
     # biased prior
     pars_biased: dict[str, Parameter] = {
-        'MALE_BW': Parameter(id="BW", distribution=Distribution(
+        'BW_MALE': Parameter(id="BW", distribution=Distribution(
             type=DistributionType.LOGNORMAL,
             parameters={"loc": 10.0, "scale": 0.2})),
-        'MALE_LI__ICGIM_Vmax': Parameter(id="LI__ICGIM_Vmax", distribution=Distribution(
+        'LI__ICGIM_Vmax_MALE': Parameter(id="LI__ICGIM_Vmax", distribution=Distribution(
             type=DistributionType.LOGNORMAL,
             parameters={"loc": 10.0, "scale": 0.2}))
     }
@@ -163,8 +163,8 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
                 sampling=true_sampling['MALE'],
                 estimation=Estimation(
                     parameters=[
-                        pars_biased['MALE_BW'],
-                        pars_biased['MALE_LI__ICGIM_Vmax']
+                        pars_biased['BW_MALE'],
+                        pars_biased['LI__ICGIM_Vmax_MALE']
                     ],
                 )
             )
@@ -189,8 +189,8 @@ def create_samples_experiments(xps_path: Path) -> PETabExperimentList:
                 id='MALE',
                 sampling=true_sampling['MALE'],
                 estimation=Estimation(
-                    parameters=[true_par['MALE_BW'],
-                                true_par['MALE_LI__ICGIM_Vmax']]
+                    parameters=[true_par['BW_MALE'],
+                                true_par['LI__ICGIM_Vmax_MALE']]
                 )
             )
         ]
@@ -221,8 +221,8 @@ def create_timepoints_experiments(xps_path: Path) -> PETabExperimentList:
                 id='MALE',
                 sampling=true_sampling['MALE'],
                 estimation=Estimation(
-                    parameters=[true_par['MALE_BW'],
-                                true_par['MALE_LI__ICGIM_Vmax']]
+                    parameters=[true_par['BW_MALE'],
+                                true_par['LI__ICGIM_Vmax_MALE']]
                 )
             )
         ]
