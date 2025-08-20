@@ -75,33 +75,36 @@ def visualize_timepoints_samples():
         df[xp_key] = df.xp.str.split("_").str[-1]
         df[xp_key] = df[xp_key].astype(int)
         df["category"] = df.pid.str.split("_").str[-1]
+        df["parameters"] = df.pid.str.split("_").str[:-1].str.join("_")  # FIXME: Category names edge cases
         df = df.sort_values(by=xp_key)
         console.print(df)
 
         # visulazation
 
-        f, ax = plt.subplots(dpi=300, layout="constrained", figsize=(6, 6))
+        f, axs = plt.subplots(nrows=len(df['parameters'].unique()),
+                              dpi=300, layout="constrained",
+                              figsize=(6, 4 * len(df['parameters'].unique())))
         # plot the mean
-        # FIXME: hard coded
-        ax.axhline(y=1.0, label="MALE (exact)", linestyle="--", color=colors["MALE"])
-        ax.axhline(y=2.0, label="FEMALE (exact)", linestyle="--", color=colors["FEMALE"])
+        for cat in df['category'].unique():
+            for ax, par in zip(axs, df['parameters'].unique()):
+                ax.axhline(y=true_par[f"{par}_{cat}"].distribution.parameters['loc'],
+                           label=f"{par} (exact)", linestyle="--", color=colors[cat])
 
-        for category in df.category.unique():
-            df_cat = df[df.category == category]
-            ax.errorbar(
-                x=df_cat[xp_key], y=df_cat["median"],
-                yerr=df_cat["std"],
-                # yerr=[df_cat["hdi_low"], df_cat["hdi_high"]],
-                label=category,
-                marker="o",
-                color=colors[category],
-                # linestyle="",
-                markeredgecolor="black",
-            )
+                df_cat = df[df.category == cat]
+                ax.errorbar(
+                    x=df_cat[xp_key], y=df_cat["median"],
+                    yerr=df_cat["std"],
+                    # yerr=[df_cat["hdi_low"], df_cat["hdi_high"]],
+                    label=cat,
+                    marker="o",
+                    color=colors[cat],
+                    # linestyle="",
+                    markeredgecolor="black",
+                )
 
-        ax.set_xlabel(xp_key)
-        ax.set_ylabel("Parameter k1")
-        ax.legend()
+                ax.set_xlabel(xp_key)
+                ax.set_ylabel(f"Parameter {par}")
+                ax.legend()
         f.savefig(RESULTS_ICG / f"xps_{xp_key}.png", bbox_inches="tight")
 
     plt.show()
@@ -118,7 +121,7 @@ def visualize_priors():
     # visualization
     from matplotlib import pyplot as plt
     f, axs = plt.subplots(nrows=len(df['parameters'].unique()),
-                         dpi=300, layout="constrained",
+                          dpi=300, layout="constrained",
                           figsize=(6, 4*len(df['parameters'].unique())))
 
     # plot the mean
@@ -166,5 +169,5 @@ if __name__ == "__main__":
     # optimize_petab_xps(exp_type="Nt")
 
     # visualize_timepoints_samples() # Only for n and Nt exps
-    visualize_priors()
+    # visualize_priors()
 
