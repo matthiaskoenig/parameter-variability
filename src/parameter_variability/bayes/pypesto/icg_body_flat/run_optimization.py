@@ -117,47 +117,44 @@ def visualize_priors():
 
     # visualization
     from matplotlib import pyplot as plt
-    f, ax = plt.subplots(nrows=len(df['prior'].unique()),
-                         ncols=len(df['parameters'].unique()),
-                         dpi=300, layout="constrained", figsize=(6, 6))
+    f, axs = plt.subplots(nrows=len(df['parameters'].unique()),
+                         dpi=300, layout="constrained",
+                          figsize=(6, 4*len(df['parameters'].unique())))
 
     # plot the mean
     # FIXME: hard coded
     console.print(df.head())
     console.print(df['category'].unique())
     cats = df.groupby(['pid', 'category']).size().reset_index()
-    for par in df['parameters'].unique():
-        for cat in df['category'].unique():
+    for cat in df['category'].unique():
+        for ax, par in zip(axs, df['parameters'].unique()):
             ax.axhline(y=true_par[f"{par}_{cat}"].distribution.parameters['loc'],
-                       label=f"{par} (exact)", linestyle="--", color=colors[category])
-    # ax.axhline(y=2.0, label="FEMALE (exact)", linestyle="--", color=colors["FEMALE"])
-    exit()
-    # plot the data
-    for par, category in zip(cats['pid'], cats['category']):
-        for k, prior in enumerate(["exact", "biased"]):  # ["exact", "biased", "noprior"]
-            # TODO: plot x parameters in different subplots
-            df_cat = df[(df['prior'] == prior) &
-                        (df['category'] == category) &
-                        (df['pid'] == par)]
-            ax.errorbar(
-                x=prior, y=df_cat["median"],
-                yerr=df_cat["std"],
-                # yerr=[df_cat["hdi_low"], df_cat["hdi_high"]],
-                label=par,
-                marker="o",
-                color=colors[category],
-                # linestyle="",
-                markeredgecolor="black",
-            )
+                       label=f"{par} (exact)", linestyle="--", color=colors[cat])
+            for k, prior in enumerate(["exact", "biased"]):  # ["exact", "biased", "noprior"]
+                # TODO: plot x parameters in different subplots
+                df_cat = df[(df['prior'] == prior) &
+                            (df['category'] == cat) &
+                            (df['parameters'] == par)]
+                console.print(df_cat)
+                ax.errorbar(
+                    x=prior, y=df_cat["median"],
+                    yerr=df_cat["std"],
+                    # yerr=[df_cat["hdi_low"], df_cat["hdi_high"]],
+                    label=f"{par}_{cat}",
+                    marker="o",
+                    color=colors[cat],
+                    # linestyle="",
+                    markeredgecolor="black",
+                )
 
             # FIXME: boxplot
             # ax.boxplot(df)
 
 
 
-    ax.set_xlabel("n (samples)")
-    ax.set_ylabel("Parameter k1")
-    ax.legend()
+            ax.set_xlabel("n (samples)")
+            ax.set_ylabel(f"Parameter {par}")
+            ax.legend()
     plt.show()
     f.savefig(RESULTS_ICG / f"xps_prior.png", bbox_inches="tight")
 
