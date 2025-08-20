@@ -80,10 +80,10 @@ def visualize_timepoints_samples():
         console.print(df)
 
         # visulazation
-
         f, axs = plt.subplots(nrows=len(df['parameters'].unique()),
                               dpi=300, layout="constrained",
                               figsize=(6, 4 * len(df['parameters'].unique())))
+
         # plot the mean
         for cat in df['category'].unique():
             for ax, par in zip(axs, df['parameters'].unique()):
@@ -125,10 +125,6 @@ def visualize_priors():
                           figsize=(6, 4*len(df['parameters'].unique())))
 
     # plot the mean
-    # FIXME: hard coded
-    console.print(df.head())
-    console.print(df['category'].unique())
-    cats = df.groupby(['pid', 'category']).size().reset_index()
     for cat in df['category'].unique():
         for ax, par in zip(axs, df['parameters'].unique()):
             ax.axhline(y=true_par[f"{par}_{cat}"].distribution.parameters['loc'],
