@@ -77,7 +77,6 @@ def visualize_timepoints_samples():
         df["category"] = df.pid.str.split("_").str[-1]
         df["parameters"] = df.pid.str.split("_").str[:-1].str.join("_")  # FIXME: Category names edge cases
         df = df.sort_values(by=xp_key)
-        print
         console.print(df)
 
         # visulazation
@@ -108,7 +107,7 @@ def visualize_timepoints_samples():
                 ax.legend()
         f.savefig(RESULTS_ICG / f"xps_{xp_key}.png", bbox_inches="tight")
 
-    plt.show()
+        plt.show()
 
 def visualize_priors():
     """Visualize the different priors."""
