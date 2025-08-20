@@ -17,14 +17,14 @@ sudo apt-get -y install graphviz graphviz-dev
 ```
 
 ### virtual environment
-Create a virtual environment and install the dependencies defined in the `requirements.txt`
+Create a virtual environment with uv and install the dependencies defined in the `requirements.txt`
 
 ```bash
-mkvirtualenv parameter-variability --python=python3.12
+uv venv
 ```
 
 ```bash
-pip install -r requirements.txt --upgrade
+uv pip install -r requirements.txt --upgrade
 ```
 
 # Example
