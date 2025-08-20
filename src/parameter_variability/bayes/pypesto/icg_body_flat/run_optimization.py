@@ -20,7 +20,7 @@ from parameter_variability.bayes.pypesto.icg_body_flat.petab_optimization import
 )
 from parameter_variability.console import console
 from parameter_variability.bayes.pypesto.icg_body_flat.experiment_factory import (
-    true_sampling
+    true_par
 )
 
 def optimize_petab_xp(yaml_file: Path) -> list[dict]:
@@ -113,34 +113,37 @@ def visualize_priors():
     df = pd.read_csv(RESULTS_ICG / f"xps_prior.tsv", sep="\t")
     df["category"] = df.pid.str.split("_").str[-1]
     df["prior"] = df.xp.str.split("_").str[-1]
+    df["parameters"] = df.pid.str.split("_").str[:-1].str.join("_") # FIXME: Category names edge cases
 
     # visualization
     from matplotlib import pyplot as plt
-    f, ax = plt.subplots(dpi=300, layout="constrained", figsize=(6, 6))
+    f, ax = plt.subplots(nrows=len(df['prior'].unique()),
+                         ncols=len(df['parameters'].unique()),
+                         dpi=300, layout="constrained", figsize=(6, 6))
 
     # plot the mean
     # FIXME: hard coded
     console.print(df.head())
     console.print(df['category'].unique())
-
-    for category in df.category.unique():
-        ax.axhline(y=, label=f"{category} (exact)", linestyle="--", color=colors[category])
+    cats = df.groupby(['pid', 'category']).size().reset_index()
+    for par in df['parameters'].unique():
+        for cat in df['category'].unique():
+            ax.axhline(y=true_par[f"{par}_{cat}"].distribution.parameters['loc'],
+                       label=f"{par} (exact)", linestyle="--", color=colors[category])
     # ax.axhline(y=2.0, label="FEMALE (exact)", linestyle="--", color=colors["FEMALE"])
-
+    exit()
     # plot the data
-    for category in df.category.unique():
+    for par, category in zip(cats['pid'], cats['category']):
         for k, prior in enumerate(["exact", "biased"]):  # ["exact", "biased", "noprior"]
             # TODO: plot x parameters in different subplots
-            df_cat = df[(df.prior == prior) & (df.category == category)]
-            console.print(df_cat.info())
-            console.print(prior)
-            console.print(df_cat['median'])
-            exit()
+            df_cat = df[(df['prior'] == prior) &
+                        (df['category'] == category) &
+                        (df['pid'] == par)]
             ax.errorbar(
                 x=prior, y=df_cat["median"],
                 yerr=df_cat["std"],
                 # yerr=[df_cat["hdi_low"], df_cat["hdi_high"]],
-                label=category,
+                label=par,
                 marker="o",
                 color=colors[category],
                 # linestyle="",
