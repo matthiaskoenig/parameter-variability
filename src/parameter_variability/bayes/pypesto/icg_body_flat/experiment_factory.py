@@ -97,7 +97,13 @@ true_par: dict[str, Parameter] = {
         parameters={"loc": 75.0, "scale": 10})),  # bodyweight [kg] (loc: mean;
     'LI__ICGIM_Vmax_MALE': Parameter(id="LI__ICGIM_Vmax", distribution=Distribution(
         type=DistributionType.LOGNORMAL,
-        parameters={"loc": 0.0369598840327503, "scale": 0.01}))
+        parameters={"loc": 0.0369598840327503, "scale": 0.01})),
+    'BW_FEMALE': Parameter(id="BW", distribution=Distribution(
+        type=DistributionType.LOGNORMAL,
+        parameters={"loc": 65.0, "scale": 10})),  # bodyweight [kg] (loc: mean;
+    'LI__ICGIM_Vmax_FEMALE': Parameter(id="LI__ICGIM_Vmax", distribution=Distribution(
+        type=DistributionType.LOGNORMAL,
+        parameters={"loc": 0.02947, "scale": 0.01}))
 }
 
 true_sampling: dict[str, Sampling] = {
@@ -106,6 +112,12 @@ true_sampling: dict[str, Sampling] = {
         steps=20,
         parameters=[true_par['BW_MALE'],
                     true_par['LI__ICGIM_Vmax_MALE']]
+    ),
+    'FEMALE': Sampling(
+        n_samples=100,
+        steps=20,
+        parameters=[true_par['BW_FEMALE'],
+                    true_par['LI__ICGIM_Vmax_FEMALE']]
     )
 }
 
@@ -124,6 +136,14 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
                     parameters=[true_par['BW_MALE'],
                                 true_par['LI__ICGIM_Vmax_MALE']]
                 )
+            ),
+            Group(
+                id='FEMALE',
+                sampling=true_sampling['FEMALE'],
+                estimation=Estimation(
+                    parameters=[true_par['BW_FEMALE'],
+                                true_par['LI__ICGIM_Vmax_FEMALE']]
+                )
             )
         ]
     )
@@ -140,6 +160,13 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
                 estimation=Estimation(
                     parameters=[],
                 )
+            ),
+            Group(
+                id="FEMALE",
+                sampling=true_sampling['FEMALE'],
+                estimation=Estimation(
+                    parameters=[],
+                )
             )
         ]
     )
@@ -151,7 +178,13 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
             parameters={"loc": 10.0, "scale": 0.2})),
         'LI__ICGIM_Vmax_MALE': Parameter(id="LI__ICGIM_Vmax", distribution=Distribution(
             type=DistributionType.LOGNORMAL,
-            parameters={"loc": 10.0, "scale": 0.2}))
+            parameters={"loc": 10.0, "scale": 0.2})),
+        'BW_FEMALE': Parameter(id="BW", distribution=Distribution(
+            type=DistributionType.LOGNORMAL,
+            parameters={"loc": 30.0, "scale": 20})),
+        'LI__ICGIM_Vmax_FEMALE': Parameter(id="LI__ICGIM_Vmax", distribution=Distribution(
+            type=DistributionType.LOGNORMAL,
+            parameters={"loc": 0.02, "scale": 0.2}))
     }
     exp_biased = PETabExperiment(
         id="prior_biased",
@@ -165,6 +198,16 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
                     parameters=[
                         pars_biased['BW_MALE'],
                         pars_biased['LI__ICGIM_Vmax_MALE']
+                    ],
+                )
+            ),
+            Group(
+                id="FEMALE",
+                sampling=true_sampling['FEMALE'],
+                estimation=Estimation(
+                    parameters=[
+                        pars_biased['BW_FEMALE'],
+                        pars_biased['LI__ICGIM_Vmax_FEMALE']
                     ],
                 )
             )
@@ -191,6 +234,14 @@ def create_samples_experiments(xps_path: Path) -> PETabExperimentList:
                 estimation=Estimation(
                     parameters=[true_par['BW_MALE'],
                                 true_par['LI__ICGIM_Vmax_MALE']]
+                )
+            ),
+            Group(
+                id='FEMALE',
+                sampling=true_sampling['FEMALE'],
+                estimation=Estimation(
+                    parameters=[true_par['BW_FEMALE'],
+                                true_par['LI__ICGIM_Vmax_FEMALE']]
                 )
             )
         ]
@@ -223,6 +274,14 @@ def create_timepoints_experiments(xps_path: Path) -> PETabExperimentList:
                 estimation=Estimation(
                     parameters=[true_par['BW_MALE'],
                                 true_par['LI__ICGIM_Vmax_MALE']]
+                )
+            ),
+            Group(
+                id='FEMALE',
+                sampling=true_sampling['FEMALE'],
+                estimation=Estimation(
+                    parameters=[true_par['BW_FEMALE'],
+                                true_par['LI__ICGIM_Vmax_FEMALE']]
                 )
             )
         ]
