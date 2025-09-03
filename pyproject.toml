@@ -1,0 +1,51 @@
+[project]
+name = "parameter_variability"
+version = "0.1.0"
+description = "Parameter variability in SBML models"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+	{name="Matthias König", email="konigmatt@googlemail.com"},
+	{name="Antonio Alvarez", email="antonio.alvarez@student.hu-berlin.de"},
+]
+maintainers = [
+	{name="Matthias König", email="konigmatt@googlemail.com"}
+]
+classifiers = [
+	"Development Status :: 4 - Beta",
+	"Intended Audience :: Science/Research",
+	"License :: OSI Approved :: MIT License",
+	"Operating System :: OS Independent",
+   "Programming Language :: Python :: 3.13",
+	"Programming Language :: Python :: Implementation :: CPython",
+	"Topic :: Scientific/Engineering",
+	"Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+keywords = [
+	"SBML",
+	"variability",
+]
+dependencies = [
+    "numpy>=2.2.2",
+    "sbmlutils>=0.9.0",
+    "libroadrunner>=2.8.0",
+    "pandas>=2.2.3",
+    "matplotlib>=3.10.0",
+    "pypesto>=0.5.6",
+    "pypesto[fides]",
+    "fides>=0.7.8",
+    "petab>=0.5.0",
+    "amici>=0.34.1",
+    "arviz>=0.20.0",
+    "rich>=13.9.4",
+    "xarray>=2025.1.2",
+    "graphviz",
+    "pydantic",
+    "pydantic-yaml",
+]
+
+[project_urls]
+Homepage = "https://github.com/matthiaskoenig/parameter-variability"
+Repository = "https://github.com/matthiaskoenig/parameter-variability"
+Documentation = "https://github.com/matthiaskoenig/parameter-variability"
+Issues = "https://github.com/matthiaskoenig/parameter-variability/issues"
