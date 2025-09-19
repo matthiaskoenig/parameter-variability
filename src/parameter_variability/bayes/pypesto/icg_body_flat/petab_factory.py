@@ -243,6 +243,10 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
 
         for sim in sim_df['sim'].values:
             df_s = sim_df.isel(sim=sim).to_dataframe().reset_index()
+
+            # TODO: Add errors in df_s
+            #   df_s = add_errors(df_s)
+
             unique_measurement = []
 
             for col in data_names:
