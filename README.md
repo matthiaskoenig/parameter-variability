@@ -13,19 +13,17 @@ This project implements Bayesian models using [PyMC](https://www.pymc.io) on top
 Install graphviz library
 
 ```bash
-sudo apt-get -y install graphviz graphviz-dev
+sudo apt -y install graphviz graphviz-dev
 ```
 
 ### virtual environment
-Create a virtual environment with uv and install the dependencies defined in the `requirements.txt`
+Create a virtual environment with `uv` and install the package (https://docs.astral.sh/uv/getting-started/installation/)
 
 ```bash
 uv venv
+uv pip install -e .
 ```
 
-```bash
-uv pip install -r requirements.txt --upgrade
-```
 
 # Example
 ## ODE model
