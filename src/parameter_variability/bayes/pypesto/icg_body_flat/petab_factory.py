@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import xarray as xr
 from parameter_variability import BAYES_DIR, MEASUREMENT_TIME_UNIT_COLUMN, MEASUREMENT_UNIT_COLUMN
 from parameter_variability.console import console
-from parameter_variability.bayes.pypesto.experiment import Group
+from parameter_variability.bayes.pypesto.experiment import Group, DistributionType
 from dataclasses import dataclass
 from enum import Enum
 from scipy.stats import lognorm
@@ -51,7 +51,7 @@ class SimulationSettings:
     start: float
     end: float
     steps: int
-    model_changes: Optional[dict[str, float]]
+    dosage: Optional[dict[str, float]] # TODO: Change to dosage and add skip error column
 
 def create_samples_parameters(
     parameters: dict[Category, dict[PKPDParameters, LognormParameters]],
@@ -129,8 +129,8 @@ class ODESampleSimulator:
         for _, row in parameters.iterrows():
             self.r.resetAll()
 
-            if simulation_settings.model_changes:
-                for key, value in simulation_settings.model_changes.items():
+            if simulation_settings.dosage:
+                for key, value in simulation_settings.dosage.items():
                     self.r.setValue(key, value)
 
             # set the parameter values
@@ -183,6 +183,18 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[P
     if fig_path is not None:
         plt.show()
         f.savefig(fig_path, bbox_inches="tight")
+
+def add_errors(df_sim: pd.Dataframe,
+               seed: int,
+               skip: Optional[List[str]]
+               # dsn_type: DistributionType
+               ) -> pd.Dataframe:
+    if skip:
+        df_sim = df_sim.drop(skip, axis=1)
+
+    np.random.normal(0, 1, df_sim.shape)
+
+    pass
 
 
 def create_petab_example(dfs: dict[Category, xarray.Dataset],

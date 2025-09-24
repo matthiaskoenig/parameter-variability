@@ -61,7 +61,7 @@ def create_petab_for_experiment(experiment: PETabExperiment,
         sim_settings = pf.SimulationSettings(start=0.0,
                                              end=group.sampling.tend,
                                              steps=group.sampling.steps,
-                                             model_changes=experiment.model_changes)
+                                             dosage=experiment.dosage)
         parameters = pd.DataFrame({par_id: samples for par_id, samples in data.items()})
         dset = simulator.simulate_samples(parameters,
                                           simulation_settings=sim_settings)
@@ -127,7 +127,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     exp_exact = PETabExperiment(
         id='prior_exact',
         model='icg_body_flat',
-        model_changes= {"IVDOSE_icg": 10.0},
+        dosage={"IVDOSE_icg": 10.0}, # TODO: Change to dosage and add skip columns
         groups=[
             Group(
                 id='MALE',
@@ -152,7 +152,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     exp_noprior = PETabExperiment(
         id="prior_noprior",
         model='icg_body_flat',
-        model_changes= {"IVDOSE_icg": 10.0},
+        dosage={"IVDOSE_icg": 10.0},
         groups=[
             Group(
                 id="MALE",
@@ -189,7 +189,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     exp_biased = PETabExperiment(
         id="prior_biased",
         model="icg_body_flat",
-        model_changes= {"IVDOSE_icg": 10.0},
+        dosage={"IVDOSE_icg": 10.0},
         groups=[
             Group(
                 id="MALE",
@@ -226,7 +226,7 @@ def create_samples_experiments(xps_path: Path) -> PETabExperimentList:
     exp = PETabExperiment(
         id='n',
         model='icg_body_flat',
-        model_changes= {"IVDOSE_icg": 10.0},
+        dosage={"IVDOSE_icg": 10.0},
         groups=[
             Group(
                 id='MALE',
@@ -266,7 +266,7 @@ def create_timepoints_experiments(xps_path: Path) -> PETabExperimentList:
     exp = PETabExperiment(
         id='Nt',
         model='icg_body_flat',
-        model_changes= {"IVDOSE_icg": 10.0},
+        dosage={"IVDOSE_icg": 10.0},
         groups=[
             Group(
                 id='MALE',
