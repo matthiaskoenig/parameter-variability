@@ -23,7 +23,7 @@ ode_timesteps:
 """
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, List
 import yaml
 
 from pydantic import BaseModel as PydanticBaseModel
@@ -111,8 +111,9 @@ class PETabExperiment(BaseModel):
     """PETab experiment."""
     id: str
     model: str
-    dosage: Optional[dict[str, float]] # ;   dosage = {"IVDOSE_icg": 10}
-    groups: list[Group]
+    dosage: Optional[dict[str, float]] = None # ;   dosage = {"IVDOSE_icg": 10}
+    skip_error_column: Optional[List[str]] = None
+    groups: List[Group]
 
     @property
     def group_ids(self) -> list[str]:

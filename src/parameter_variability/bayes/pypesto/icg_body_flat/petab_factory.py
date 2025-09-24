@@ -51,7 +51,8 @@ class SimulationSettings:
     start: float
     end: float
     steps: int
-    dosage: Optional[dict[str, float]] # TODO: Change to dosage and add skip error column
+    dosage: Optional[dict[str, float]] = None
+    skip_error_column: Optional[List[str]] = None
 
 def create_samples_parameters(
     parameters: dict[Category, dict[PKPDParameters, LognormParameters]],
@@ -120,6 +121,32 @@ class ODESampleSimulator:
         integrator.setSetting("relative_tolerance", rel_tol)
         self.ids: List[str] = self.r.getIds()
 
+    @staticmethod
+    def add_errors(df_sim: pd.DataFrame,
+                   skip_error_column: Optional[List[str]],
+                   coef_variation: float = 0.05,
+                   seed: Optional[int] = None,
+                   # dsn_type: DistributionType
+                   ) -> pd.DataFrame:
+
+        if seed is None:
+            seed = np.random.randint(low=0, high=2001)
+
+        np.random.seed(seed)
+        df_sim = df_sim.reset_index()
+        cols_w_err = df_sim.columns.tolist()
+        skip_cols = ['time']
+        if skip_error_column:
+            skip_cols.extend(cols_w_err)
+
+        cols_w_err = [c for c in cols_w_err if c not in skip_cols]
+
+        errors = np.random.normal(0, 1, df_sim[cols_w_err].shape)
+        df_sim[cols_w_err] = df_sim[cols_w_err] * errors * coef_variation
+        df_sim.set_index('time', inplace=True)
+
+        return df_sim
+
 
     def simulate_samples(self, parameters: pd.DataFrame, simulation_settings: SimulationSettings) -> xr.Dataset:
         """Simulate samples with roadrunner."""
@@ -147,6 +174,7 @@ class ODESampleSimulator:
             )
             # convert result to data frame
             df = pd.DataFrame(s, columns=s.colnames).set_index("time")
+            df = self.add_errors(df, skip_error_column=simulation_settings.skip_error_column)
             dfs.append(df)
 
         dset = xr.concat([df.to_xarray() for df in dfs], dim=pd.Index(np.arange(n), name='sim'))
@@ -183,18 +211,6 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[P
     if fig_path is not None:
         plt.show()
         f.savefig(fig_path, bbox_inches="tight")
-
-def add_errors(df_sim: pd.Dataframe,
-               seed: int,
-               skip: Optional[List[str]]
-               # dsn_type: DistributionType
-               ) -> pd.Dataframe:
-    if skip:
-        df_sim = df_sim.drop(skip, axis=1)
-
-    np.random.normal(0, 1, df_sim.shape)
-
-    pass
 
 
 def create_petab_example(dfs: dict[Category, xarray.Dataset],

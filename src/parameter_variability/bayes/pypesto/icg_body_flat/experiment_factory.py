@@ -127,7 +127,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     exp_exact = PETabExperiment(
         id='prior_exact',
         model='icg_body_flat',
-        dosage={"IVDOSE_icg": 10.0}, # TODO: Change to dosage and add skip columns
+        dosage={"IVDOSE_icg": 10.0},
         groups=[
             Group(
                 id='MALE',
