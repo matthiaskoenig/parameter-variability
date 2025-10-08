@@ -61,7 +61,9 @@ def create_petab_for_experiment(experiment: PETabExperiment,
         sim_settings = pf.SimulationSettings(start=0.0,
                                              end=group.sampling.tend,
                                              steps=group.sampling.steps,
-                                             dosage=experiment.dosage)
+                                             dosage=experiment.dosage,
+                                             add_errors=experiment.add_errors,
+                                             skip_error_column=experiment.skip_error_column)
         parameters = pd.DataFrame({par_id: samples for par_id, samples in data.items()})
         dset = simulator.simulate_samples(parameters,
                                           simulation_settings=sim_settings)
@@ -128,6 +130,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
         id='prior_exact',
         model='icg_body_flat',
         dosage={"IVDOSE_icg": 10.0},
+        add_errors=True,
         groups=[
             Group(
                 id='MALE',
@@ -153,6 +156,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
         id="prior_noprior",
         model='icg_body_flat',
         dosage={"IVDOSE_icg": 10.0},
+        add_errors=True,
         groups=[
             Group(
                 id="MALE",
@@ -190,6 +194,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
         id="prior_biased",
         model="icg_body_flat",
         dosage={"IVDOSE_icg": 10.0},
+        add_errors=True,
         groups=[
             Group(
                 id="MALE",
@@ -227,6 +232,7 @@ def create_samples_experiments(xps_path: Path) -> PETabExperimentList:
         id='n',
         model='icg_body_flat',
         dosage={"IVDOSE_icg": 10.0},
+        add_errors=True,
         groups=[
             Group(
                 id='MALE',
@@ -267,6 +273,7 @@ def create_timepoints_experiments(xps_path: Path) -> PETabExperimentList:
         id='Nt',
         model='icg_body_flat',
         dosage={"IVDOSE_icg": 10.0},
+        add_errors=True,
         groups=[
             Group(
                 id='MALE',

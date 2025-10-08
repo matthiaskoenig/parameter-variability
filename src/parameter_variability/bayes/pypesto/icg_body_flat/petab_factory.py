@@ -52,6 +52,7 @@ class SimulationSettings:
     end: float
     steps: int
     dosage: Optional[dict[str, float]] = None
+    add_errors: bool = False
     skip_error_column: Optional[List[str]] = None
 
 def create_samples_parameters(
@@ -128,7 +129,7 @@ class ODESampleSimulator:
                    seed: Optional[int] = None,
                    # dsn_type: DistributionType
                    ) -> pd.DataFrame:
-
+        # TODO: tune errors accordingly
         if seed is None:
             seed = np.random.randint(low=0, high=2001)
 
@@ -174,7 +175,13 @@ class ODESampleSimulator:
             )
             # convert result to data frame
             df = pd.DataFrame(s, columns=s.colnames).set_index("time")
-            df = self.add_errors(df, skip_error_column=simulation_settings.skip_error_column)
+
+            if simulation_settings.add_errors:
+                df = self.add_errors(
+                    df,
+                    skip_error_column=simulation_settings.skip_error_column
+                )
+
             dfs.append(df)
 
         dset = xr.concat([df.to_xarray() for df in dfs], dim=pd.Index(np.arange(n), name='sim'))

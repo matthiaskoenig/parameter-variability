@@ -112,6 +112,7 @@ class PETabExperiment(BaseModel):
     id: str
     model: str
     dosage: Optional[dict[str, float]] = None # ;   dosage = {"IVDOSE_icg": 10}
+    add_errors: bool = False
     skip_error_column: Optional[List[str]] = None
     groups: List[Group]
 
