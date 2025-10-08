@@ -143,7 +143,7 @@ class ODESampleSimulator:
         cols_w_err = [c for c in cols_w_err if c not in skip_cols]
 
         errors = np.random.normal(0, 1, df_sim[cols_w_err].shape)
-        df_sim[cols_w_err] = df_sim[cols_w_err] * errors * coef_variation
+        df_sim[cols_w_err] = df_sim[cols_w_err] + df_sim[cols_w_err] * errors * coef_variation
         df_sim.set_index('time', inplace=True)
 
         return df_sim

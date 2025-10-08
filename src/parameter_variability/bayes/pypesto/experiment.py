@@ -49,6 +49,14 @@ class Distribution(BaseModel):
     parameters: dict[str, float]
     type: DistributionType = DistributionType.LOGNORMAL
 
+class Noise(BaseModel):
+    """Parameter dictionary for noise.
+
+    """
+    add_noise: bool
+    cv: float
+    type: DistributionType = DistributionType.NORMAL
+
 
 class Parameter(BaseModel):
     """Priors used for sampling or estimation."""
@@ -81,6 +89,8 @@ class Sampling(BaseModel):
     tend: float = 100
     # compartments: list[Compartment]
     # FIXME: error settings, ...
+    # noise: Noise
+
 
     def get_dsn_parameter(self, parameter: str) -> Optional[dict[str, float]]:
         for par in self.parameters:
@@ -111,9 +121,10 @@ class PETabExperiment(BaseModel):
     """PETab experiment."""
     id: str
     model: str
-    dosage: Optional[dict[str, float]] = None # ;   dosage = {"IVDOSE_icg": 10}
-    add_errors: bool = False
-    skip_error_column: Optional[List[str]] = None
+    dosage: Optional[dict[str, float]] = None # ;   dosage = {"IVDOSE_icg": 10}  # FIXME: rename to model_changes
+    add_errors: bool = False  # FIXME move to sampling
+    # observables: FIXME;  # [Cve_icg], Afeces_icg, [LI__icg], [LI__icg_bi] | [Cve_icg]
+    skip_error_column: Optional[List[str]] = None   # FIXME move to sampling
     groups: List[Group]
 
     @property
