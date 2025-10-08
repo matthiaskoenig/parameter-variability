@@ -11,7 +11,8 @@ from dataclasses import dataclass
 import xarray as xr
 from parameter_variability import BAYES_DIR, MEASUREMENT_TIME_UNIT_COLUMN, MEASUREMENT_UNIT_COLUMN
 from parameter_variability.console import console
-from parameter_variability.bayes.pypesto.experiment import Group, DistributionType
+from parameter_variability.bayes.pypesto.experiment import Group, DistributionType, \
+    Noise
 from dataclasses import dataclass
 from enum import Enum
 from scipy.stats import lognorm
@@ -51,9 +52,10 @@ class SimulationSettings:
     start: float
     end: float
     steps: int
+    noise: Noise
     dosage: Optional[dict[str, float]] = None
-    add_errors: bool = False
-    skip_error_column: Optional[List[str]] = None
+    # add_errors: bool = False
+    # skip_error_column: Optional[List[str]] = None
 
 def create_samples_parameters(
     parameters: dict[Category, dict[PKPDParameters, LognormParameters]],
@@ -123,12 +125,11 @@ class ODESampleSimulator:
         self.ids: List[str] = self.r.getIds()
 
     @staticmethod
-    def add_errors(df_sim: pd.DataFrame,
-                   skip_error_column: Optional[List[str]],
-                   coef_variation: float = 0.05,
-                   seed: Optional[int] = None,
-                   # dsn_type: DistributionType
-                   ) -> pd.DataFrame:
+    def add_noise(df_sim: pd.DataFrame,
+                   # skip_error_column: Optional[List[str]],
+                  coef_variation: float,
+                  dsn_type: DistributionType,
+                  seed: Optional[int] = None) -> pd.DataFrame:
         # TODO: tune errors accordingly
         if seed is None:
             seed = np.random.randint(low=0, high=2001)
@@ -137,8 +138,8 @@ class ODESampleSimulator:
         df_sim = df_sim.reset_index()
         cols_w_err = df_sim.columns.tolist()
         skip_cols = ['time']
-        if skip_error_column:
-            skip_cols.extend(cols_w_err)
+        # if skip_error_column:
+        #     skip_cols.extend(cols_w_err)
 
         cols_w_err = [c for c in cols_w_err if c not in skip_cols]
 
@@ -176,10 +177,11 @@ class ODESampleSimulator:
             # convert result to data frame
             df = pd.DataFrame(s, columns=s.colnames).set_index("time")
 
-            if simulation_settings.add_errors:
-                df = self.add_errors(
+            if simulation_settings.noise.add_noise:
+                df = self.add_noise(
                     df,
-                    skip_error_column=simulation_settings.skip_error_column
+                    coef_variation=simulation_settings.noise.cv,
+                    dsn_type=simulation_settings.noise.type,
                 )
 
             dfs.append(df)
