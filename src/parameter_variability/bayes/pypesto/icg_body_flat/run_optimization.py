@@ -159,11 +159,12 @@ def visualize_priors():
 
 
 if __name__ == "__main__":
-
-    # optimize_petab_xps(exp_type="prior")
+    # FIXME: Remove AMICI Models everytime the Observed Compartments are redefined
+    #   or for every run
+    optimize_petab_xps(exp_type="prior")
     # optimize_petab_xps(exp_type="n")
     # optimize_petab_xps(exp_type="Nt")
 
-    visualize_timepoints_samples() # Only for n and Nt exps
-    # visualize_priors()
+    # visualize_timepoints_samples() # Only for n and Nt exps
+    visualize_priors()
 

@@ -117,7 +117,7 @@ observed_compartments: List[Compartment] = [
                 starting_value=0,
             ),
             Compartment(
-                id="Cli_plasma_icg",
+                id="Cgi_plasma_icg",
                 starting_value=0,
             )
         ]
@@ -132,7 +132,7 @@ true_sampling: dict[str, Sampling] = {
             add_noise=True,
             cv=0.05
         ),
-        compartments=None
+        compartments=observed_compartments
     ),
     'FEMALE': Sampling(
         n_samples=100,
@@ -143,7 +143,7 @@ true_sampling: dict[str, Sampling] = {
             add_noise=True,
             cv=0.05
         ),
-        compartments=None
+        compartments=observed_compartments
     )
 }
 
@@ -345,7 +345,6 @@ def create_petabs(exps: PETabExperimentList, directory: Path) -> list[Path]:
 
 
 if __name__ == "__main__":
-    # FIXME: what subset should be written in the measurements table [Cve_icg], [LI__icg_bi],
 
     # vary priors
     xps_prior = create_prior_experiments(xps_path=RESULTS_ICG / "xps_prior.yaml")
@@ -358,5 +357,3 @@ if __name__ == "__main__":
     # vary number of timepoints
     xps_timepoints = create_timepoints_experiments(xps_path=RESULTS_ICG / "xps_Nt.yaml")
     create_petabs(xps_timepoints, directory=RESULTS_ICG / "Nt")
-
-    # TODO: vary the noise;
