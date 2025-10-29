@@ -88,7 +88,7 @@ class Sampling(BaseModel):
     steps: int = 20
     tend: float = 100
     noise: Noise
-    # compartments: list[Compartment]
+    compartments: Optional[list[Compartment]]
 
 
     def get_dsn_parameter(self, parameter: str) -> Optional[dict[str, float]]:
@@ -163,6 +163,8 @@ __all__ = [
     "Group",
     "PETabExperiment",
     "PETabExperimentList",
+    "Noise",
+    "Compartment"
 ]
 
 if __name__ == "__main__":

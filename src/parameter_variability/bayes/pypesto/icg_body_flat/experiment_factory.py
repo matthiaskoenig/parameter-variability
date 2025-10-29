@@ -15,7 +15,6 @@ import yaml
 from pydantic_yaml import parse_yaml_raw_as
 
 import parameter_variability.bayes.pypesto.icg_body_flat.petab_factory as pf
-from parameter_variability.bayes.pypesto.experiment import Noise
 
 from parameter_variability.console import console
 from parameter_variability import MODEL_ICG, RESULTS_ICG
@@ -59,12 +58,15 @@ def create_petab_for_experiment(experiment: PETabExperiment,
     for (category, data), group in zip(samples_pkpd_par.items(), groups):
         # simulate samples for category
         noise = experiment.group_by_id(group.id).sampling.noise
+        observed_compartments = experiment.group_by_id(group.id).sampling.compartments
 
         sim_settings = pf.SimulationSettings(start=0.0,
                                              end=group.sampling.tend,
                                              steps=group.sampling.steps,
                                              dosage=experiment.dosage,
-                                             noise=noise)
+                                             noise=noise,
+                                             compartments=observed_compartments
+                                             )
         parameters = pd.DataFrame({par_id: samples for par_id, samples in data.items()})
         dset = simulator.simulate_samples(parameters,
                                           simulation_settings=sim_settings)
@@ -109,6 +111,17 @@ true_par: dict[str, Parameter] = {
         parameters={"loc": 0.02947, "scale": 0.01}))
 }
 
+observed_compartments: List[Compartment] = [
+            Compartment(
+                id="Cre_plasma_icg",
+                starting_value=0,
+            ),
+            Compartment(
+                id="Cli_plasma_icg",
+                starting_value=0,
+            )
+        ]
+
 true_sampling: dict[str, Sampling] = {
     'MALE': Sampling(
         n_samples=100,
@@ -118,7 +131,8 @@ true_sampling: dict[str, Sampling] = {
         noise=Noise(
             add_noise=True,
             cv=0.05
-        )
+        ),
+        compartments=None
     ),
     'FEMALE': Sampling(
         n_samples=100,
@@ -128,7 +142,8 @@ true_sampling: dict[str, Sampling] = {
         noise=Noise(
             add_noise=True,
             cv=0.05
-        )
+        ),
+        compartments=None
     )
 }
 
