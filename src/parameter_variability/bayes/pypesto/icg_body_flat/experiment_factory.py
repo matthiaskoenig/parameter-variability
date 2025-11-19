@@ -326,6 +326,48 @@ def create_timepoints_experiments(xps_path: Path) -> PETabExperimentList:
     exp_list.to_yaml(xps_path)
     return exp_list
 
+def create_noise_experiments(xps_path: Path) -> PETabExperimentList:
+
+    exp = PETabExperiment(
+        id='noise',
+        model='icg_body_flat',
+        dosage={"IVDOSE_icg": 10.0},
+        groups=[
+            Group(
+                id='MALE',
+                sampling=true_sampling['MALE'],
+                estimation=Estimation(
+                    parameters=[true_par['BW_MALE'],
+                                true_par['LI__ICGIM_Vmax_MALE']]
+                )
+            ),
+            Group(
+                id='FEMALE',
+                sampling=true_sampling['FEMALE'],
+                estimation=Estimation(
+                    parameters=[true_par['BW_FEMALE'],
+                                true_par['LI__ICGIM_Vmax_FEMALE']]
+                )
+            )
+        ]
+    )
+
+    experiments = []
+    # The closest to 0, the least errors
+    #TODO: Fix the timecourses going negative
+    for noise_cv in [0.01, 0.05, 0.1, 0.2, 0.5, 1.0]:
+        exp_n = exp.model_copy(deep=True)
+        exp_n.id = f"noise_{noise_cv}"
+        for g in exp_n.groups:
+            g.sampling.noise.cv = noise_cv
+        experiments.append(exp_n)
+
+    exp_list = PETabExperimentList(
+        experiments=experiments
+        )
+    exp_list.to_yaml(xps_path)
+    return exp_list
+
 
 def create_petabs(exps: PETabExperimentList, directory: Path) -> list[Path]:
     """Create Petab files."""
@@ -357,3 +399,6 @@ if __name__ == "__main__":
     # vary number of timepoints
     xps_timepoints = create_timepoints_experiments(xps_path=RESULTS_ICG / "xps_Nt.yaml")
     create_petabs(xps_timepoints, directory=RESULTS_ICG / "Nt")
+
+    xps_noise = create_noise_experiments(xps_path=RESULTS_ICG / "xps_noise.yaml")
+    create_petabs(xps_noise, directory=RESULTS_ICG / "noise")
