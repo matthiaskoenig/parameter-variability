@@ -63,9 +63,9 @@ class Parameter(BaseModel):
     id: str
     distribution: Distribution
 
-# TODO: finish Compartment integration
-class Compartment(BaseModel):
-    """Compartment settings for sampling"""
+# TODO: finish Observables integration
+class Observable(BaseModel):
+    """Observables settings for sampling"""
     id: str
     starting_value: float
 
@@ -88,7 +88,7 @@ class Sampling(BaseModel):
     steps: int = 20
     tend: float = 100
     noise: Noise
-    compartments: Optional[list[Compartment]]
+    observables: Optional[list[Observable]]
 
 
     def get_dsn_parameter(self, parameter: str) -> Optional[dict[str, float]]:
@@ -164,7 +164,7 @@ __all__ = [
     "PETabExperiment",
     "PETabExperimentList",
     "Noise",
-    "Compartment"
+    "Observable"
 ]
 
 if __name__ == "__main__":

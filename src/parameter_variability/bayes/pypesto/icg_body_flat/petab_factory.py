@@ -12,7 +12,7 @@ import xarray as xr
 from parameter_variability import BAYES_DIR, MEASUREMENT_TIME_UNIT_COLUMN, MEASUREMENT_UNIT_COLUMN
 from parameter_variability.console import console
 from parameter_variability.bayes.pypesto.experiment import Group, DistributionType, \
-    Noise, Compartment
+    Noise, Observable
 from dataclasses import dataclass
 from enum import Enum
 from scipy.stats import lognorm
@@ -53,7 +53,7 @@ class SimulationSettings:
     end: float
     steps: int
     noise: Noise
-    compartments: list[Compartment]
+    observables: list[Observable]
     dosage: Optional[dict[str, float]] = None
     # add_errors: bool = False
     # skip_error_column: Optional[List[str]] = None
@@ -178,15 +178,15 @@ class ODESampleSimulator:
             # convert result to data frame
             df = pd.DataFrame(s, columns=s.colnames).set_index("time")
 
-            if simulation_settings.compartments:
-                compartments = simulation_settings.compartments
-                comp_ls: List[str] = []
-                for compartment in compartments:
-                    if compartment.id[0] != "[" or compartment.id[-1] != "]":
-                        compartment.id = "[" + compartment.id + "]"
-                    comp_ls.append(compartment.id)
+            if simulation_settings.observables:
+                observables = simulation_settings.observables
+                obs_ls: List[str] = []
+                for observed in observables:
+                    if observed.id[0] != "[" or observed.id[-1] != "]":
+                        observed.id = "[" + observed.id + "]"
+                    obs_ls.append(observed.id)
 
-                df = df[comp_ls]
+                df = df[obs_ls]
 
 
 

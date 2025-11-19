@@ -58,14 +58,14 @@ def create_petab_for_experiment(experiment: PETabExperiment,
     for (category, data), group in zip(samples_pkpd_par.items(), groups):
         # simulate samples for category
         noise = experiment.group_by_id(group.id).sampling.noise
-        observed_compartments = experiment.group_by_id(group.id).sampling.compartments
+        observables = experiment.group_by_id(group.id).sampling.observables
 
         sim_settings = pf.SimulationSettings(start=0.0,
                                              end=group.sampling.tend,
                                              steps=group.sampling.steps,
                                              dosage=experiment.dosage,
                                              noise=noise,
-                                             compartments=observed_compartments
+                                             observables=observables
                                              )
         parameters = pd.DataFrame({par_id: samples for par_id, samples in data.items()})
         dset = simulator.simulate_samples(parameters,
@@ -111,12 +111,12 @@ true_par: dict[str, Parameter] = {
         parameters={"loc": 0.02947, "scale": 0.01}))
 }
 
-observed_compartments: List[Compartment] = [
-            Compartment(
+observables: List[Observable] = [
+            Observable(
                 id="Cre_plasma_icg",
                 starting_value=0,
             ),
-            Compartment(
+            Observable(
                 id="Cgi_plasma_icg",
                 starting_value=0,
             )
@@ -132,7 +132,7 @@ true_sampling: dict[str, Sampling] = {
             add_noise=True,
             cv=0.05
         ),
-        compartments=observed_compartments
+        observables=observables
     ),
     'FEMALE': Sampling(
         n_samples=100,
@@ -143,7 +143,7 @@ true_sampling: dict[str, Sampling] = {
             add_noise=True,
             cv=0.05
         ),
-        compartments=observed_compartments
+        observables=observables
     )
 }
 
