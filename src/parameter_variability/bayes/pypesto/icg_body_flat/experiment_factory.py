@@ -355,7 +355,7 @@ def create_noise_experiments(xps_path: Path) -> PETabExperimentList:
     experiments = []
     # The closest to 0, the least errors
     #TODO: Fix the timecourses going negative
-    for noise_cv in [0.01, 0.05, 0.1, 0.2, 0.5, 1.0]:
+    for noise_cv in [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5]:
         exp_n = exp.model_copy(deep=True)
         exp_n.id = f"noise_{noise_cv}"
         for g in exp_n.groups:
@@ -389,16 +389,16 @@ def create_petabs(exps: PETabExperimentList, directory: Path) -> list[Path]:
 if __name__ == "__main__":
 
     # vary priors
-    xps_prior = create_prior_experiments(xps_path=RESULTS_ICG / "xps_prior.yaml")
-    create_petabs(xps_prior, directory=RESULTS_ICG / "prior")
-
-    # vary samples
-    xps_samples = create_samples_experiments(xps_path=RESULTS_ICG / "xps_n.yaml")
-    create_petabs(xps_samples, directory=RESULTS_ICG / "n")
-
-    # vary number of timepoints
-    xps_timepoints = create_timepoints_experiments(xps_path=RESULTS_ICG / "xps_Nt.yaml")
-    create_petabs(xps_timepoints, directory=RESULTS_ICG / "Nt")
+    # xps_prior = create_prior_experiments(xps_path=RESULTS_ICG / "xps_prior.yaml")
+    # create_petabs(xps_prior, directory=RESULTS_ICG / "prior")
+    #
+    # # vary samples
+    # xps_samples = create_samples_experiments(xps_path=RESULTS_ICG / "xps_n.yaml")
+    # create_petabs(xps_samples, directory=RESULTS_ICG / "n")
+    #
+    # # vary number of timepoints
+    # xps_timepoints = create_timepoints_experiments(xps_path=RESULTS_ICG / "xps_Nt.yaml")
+    # create_petabs(xps_timepoints, directory=RESULTS_ICG / "Nt")
 
     xps_noise = create_noise_experiments(xps_path=RESULTS_ICG / "xps_noise.yaml")
     create_petabs(xps_noise, directory=RESULTS_ICG / "noise")
