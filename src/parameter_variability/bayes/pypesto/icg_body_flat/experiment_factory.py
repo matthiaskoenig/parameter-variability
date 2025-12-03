@@ -243,7 +243,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     exp_list = PETabExperimentList(
         experiments=[exp_exact, exp_noprior, exp_biased]
     )
-    exp_list.to_yaml(xps_path)
+    exp_list.to_yaml_file(xps_path)
     return exp_list
 
 
@@ -283,7 +283,7 @@ def create_samples_experiments(xps_path: Path) -> PETabExperimentList:
     exp_list = PETabExperimentList(
         experiments=experiments
     )
-    exp_list.to_yaml(xps_path)
+    exp_list.to_yaml_file(xps_path)
     return exp_list
 
 
@@ -323,7 +323,7 @@ def create_timepoints_experiments(xps_path: Path) -> PETabExperimentList:
     exp_list = PETabExperimentList(
         experiments=experiments
     )
-    exp_list.to_yaml(xps_path)
+    exp_list.to_yaml_file(xps_path)
     return exp_list
 
 def create_noise_experiments(xps_path: Path) -> PETabExperimentList:
@@ -365,7 +365,7 @@ def create_noise_experiments(xps_path: Path) -> PETabExperimentList:
     exp_list = PETabExperimentList(
         experiments=experiments
         )
-    exp_list.to_yaml(xps_path)
+    exp_list.to_yaml_file(xps_path)
     return exp_list
 
 

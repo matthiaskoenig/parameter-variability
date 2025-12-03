@@ -1,33 +1,18 @@
-"""Factory to create the various experiments.
-
-sample_size:
-    n_samples:
-        - 1
-        - 5
-        - 10
-        - 20
-    prior_same: True
-
-unbalanced_samples:
-    n_samples:
-        k1_MALE: 5
-        k1_FEMALE: 10
-
-ode_timesteps:
-    time:
-        - 3
-        - 10
-        - 20
-
-
-"""
+"""Factory to create the various PETab simulation experiments."""
+from __future__ import annotations
 from enum import Enum
 from pathlib import Path
 from typing import Optional, Union, List
+from pydantic_yaml import parse_yaml_raw_as, to_yaml_str
+from parameter_variability.console import console
+
+
+import pandas as pd
 import yaml
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Field, ValidationError, validator
+
 
 class DistributionType(str, Enum):
     """Type of prior."""
@@ -49,6 +34,7 @@ class Distribution(BaseModel):
     parameters: dict[str, float]
     type: DistributionType = DistributionType.LOGNORMAL
 
+
 class Noise(BaseModel):
     """Parameter dictionary for noise.
 
@@ -62,6 +48,7 @@ class Parameter(BaseModel):
     """Priors used for sampling or estimation."""
     id: str
     distribution: Distribution
+
 
 # TODO: finish Observables integration
 class Observable(BaseModel):
@@ -90,7 +77,6 @@ class Sampling(BaseModel):
     noise: Noise
     observables: Optional[list[Observable]]
 
-
     def get_dsn_parameter(self, parameter: str) -> Optional[dict[str, float]]:
         for par in self.parameters:
             if par.id == parameter:
@@ -108,7 +94,6 @@ class Group(BaseModel):
         strat: Union[Sampling, Estimation] = getattr(self, type)
         return strat.parameters
 
-
     def get_parameter(self, type: str, parameter: str, dsn_par: str) -> float:
         strat: Union[Sampling, Estimation] = getattr(self, type)
         dsn_parameters = strat.get_dsn_parameter(parameter)
@@ -120,9 +105,10 @@ class PETabExperiment(BaseModel):
     """PETab experiment."""
     id: str
     model: str
-    dosage: Optional[dict[str, float]] = None # ;   dosage = {"IVDOSE_icg": 10}  # FIXME: rename to model_changes
+    dosage: Optional[dict[
+        str, float]] = None  # ;   dosage = {"IVDOSE_icg": 10}  # FIXME: rename to model_changes
     # observables: FIXME;  # [Cve_icg], Afeces_icg, [LI__icg], [LI__icg_bi] | [Cve_icg]
-    skip_error_column: Optional[List[str]] = None   # FIXME move to sampling
+    skip_error_column: Optional[List[str]] = None  # FIXME move to sampling
     groups: List[Group]
 
     @property
@@ -136,11 +122,40 @@ class PETabExperiment(BaseModel):
                 return g
         return None
 
+    @staticmethod
+    def print_schema():
+        """Print schema information."""
+        console.rule("JSON schema", style="white", align="left")
+        console.print(PETabExperiment.model_json_schema())
+
+    def to_json(self) -> str:
+        """Serialize to JSON string."""
+        return self.model_dump_json(indent=2)
+
+    def print_json(self):
+        """Print JSON."""
+        console.rule("JSON", style="white", align="left")
+        console.print(self.to_json())
+
+    def to_yaml(self) -> str:
+        """Serialize to YAML."""
+        return to_yaml_str(self)
+
+    @staticmethod
+    def from_yaml(yaml: str) -> PETabExperiment:
+        return parse_yaml_raw_as(PETabExperiment, yaml)
+
+    def print_yaml(self):
+        """Print YAML."""
+        console.rule("YAML", style="white", align="left")
+        console.print(self.to_yaml())
+
+
 class PETabExperimentList(BaseModel):
     """PETab experiment list."""
     experiments: list[PETabExperiment]
 
-    def to_yaml(self, path: Path):
+    def to_yaml_file(self, path: Path):
         # json_ = self.model_dump_json(indent=2)
         # console.print(json_)
         # console.rule(style="white")
@@ -152,6 +167,131 @@ class PETabExperimentList(BaseModel):
         with open(path, "w") as f:
             exps_m = self.model_dump(mode='json')
             yaml.dump(exps_m, f, sort_keys=False, indent=2)
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Serialization of list of experiments to DataFrame."""
+        items = []
+        for exp in self.experiments:
+            d = {}
+            d["id"] = exp.id
+            d["model"] = exp.model
+            d["n_groups"] = len(exp.groups)
+            d["groups"] = [g.id for g in exp.groups]
+
+            # d = exp.model_dump(mode='python')
+            console.print(d)
+            items.append(d)
+
+        df = pd.DataFrame(data=items)
+        return df
+
+
+    def to_json(self) -> str:
+        """Serialize to JSON string."""
+        return self.model_dump_json(indent=2)
+
+def example_experiment() -> PETabExperiment:
+    """Example of a PETabExperiment."""
+
+    # Define the true values of the parameters for distribution sampling
+    true_par: dict[str, Parameter] = {
+        'BW_MALE': Parameter(
+            id="BW",
+            distribution=Distribution(
+                type=DistributionType.LOGNORMAL,
+                parameters={"loc": 75.0, "scale": 10}
+            )
+        ),
+        'LI__ICGIM_Vmax_MALE': Parameter(
+            id="LI__ICGIM_Vmax",
+            distribution=Distribution(
+                type=DistributionType.LOGNORMAL,
+                parameters={"loc": 0.0369598840327503, "scale": 0.01}
+            )
+        ),
+        'BW_FEMALE': Parameter(
+            id="BW",
+            distribution=Distribution(
+                type=DistributionType.LOGNORMAL,
+                parameters={"loc": 65.0, "scale": 10}
+            )
+        ),
+        'LI__ICGIM_Vmax_FEMALE': Parameter(
+            id="LI__ICGIM_Vmax",
+            distribution=Distribution(
+               type=DistributionType.LOGNORMAL,
+               parameters={"loc": 0.02947, "scale": 0.01}
+            )
+        )
+    }
+
+    observables: List[Observable] = [
+        Observable(
+            id="Cve_plasma_icg",
+            starting_value=0,
+        ),
+    ]
+
+    # example experiment
+    petab_experiment = PETabExperiment(
+        id='noise',
+        model='icg_body_flat',
+        dosage={"IVDOSE_icg": 10.0},
+        groups=[
+            Group(
+                id='MALE',
+                sampling=Sampling(
+                    n_samples=100,
+                    steps=20,
+                    parameters=[
+                        true_par['BW_MALE'],
+                        true_par['LI__ICGIM_Vmax_MALE']
+                    ],
+                    noise=Noise(
+                        add_noise=True,
+                        cv=0.05
+                    ),
+                    observables=observables
+                ),
+                estimation=Estimation(
+                    parameters=[
+                        true_par['BW_MALE'],
+                        true_par['LI__ICGIM_Vmax_MALE']
+                    ]
+                )
+            ),
+            Group(
+                id='FEMALE',
+                sampling=Sampling(
+                    n_samples=100,
+                    steps=20,
+                    parameters=[
+                        true_par['BW_FEMALE'],
+                        true_par['LI__ICGIM_Vmax_FEMALE']
+                    ],
+                    noise=Noise(
+                        add_noise=True,
+                        cv=0.05
+                    ),
+                    observables=observables
+                ),
+                estimation=Estimation(
+                    parameters=[
+                        true_par['BW_FEMALE'],
+                        true_par['LI__ICGIM_Vmax_FEMALE']
+                    ]
+                )
+            )
+        ]
+    )
+    return petab_experiment
+
+def example_experiment_list() -> PETabExperimentList:
+    return PETabExperimentList(experiments=[
+        example_experiment(),
+        example_experiment(),
+    ])
+
 
 
 __all__ = [
@@ -168,68 +308,18 @@ __all__ = [
 ]
 
 if __name__ == "__main__":
-
     from pymetadata.console import console
 
-    console.rule(style="white")
-    console.print(PETabExperiment.model_json_schema())
-    console.rule(style="white")
+    # experiment = example_experiment()
+    # experiment.print_schema()
+    # experiment.print_json()
+    # experiment.print_yaml()
+    #
+    # console.rule("Reading data", style="white", align="left")
+    # yaml = experiment.to_yaml()
+    # experiment_new = PETabExperiment.from_yaml(yaml)
+    # console.print(experiment_new)
 
-    exp_uninformative = PETabExperiment(
-        id="uninformative",
-        model="simple_chain",
-        groups=[
-            Group(
-                id="MALE",
-                sampling=Sampling(
-                    n_samples=10,
-                    steps=20,
-                    parameters=[
-                        Parameter(id="k1", distribution=Distribution(
-                            type=DistributionType.LOGNORMAL,
-                            parameters={"loc": 1.0, "scale": 0.2})),
-                    ],
-                ),
-                estimation=Estimation(
-                    parameters=[
-                        Parameter(id="k1", distribution=Distribution(
-                            type=DistributionType.LOGNORMAL,
-                            parameters={"loc": 1.0, "scale": 0.2})),
-                    ],
-                )
-            ),
-            Group(
-                id="FEMALE",
-                sampling=Sampling(
-                    n_samples=10,
-                    steps=20,
-                    parameters=[
-                        Parameter(id="k1", distribution=Distribution(
-                            type=DistributionType.LOGNORMAL,
-                            parameters={"loc": 10.0, "scale": 0.2})),
-                    ],
-                ),
-                estimation=Estimation(
-                    parameters=[
-                        Parameter(id="k1", distribution=Distribution(
-                            type=DistributionType.LOGNORMAL,
-                            parameters={"loc": 10.0, "scale": 0.2})),
-                    ],
-                )
-            ),
-        ]
-    )
-
-    json = exp_uninformative.model_dump_json(indent=2)
-    console.print(json)
-    console.rule(style="white")
-
-    from pydantic_yaml import parse_yaml_raw_as, to_yaml_str
-    yml = to_yaml_str(exp_uninformative)
-    console.print(yml)
-    console.rule(style="white")
-
-    e_new: PETabExperiment = parse_yaml_raw_as(PETabExperiment, yml)
-    console.print(e_new)
-    console.print(e_new.group_ids)
-
+    experiment_list = example_experiment_list()
+    df = experiment_list.to_dataframe()
+    console.print(df)
