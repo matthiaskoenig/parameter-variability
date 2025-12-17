@@ -56,7 +56,7 @@ def optimize_petab_xps(exp_type: str):
         infos.extend(results)
 
     df = pd.DataFrame(infos)
-    df.to_csv(RESULTS_ICG / f"xps_{exp_type}.tsv", sep="\t", index=False)
+    df.to_csv(RESULTS_ICG / exp_type / f"bayes_results.tsv", sep="\t", index=False)
     console.print(df)
     return df
 
@@ -161,10 +161,10 @@ def visualize_priors():
 if __name__ == "__main__":
     # FIXME: Remove AMICI Models everytime the Observed Compartments are redefined
     #   or for every run
-    optimize_petab_xps(exp_type="prior")
-    # optimize_petab_xps(exp_type="n")
-    # optimize_petab_xps(exp_type="Nt")
+    # optimize_petab_xps(exp_type="prior")
+    optimize_petab_xps(exp_type="n")
+    optimize_petab_xps(exp_type="Nt")
 
-    # visualize_timepoints_samples() # Only for n and Nt exps
-    visualize_priors()
+    visualize_timepoints_samples() # Only for n and Nt exps
+    # visualize_priors()
 
