@@ -153,6 +153,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     exp_exact = PETabExperiment(
         id='prior_exact',
         model='icg_body_flat',
+        prior_type='exact',
         dosage={"IVDOSE_icg": 10.0},
         groups=[
             Group(
@@ -178,6 +179,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     exp_noprior = PETabExperiment(
         id="prior_noprior",
         model='icg_body_flat',
+        prior_type='no_prior',
         dosage={"IVDOSE_icg": 10.0},
         groups=[
             Group(
@@ -215,6 +217,7 @@ def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
     exp_biased = PETabExperiment(
         id="prior_biased",
         model="icg_body_flat",
+        prior_type='biased',
         dosage={"IVDOSE_icg": 10.0},
         groups=[
             Group(
@@ -252,6 +255,7 @@ def create_samples_experiments(xps_path: Path) -> PETabExperimentList:
     exp = PETabExperiment(
         id='n',
         model='icg_body_flat',
+        prior_type='exact',
         dosage={"IVDOSE_icg": 10.0},
         groups=[
             Group(
@@ -292,6 +296,7 @@ def create_timepoints_experiments(xps_path: Path) -> PETabExperimentList:
     exp = PETabExperiment(
         id='Nt',
         model='icg_body_flat',
+        prior_type='exact',
         dosage={"IVDOSE_icg": 10.0},
         groups=[
             Group(
@@ -331,6 +336,7 @@ def create_noise_experiments(xps_path: Path) -> PETabExperimentList:
     exp = PETabExperiment(
         id='noise',
         model='icg_body_flat',
+        prior_type='exact',
         dosage={"IVDOSE_icg": 10.0},
         groups=[
             Group(
@@ -387,6 +393,10 @@ def create_petabs(exps: PETabExperimentList, directory: Path) -> list[Path]:
     df_res.to_csv(directory / "results.tsv", sep="\t", index=False)
 
     return yaml_files
+
+def create_uuid_expermients(xps_path: Path) -> list[Path]:
+    pass
+
 
 
 if __name__ == "__main__":

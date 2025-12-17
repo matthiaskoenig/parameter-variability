@@ -106,6 +106,7 @@ class PETabExperiment(BaseModel):
     """PETab experiment."""
     id: str
     model: str
+    prior_type: str
     dosage: Optional[dict[
         str, float]] = None  # ;   dosage = {"IVDOSE_icg": 10}  # FIXME: rename to model_changes
     # observables: FIXME;  # [Cve_icg], Afeces_icg, [LI__icg], [LI__icg_bi] | [Cve_icg]
@@ -178,6 +179,7 @@ class PETabExperimentList(BaseModel):
             d["model"] = exp.model
             d["n_groups"] = len(exp.groups)
             d["groups"] = [g.id for g in exp.groups]
+            d["prior_type"] = exp.prior_type
             d["n"] = [g.sampling.n_samples for g in exp.groups]
             d["n_t"] = [g.sampling.steps for g in exp.groups]
             d["noise_cv"] = [g.sampling.noise.cv for g in exp.groups]
@@ -246,6 +248,7 @@ def example_experiment() -> PETabExperiment:
     petab_experiment = PETabExperiment(
         id='noise',
         model='icg_body_flat',
+        prior_type='exact',
         dosage={"IVDOSE_icg": 10.0},
         groups=[
             Group(
