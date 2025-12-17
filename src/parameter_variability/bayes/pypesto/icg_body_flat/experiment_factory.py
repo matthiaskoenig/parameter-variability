@@ -383,22 +383,26 @@ def create_petabs(exps: PETabExperimentList, directory: Path) -> list[Path]:
             ex_m = xp.model_dump(mode='json')
             yaml.dump(ex_m, f, sort_keys=False, indent=2)
 
+    df_res = exps.to_dataframe()
+    df_res.to_csv(directory / "results.tsv", sep="\t", index=False)
+
     return yaml_files
 
 
 if __name__ == "__main__":
 
     # vary priors
-    # xps_prior = create_prior_experiments(xps_path=RESULTS_ICG / "xps_prior.yaml")
-    # create_petabs(xps_prior, directory=RESULTS_ICG / "prior")
-    #
-    # # vary samples
-    # xps_samples = create_samples_experiments(xps_path=RESULTS_ICG / "xps_n.yaml")
-    # create_petabs(xps_samples, directory=RESULTS_ICG / "n")
-    #
-    # # vary number of timepoints
-    # xps_timepoints = create_timepoints_experiments(xps_path=RESULTS_ICG / "xps_Nt.yaml")
-    # create_petabs(xps_timepoints, directory=RESULTS_ICG / "Nt")
+    xps_prior = create_prior_experiments(xps_path=RESULTS_ICG / "xps_prior.yaml")
+    create_petabs(xps_prior, directory=RESULTS_ICG / "prior")
 
+    # vary samples
+    xps_samples = create_samples_experiments(xps_path=RESULTS_ICG / "xps_n.yaml")
+    create_petabs(xps_samples, directory=RESULTS_ICG / "n")
+
+    # vary number of timepoints
+    xps_timepoints = create_timepoints_experiments(xps_path=RESULTS_ICG / "xps_Nt.yaml")
+    create_petabs(xps_timepoints, directory=RESULTS_ICG / "Nt")
+
+    # vary noise
     xps_noise = create_noise_experiments(xps_path=RESULTS_ICG / "xps_noise.yaml")
     create_petabs(xps_noise, directory=RESULTS_ICG / "noise")

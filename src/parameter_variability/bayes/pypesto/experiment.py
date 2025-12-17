@@ -12,6 +12,7 @@ import yaml
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Field, ValidationError, validator
+from ast import literal_eval
 
 
 class DistributionType(str, Enum):
@@ -177,12 +178,21 @@ class PETabExperimentList(BaseModel):
             d["model"] = exp.model
             d["n_groups"] = len(exp.groups)
             d["groups"] = [g.id for g in exp.groups]
+            d["n"] = [g.sampling.n_samples for g in exp.groups]
+            d["n_t"] = [g.sampling.steps for g in exp.groups]
+            d["noise_cv"] = [g.sampling.noise.cv for g in exp.groups]
 
             # d = exp.model_dump(mode='python')
-            console.print(d)
             items.append(d)
 
         df = pd.DataFrame(data=items)
+        cols_with_ls = ["groups", "n", "n_t", "noise_cv"]
+        #
+        # for col in cols_with_ls:
+        #     df[col] = df[col].apply(literal_eval)
+        #
+        df = df.explode(cols_with_ls)
+
         return df
 
 
