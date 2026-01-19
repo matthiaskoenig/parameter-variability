@@ -84,7 +84,8 @@ def create_samples_parameters(
 
 def plot_samples(
     samples: dict[Category, dict[PKPDParameters, np.ndarray]],
-    fig_path: Optional[Path]
+    fig_path: Optional[Path],
+    show_plot: bool = True
 ) -> None:
     n_rows = np.max(np.array([len(v) for k, v in samples.items()]))
     # plot distributions
@@ -109,9 +110,13 @@ def plot_samples(
             ax.set_xlabel("parameter")
             ax.set_ylabel("density")
             ax.legend()
+
+    if show_plot:
+        plt.show()
+
     if fig_path:
         plt.savefig(str(fig_path))
-    # plt.show()
+
 
 class ODESampleSimulator:
     """Performs simulations with given model and samples."""
@@ -203,7 +208,9 @@ class ODESampleSimulator:
         return dset
 
 
-def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[Path] = None):
+def plot_simulations(dsets: dict[Category, xarray.Dataset],
+                     fig_path: Optional[Path] = None,
+                     show_plot: bool = True):
     """Plot simulations which were used for the PETab problem."""
     vars = dsets[next(iter(dsets))].data_vars
     # plot distributions
@@ -230,8 +237,10 @@ def plot_simulations(dsets: dict[Category, xarray.Dataset], fig_path: Optional[P
                 ax.set_xlabel("time")
                 ax.legend()
 
-    if fig_path is not None:
+    if show_plot:
         plt.show()
+
+    if fig_path is not None:
         f.savefig(fig_path, bbox_inches="tight")
 
 
