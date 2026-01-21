@@ -1,103 +1,36 @@
 """Factory to create the various sampling experiments."""
+
+from typing import Optional
+from rich.progress import track
+from itertools import product
+from parameter_variability.console import console
+from parameter_variability import RESULTS_ICG
+
+from parameter_variability.bayes.pypesto.icg_body_flat.petab_factory import \
+    create_petabs
 from parameter_variability.bayes.pypesto.experiment import *
-from pathlib import Path
-from pydantic_yaml import parse_yaml_file_as, to_yaml_str
-import yaml
-from pymetadata.console import console
-
-from pathlib import Path
-from typing import List, Union
-import numpy as np
-import xarray as xr
-import pandas as pd
-import yaml
-from pydantic_yaml import parse_yaml_raw_as
-
-import parameter_variability.bayes.pypesto.icg_body_flat.petab_factory as pf
 from parameter_variability.bayes.pypesto.utils import uuid_alphanumeric
 
-from parameter_variability.console import console
-from parameter_variability import MODEL_ICG, RESULTS_ICG
-from parameter_variability import RESULTS_DIR, MODELS
 
+# -------------------------------------------------------------------------------------
+# General definitions for ICG model
+# -------------------------------------------------------------------------------------
 
-def create_petab_for_experiment(experiment: PETabExperiment,
-                                directory: Path,
-                                show_plot: bool = True):
-    """Create all the petab problems for the given model and experiment."""
-
-    # create results directory
-    xp_path: Path = directory / f"{experiment.id}"
-    xp_path.mkdir(parents=True, exist_ok=True)
-
-    # get absolute model path
-    sbml_path: Path = MODELS[experiment.model]
-
-
-    # create samples
-    groups: List[Group] = experiment.groups
-    samples_dsn: dict[pf.Category, dict[pf.PKPDParameters, pf.LognormParameters]] = {}
-    for group in groups:
-        parameters = group.get_parameter_list('sampling')
-        samples_par: dict[pf.PKPDParameters, pf.LognormParameters] = {}
-        for par in parameters:
-            samples = pf.LognormParameters(
-                mu=group.get_parameter('sampling', par.id, 'loc'),
-                sigma=group.get_parameter('sampling', par.id, 'scale'),
-                n=group.sampling.n_samples
-            )
-            samples_par[pf.PKPDParameters[par.id]] = samples
-
-        samples_dsn[pf.Category[group.id]] = samples_par
-
-    samples_pkpd_par = pf.create_samples_parameters(samples_dsn)
-    pf.plot_samples(samples_pkpd_par, fig_path=xp_path / 'samples.png', show_plot=show_plot)
-
-    # simulate samples to get data for measurement table
-    simulator = pf.ODESampleSimulator(model_path=sbml_path)
-    dsets: dict[pf.Category, xr.Dataset] = {}
-    for (category, data), group in zip(samples_pkpd_par.items(), groups):
-        # simulate samples for category
-        noise = experiment.group_by_id(group.id).sampling.noise
-        observables = experiment.group_by_id(group.id).sampling.observables
-
-        sim_settings = pf.SimulationSettings(start=0.0,
-                                             end=group.sampling.tend,
-                                             steps=group.sampling.steps,
-                                             dosage=experiment.dosage,
-                                             noise=noise,
-                                             observables=observables
-                                             )
-        parameters = pd.DataFrame({par_id: samples for par_id, samples in data.items()})
-        dset = simulator.simulate_samples(parameters,
-                                          simulation_settings=sim_settings)
-        dsets[category] = dset
-
-        # serialize to netCDF
-        dset.to_netcdf(xp_path / f"{category}.nc")
-
-    # save the plot
-    pf.plot_simulations(dsets, fig_path=xp_path / "simulations.png", show_plot=show_plot)
-    # create petab path
-    # TODO: Feed the param and the sbml_path inputs accordingly.
-    #   feed the model_icg inside to get all the model parameters r.getIds
-    #   https://libroadrunner.readthedocs.io/en/latest/PythonAPIReference/cls_RoadRunner.html#RoadRunner.getIds
-    petab_path = xp_path / "petab"
-    params = [par.id for par in experiment.groups[0].get_parameter_list('sampling')]
-    yaml_file = pf.create_petab_example(
-        dfs=dsets,
-        groups=groups,
-        petab_path=petab_path,
-        param=params,
-        sbml_path=sbml_path,
-        initial_values=None
+# Observables in model
+# FIXME: this should be venous plasma and liver
+observables_icg: list[Observable] = [
+    Observable(
+        id="Cre_plasma_icg",
+        starting_value=0,
+    ),
+    Observable(
+        id="Cgi_plasma_icg",
+        starting_value=0,
     )
+]
 
-    return yaml_file
-
-
-# Define the true values of the parameters for distribution sampling
-true_par: dict[str, Parameter] = {
+# True parameters for sampling
+pars_true_icg: dict[str, Parameter] = {
     'BW_MALE': Parameter(id="BW", distribution=Distribution(
         type=DistributionType.LOGNORMAL,
         parameters={"loc": 75.0, "scale": 10})),  # bodyweight [kg] (loc: mean;
@@ -112,43 +45,8 @@ true_par: dict[str, Parameter] = {
         parameters={"loc": 0.02947, "scale": 0.01}))
 }
 
-observables: List[Observable] = [
-            Observable(
-                id="Cre_plasma_icg",
-                starting_value=0,
-            ),
-            Observable(
-                id="Cgi_plasma_icg",
-                starting_value=0,
-            )
-        ]
-
-true_sampling: dict[str, Sampling] = {
-    'MALE': Sampling(
-        n_samples=100,
-        steps=20,
-        parameters=[true_par['BW_MALE'],
-                    true_par['LI__ICGIM_Vmax_MALE']],
-        noise=Noise(
-            add_noise=True,
-            cv=0.05
-        ),
-        observables=observables
-    ),
-    'FEMALE': Sampling(
-        n_samples=100,
-        steps=20,
-        parameters=[true_par['BW_FEMALE'],
-                    true_par['LI__ICGIM_Vmax_FEMALE']],
-        noise=Noise(
-            add_noise=True,
-            cv=0.05
-        ),
-        observables=observables
-    )
-}
-
-pars_biased: dict[str, Parameter] = {
+# Biased parameters
+pars_biased_icg: dict[str, Parameter] = {
     'BW_MALE': Parameter(id="BW", distribution=Distribution(
         type=DistributionType.LOGNORMAL,
         parameters={"loc": 10.0, "scale": 0.2})),
@@ -163,334 +61,168 @@ pars_biased: dict[str, Parameter] = {
         parameters={"loc": 0.02, "scale": 0.2}))
 }
 
-def create_prior_experiments(xps_path: Path) -> PETabExperimentList:
-    """Create experiments to check for prior effect."""
-    # exact prior
-    exp_exact = PETabExperiment(
-        id='prior_exact',
-        model='icg_body_flat',
-        prior_type='exact',
-        dosage={"IVDOSE_icg": 10.0},
-        groups=[
-            Group(
-                id='MALE',
-                sampling=true_sampling['MALE'],
-                estimation=Estimation(
-                    parameters=[true_par['BW_MALE'],
-                                true_par['LI__ICGIM_Vmax_MALE']]
-                )
-            ),
-            Group(
-                id='FEMALE',
-                sampling=true_sampling['FEMALE'],
-                estimation=Estimation(
-                    parameters=[true_par['BW_FEMALE'],
-                                true_par['LI__ICGIM_Vmax_FEMALE']]
-                )
+# True sampling
+true_sampling: dict[str, Sampling] = {
+    'MALE': Sampling(
+        n_samples=100,
+        steps=20,
+        parameters=[pars_true_icg['BW_MALE'],
+                    pars_true_icg['LI__ICGIM_Vmax_MALE']],
+        noise=Noise(
+            add_noise=True,
+            cv=0.05
+        ),
+        observables=observables_icg
+    ),
+    'FEMALE': Sampling(
+        n_samples=100,
+        steps=20,
+        parameters=[pars_true_icg['BW_FEMALE'],
+                    pars_true_icg['LI__ICGIM_Vmax_FEMALE']],
+        noise=Noise(
+            add_noise=True,
+            cv=0.05
+        ),
+        observables=observables_icg
+    )
+}
+
+exp_base = PETabExperiment(
+    id='empty',
+    model='icg_body_flat',
+    prior_type='empty',
+    dosage={"IVDOSE_icg": 10.0},
+    groups=[
+        Group(
+            id='MALE',
+            sampling=true_sampling['MALE'],
+            estimation=Estimation(
+                parameters=[pars_true_icg['BW_MALE'],
+                            pars_true_icg['LI__ICGIM_Vmax_MALE']]
             )
-        ]
-    )
-
-    # No prior
-    exp_noprior = PETabExperiment(
-        id="prior_noprior",
-        model='icg_body_flat',
-        prior_type='no_prior',
-        dosage={"IVDOSE_icg": 10.0},
-        groups=[
-            Group(
-                id="MALE",
-                sampling=true_sampling['MALE'],
-                estimation=Estimation(
-                    parameters=[],
-                )
-            ),
-            Group(
-                id="FEMALE",
-                sampling=true_sampling['FEMALE'],
-                estimation=Estimation(
-                    parameters=[],
-                )
+        ),
+        Group(
+            id='FEMALE',
+            sampling=true_sampling['FEMALE'],
+            estimation=Estimation(
+                parameters=[pars_true_icg['BW_FEMALE'],
+                            pars_true_icg['LI__ICGIM_Vmax_FEMALE']]
             )
-        ]
-    )
-
-    # biased prior
-    exp_biased = PETabExperiment(
-        id="prior_biased",
-        model="icg_body_flat",
-        prior_type='biased',
-        dosage={"IVDOSE_icg": 10.0},
-        groups=[
-            Group(
-                id="MALE",
-                sampling=true_sampling['MALE'],
-                estimation=Estimation(
-                    parameters=[
-                        pars_biased['BW_MALE'],
-                        pars_biased['LI__ICGIM_Vmax_MALE']
-                    ],
-                )
-            ),
-            Group(
-                id="FEMALE",
-                sampling=true_sampling['FEMALE'],
-                estimation=Estimation(
-                    parameters=[
-                        pars_biased['BW_FEMALE'],
-                        pars_biased['LI__ICGIM_Vmax_FEMALE']
-                    ],
-                )
-            )
-        ]
-    )
-
-    exp_list = PETabExperimentList(
-        experiments=[exp_exact, exp_noprior, exp_biased]
-    )
-    exp_list.to_yaml_file(xps_path)
-    return exp_list
-
-
-def create_samples_experiments(xps_path: Path) -> PETabExperimentList:
-    """Create experiments to check for number of samples n effect."""
-    exp = PETabExperiment(
-        id='n',
-        model='icg_body_flat',
-        prior_type='exact',
-        dosage={"IVDOSE_icg": 10.0},
-        groups=[
-            Group(
-                id='MALE',
-                sampling=true_sampling['MALE'],
-                estimation=Estimation(
-                    parameters=[true_par['BW_MALE'],
-                                true_par['LI__ICGIM_Vmax_MALE']]
-                )
-            ),
-            Group(
-                id='FEMALE',
-                sampling=true_sampling['FEMALE'],
-                estimation=Estimation(
-                    parameters=[true_par['BW_FEMALE'],
-                                true_par['LI__ICGIM_Vmax_FEMALE']]
-                )
-            )
-        ]
-    )
-    experiments = []
-    for n in [1, 2, 3, 4, 5, 10, 20, 40, 80]:
-        exp_n = exp.model_copy(deep=True)
-        exp_n.id = f"n_{n}"
-        for g in exp_n.groups:
-            g.sampling.n_samples = n
-        experiments.append(exp_n)
-
-    exp_list = PETabExperimentList(
-        experiments=experiments
-    )
-    exp_list.to_yaml_file(xps_path)
-    return exp_list
-
-
-def create_timepoints_experiments(xps_path: Path) -> PETabExperimentList:
-    """Create experiments to check for number of timepoints Nt effect."""
-    exp = PETabExperiment(
-        id='Nt',
-        model='icg_body_flat',
-        prior_type='exact',
-        dosage={"IVDOSE_icg": 10.0},
-        groups=[
-            Group(
-                id='MALE',
-                sampling=true_sampling['MALE'],
-                estimation=Estimation(
-                    parameters=[true_par['BW_MALE'],
-                                true_par['LI__ICGIM_Vmax_MALE']]
-                )
-            ),
-            Group(
-                id='FEMALE',
-                sampling=true_sampling['FEMALE'],
-                estimation=Estimation(
-                    parameters=[true_par['BW_FEMALE'],
-                                true_par['LI__ICGIM_Vmax_FEMALE']]
-                )
-            )
-        ]
-    )
-    experiments = []
-    for Nt in [2, 3, 4, 5, 11, 21, 41, 81]:
-        exp_n = exp.model_copy(deep=True)
-        exp_n.id = f"Nt_{Nt}"
-        for g in exp_n.groups:
-            g.sampling.steps = Nt - 1
-        experiments.append(exp_n)
-
-    exp_list = PETabExperimentList(
-        experiments=experiments
-    )
-    exp_list.to_yaml_file(xps_path)
-    return exp_list
-
-def create_noise_experiments(xps_path: Path) -> PETabExperimentList:
-
-    exp = PETabExperiment(
-        id='noise',
-        model='icg_body_flat',
-        prior_type='exact',
-        dosage={"IVDOSE_icg": 10.0},
-        groups=[
-            Group(
-                id='MALE',
-                sampling=true_sampling['MALE'],
-                estimation=Estimation(
-                    parameters=[true_par['BW_MALE'],
-                                true_par['LI__ICGIM_Vmax_MALE']]
-                )
-            ),
-            Group(
-                id='FEMALE',
-                sampling=true_sampling['FEMALE'],
-                estimation=Estimation(
-                    parameters=[true_par['BW_FEMALE'],
-                                true_par['LI__ICGIM_Vmax_FEMALE']]
-                )
-            )
-        ]
-    )
-
-    experiments = []
-    # The closest to 0, the least errors
-    #TODO: Fix the timecourses going negative
-    for noise_cv in [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5]:
-        exp_n = exp.model_copy(deep=True)
-        exp_n.id = f"noise_{noise_cv}"
-        for g in exp_n.groups:
-            g.sampling.noise.cv = noise_cv
-        experiments.append(exp_n)
-
-    exp_list = PETabExperimentList(
-        experiments=experiments
         )
-    exp_list.to_yaml_file(xps_path)
-    return exp_list
+    ]
+)
+# -------------------------------------------------------------------------------------
 
 
-def create_uuid_expermients(xps_path: Path) -> PETabExperimentList:
-    n_samples = [1, 2, 3, 4, 5, 10, 20, 40, 80]
-    prior_types = ['no_prior', 'prior_biased', 'exact_prior']
-    n_ts = [2, 3, 4, 5, 11, 21, 41, 81]
-    noise_cvs = [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5]
+def icg_experiment_factory(
+    n_samples: Optional[list[int]] = None,
+    n_timepoints: Optional[list[int]] = None,
+    noise_cvs: Optional[list[float]] = None,
+    prior_types: list[str] = None,
+) -> PETabExperimentList:
+    """Factory for creating all ICG experiments.
 
+    :param xps_path: Path to xps file
+    :param n_samples: Number of samples to generate
+    :param prior_types: List of prior types
+    :param n_timepoints: Number of timepoints to generate
+    :param noise_cvs: List of CV noise values
+
+    :return: PETabExperimentList
+    """
+    # handle default values
+    if n_samples is None:
+        n_samples = [20]
+        console.print(f"Using default number of samples: {n_samples}", style="warning")
+    if n_timepoints is None:
+        n_timepoints = [20]
+        console.print(f"Using default number of timepoints: {n_timepoints}", style="warning")
+    if noise_cvs is None:
+        noise_cvs = [0.1]
+        console.print(f"Using default CVS: {noise_cvs}", style="warning")
+    if prior_types is None:
+        prior_types = ["no_prior"]
+        console.print(f"Using default priors: {prior_types}", style="warning")
+
+    # check prior types
+    supported_prior_types = ['no_prior', 'prior_biased', 'exact_prior']
+    for prior_type in prior_types:
+        if prior_type not in supported_prior_types:
+            raise ValueError(f"Unsupported prior type: {prior_type}")
+
+    # create all experiments
     experiments = []
 
-    exp_base = PETabExperiment(
-        id='empty',
-        model='icg_body_flat',
-        prior_type='empty',
-        dosage={"IVDOSE_icg": 10.0},
-        groups=[
-            Group(
-                id='MALE',
-                sampling=true_sampling['MALE'],
-                estimation=Estimation(
-                    parameters=[true_par['BW_MALE'],
-                                true_par['LI__ICGIM_Vmax_MALE']]
-                )
-            ),
-            Group(
-                id='FEMALE',
-                sampling=true_sampling['FEMALE'],
-                estimation=Estimation(
-                    parameters=[true_par['BW_FEMALE'],
-                                true_par['LI__ICGIM_Vmax_FEMALE']]
-                )
-            )
-        ]
+    console.rule()
+    console.print(f"{n_samples=}", style="info")
+    console.print(f"{n_timepoints=}", style="info")
+    console.print(f"{noise_cvs=}", style="info")
+    console.print(f"{prior_types=}", style="info")
+    console.rule()
 
-    )
+    tuples = list(product(prior_types, n_samples, n_timepoints, noise_cvs))
+    for kt in track(range(len(tuples)), description="Creating experiment definitions..."):
 
-    for prior in prior_types:
-        for n in n_samples:
-            for n_t in n_ts:
-                for cv in noise_cvs:
-                    id = uuid_alphanumeric()
-                    exp_n = exp_base.model_copy(deep=True)
-                    exp_n.id = id
-                    exp_n.prior_type = prior
+        # current settings
+        (prior_type, n_sample, n_timepoint, cv) = tuples[kt]
 
-                    for g in exp_n.groups:
-                        g.sampling.n_samples = n
-                        g.sampling.steps = n_t - 1
-                        g.sampling.noise.cv = cv
+        # copy base experiment
+        exp_n = exp_base.model_copy(deep=True)
+        exp_n.id = uuid_alphanumeric()
+        exp_n.prior_type = prior_type
 
-                        if exp_n.prior_type == 'no_prior':
-                            g.estimation= Estimation(parameters=[])
+        for g in exp_n.groups:
+            g.sampling.n_samples = n_sample
+            g.sampling.steps = n_timepoint - 1
+            g.sampling.noise.cv = cv
 
-                        elif exp_n.prior_type == 'prior_biased':
-                            pars_id = [par for par in pars_biased if g.id in par]
-                            g.estimation = Estimation(parameters=[pars_biased[par] for par in pars_id])
+            if exp_n.prior_type == 'no_prior':
+                g.estimation= Estimation(parameters=[])
 
-                        elif exp_n.prior_type == 'exact_prior':
-                            pars_id = [par for par in true_par if g.id in par]
-                            g.estimation = Estimation(parameters=[true_par[par] for par in pars_id])
+            elif exp_n.prior_type == 'prior_biased':
+                pars_id = [par for par in pars_biased_icg if g.id in par]
+                g.estimation = Estimation(parameters=[pars_biased_icg[par] for par in pars_id])
 
-                    experiments.append(exp_n)
+            elif exp_n.prior_type == 'exact_prior':
+                pars_id = [par for par in pars_true_icg if g.id in par]
+                g.estimation = Estimation(parameters=[pars_true_icg[par] for par in pars_id])
+
+        experiments.append(exp_n)
 
 
     exp_list = PETabExperimentList(
         experiments=experiments
     )
-    exp_list.to_yaml_file(xps_path)
 
     return exp_list
-
-
-def create_petabs(exps: PETabExperimentList,
-                  directory: Path,
-                  show_plot: bool = True
-                  ) -> list[Path]:
-    """Create Petab files."""
-    directory.mkdir(parents=True, exist_ok=True)
-    yaml_files: list[Path] = []
-    for xp in exps.experiments:
-        console.rule(title=xp.id, style="bold white")
-        yaml_file = create_petab_for_experiment(experiment=xp, directory=directory,
-                                                show_plot=show_plot)
-        yaml_files.append(yaml_file)
-
-        # Dump PETabExperiment into YAML file
-        with open(directory / f"{xp.id}" / "xp.yaml", "w") as f:
-            ex_m = xp.model_dump(mode='json')
-            yaml.dump(ex_m, f, sort_keys=False, indent=2)
-
-    df_res = exps.to_dataframe()
-    df_res.to_csv(directory / "results.tsv", sep="\t", index=False)
-
-    return yaml_files
-
-
 
 
 if __name__ == "__main__":
-    #
-    # # vary priors
-    # xps_prior = create_prior_experiments(xps_path=RESULTS_ICG / "xps_prior.yaml")
-    # create_petabs(xps_prior, directory=RESULTS_ICG / "prior")
-    #
-    # # vary samples
-    # xps_samples = create_samples_experiments(xps_path=RESULTS_ICG / "xps_n.yaml")
-    # create_petabs(xps_samples, directory=RESULTS_ICG / "n")
-    #
-    # # vary number of timepoints
-    # xps_timepoints = create_timepoints_experiments(xps_path=RESULTS_ICG / "xps_Nt.yaml")
-    # create_petabs(xps_timepoints, directory=RESULTS_ICG / "Nt")
-    #
-    # # vary noise
-    # xps_noise = create_noise_experiments(xps_path=RESULTS_ICG / "xps_noise.yaml")
-    # create_petabs(xps_noise, directory=RESULTS_ICG / "noise")
 
-    # vary everything
-    xps = create_uuid_expermients(xps_path=RESULTS_ICG / "xps.yaml")
-    create_petabs(xps, directory=RESULTS_ICG / "xps", show_plot=False)
+    definitions = {
+        "all": {
+            "n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
+            "prior_types": ['no_prior', 'prior_biased', 'exact_prior'],
+            "n_timepoints": [2, 3, 4, 5, 11, 21, 41, 81],
+            "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
+        },
+        # "samples": {
+        #     "n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
+        # },
+        # "prior_types": {
+        #     "prior_types": ['no_prior', 'prior_biased', 'exact_prior'],
+        # },
+        # "timepoints": {
+        #     "n_timepoints": [2, 3, 4, 5, 11, 21, 41, 81],
+        # },
+        # "cvs": {
+        #     "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
+        # },
+    }
+    for key, definition in definitions.items():
+        console.rule(f"{key.upper()}", style="bold white", align="center")
+        xps = icg_experiment_factory(**definition)
+        # xps.to_yaml_file(RESULTS_ICG / f"xps_{key}.yaml")
+        create_petabs(xps, directory=RESULTS_ICG / f"xps_{key}", show_plot=False)
+        console.print()
+

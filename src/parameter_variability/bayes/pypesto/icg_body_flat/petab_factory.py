@@ -7,12 +7,14 @@ from matplotlib import pyplot as plt
 import roadrunner
 import pandas as pd
 import numpy as np
-from dataclasses import dataclass
+from rich.progress import track
+
 import xarray as xr
-from parameter_variability import BAYES_DIR, MEASUREMENT_TIME_UNIT_COLUMN, MEASUREMENT_UNIT_COLUMN
+from parameter_variability import BAYES_DIR, MEASUREMENT_TIME_UNIT_COLUMN, \
+    MEASUREMENT_UNIT_COLUMN, MODELS
 from parameter_variability.console import console
 from parameter_variability.bayes.pypesto.experiment import Group, DistributionType, \
-    Noise, Observable
+    Noise, Observable, PETabExperimentList, PETabExperiment
 from dataclasses import dataclass
 from enum import Enum
 from scipy.stats import lognorm
@@ -116,6 +118,9 @@ def plot_samples(
 
     if fig_path:
         plt.savefig(str(fig_path))
+
+    plt.close("all")
+
 
 
 class ODESampleSimulator:
@@ -423,51 +428,100 @@ def create_petab_example(dfs: dict[Category, xarray.Dataset],
     return yaml_dest
 
 
-# if __name__ == '__main__':
-#     from parameter_variability import MODEL_SIMPLE_CHAIN
-#
-#     fig_path: Path = Path(__file__).parent / "results"
-#     fig_path.mkdir(parents=True, exist_ok=True)
-#
-#     petab_path = fig_path / "petab"
-#     petab_path.mkdir(parents=True, exist_ok=True)
-#     sbml_path = Path("../../../models/sbml/simple_chain.xml")
-#
-#
-#
-#     pid: str = "k1"
-#     prior_par = {f'{pid}_MALE': [1.0, 0.2], f'{pid}_FEMALE': [10.0, 0.2]}
-#
-#     # samples
-#     samples_k1: dict[Category, np.ndarray] = create_male_female_samples(
-#         {
-#             Category.MALE: LognormParameters(mu=prior_par["k1_MALE"][0], sigma=prior_par["k1_MALE"][1], n=100),
-#             Category.FEMALE: LognormParameters(mu=prior_par["k1_FEMALE"][0], sigma=prior_par["k1_FEMALE"][1], n=100),
-#         }
-#     )
-#     plot_samples(samples_k1)
-#     plt.savefig(str(fig_path) + '/01-plot_samples.png')
-#
-#     # simulations
-#     simulator = ODESampleSimulator(model_path=MODEL_SIMPLE_CHAIN)
-#     sim_settings = SimulationSettings(start=0.0, end=20.0, steps=300)
-#     dsets: dict[Category, xarray.Dataset] = {}
-#
-#
-#     for category, data in samples_k1.items():
-#         # simulate samples for category
-#         parameters = pd.DataFrame({pid: data})
-#         dset = simulator.simulate_samples(parameters, simulation_settings=sim_settings)
-#         dsets[category] = dset
-#
-#     plot_simulations(dsets)
-#     plt.savefig(str(fig_path) + '/02-plot_simulations.png')
-#
-#     prior_par = {'k1_MALE': [0.0, 10.0], 'k1_FEMALE': [0.0, 10.0]}
-#
-#
-#     create_petab_example(petab_path, dsets, param='k1',
-#                          initial_values={'S1': 1, 'S2': 0},
-#                          prior_par=prior_par,
-#                          sbml_path=sbml_path)
+def create_petabs(exps: PETabExperimentList,
+                  directory: Path,
+                  show_plot: bool = True
+                  ) -> list[Path]:
+    """Create Petab files for list of experiments."""
+    directory.mkdir(parents=True, exist_ok=True)
+    yaml_files: list[Path] = []
 
+    for ke in track(range(len(exps.experiments)), description="Creating experiments..."):
+        xp = exps.experiments[ke]
+        yaml_file = create_petab_for_experiment(experiment=xp, directory=directory,
+                                                show_plot=show_plot)
+        yaml_files.append(yaml_file)
+
+        # Dump PETabExperiment into YAML file
+        with open(directory / f"{xp.id}" / "xp.yaml", "w") as f:
+            ex_m = xp.model_dump(mode='json')
+            yaml.dump(ex_m, f, sort_keys=False, indent=2)
+
+    df_res = exps.to_dataframe()
+    df_res.to_csv(directory / "results.tsv", sep="\t", index=False)
+
+    return yaml_files
+
+
+def create_petab_for_experiment(experiment: PETabExperiment,
+                                directory: Path,
+                                show_plot: bool = True):
+    """Create all the petab problems for the given model and experiment."""
+
+    # create results directory
+    xp_path: Path = directory / f"{experiment.id}"
+    xp_path.mkdir(parents=True, exist_ok=True)
+
+    # get absolute model path
+    sbml_path: Path = MODELS[experiment.model]
+
+    # create samples
+    groups: list[Group] = experiment.groups
+    samples_dsn: dict[Category, dict[PKPDParameters, LognormParameters]] = {}
+    for group in groups:
+        parameters = group.get_parameter_list('sampling')
+        samples_par: dict[PKPDParameters, LognormParameters] = {}
+        for par in parameters:
+            samples = LognormParameters(
+                mu=group.get_parameter('sampling', par.id, 'loc'),
+                sigma=group.get_parameter('sampling', par.id, 'scale'),
+                n=group.sampling.n_samples
+            )
+            samples_par[PKPDParameters[par.id]] = samples
+
+        samples_dsn[Category[group.id]] = samples_par
+
+    samples_pkpd_par = create_samples_parameters(samples_dsn)
+    plot_samples(samples_pkpd_par, fig_path=xp_path / 'samples.png', show_plot=show_plot)
+
+    # simulate samples to get data for measurement table
+    simulator = ODESampleSimulator(model_path=sbml_path)
+    dsets: dict[Category, xr.Dataset] = {}
+    for (category, data), group in zip(samples_pkpd_par.items(), groups):
+        # simulate samples for category
+        noise = experiment.group_by_id(group.id).sampling.noise
+        observables = experiment.group_by_id(group.id).sampling.observables
+
+        sim_settings = SimulationSettings(start=0.0,
+                                             end=group.sampling.tend,
+                                             steps=group.sampling.steps,
+                                             dosage=experiment.dosage,
+                                             noise=noise,
+                                             observables=observables
+                                             )
+        parameters = pd.DataFrame({par_id: samples for par_id, samples in data.items()})
+        dset = simulator.simulate_samples(parameters,
+                                          simulation_settings=sim_settings)
+        dsets[category] = dset
+
+        # serialize to netCDF
+        dset.to_netcdf(xp_path / f"{category}.nc")
+
+    # save the plot
+    plot_simulations(dsets, fig_path=xp_path / "simulations.png", show_plot=show_plot)
+    # create petab path
+    # TODO: Feed the param and the sbml_path inputs accordingly.
+    #   feed the model_icg inside to get all the model parameters r.getIds
+    #   https://libroadrunner.readthedocs.io/en/latest/PythonAPIReference/cls_RoadRunner.html#RoadRunner.getIds
+    petab_path = xp_path / "petab"
+    params = [par.id for par in experiment.groups[0].get_parameter_list('sampling')]
+    yaml_file = create_petab_example(
+        dfs=dsets,
+        groups=groups,
+        petab_path=petab_path,
+        param=params,
+        sbml_path=sbml_path,
+        initial_values=None
+    )
+
+    return yaml_file

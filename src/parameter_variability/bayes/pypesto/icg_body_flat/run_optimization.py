@@ -20,7 +20,7 @@ from parameter_variability.bayes.pypesto.icg_body_flat.petab_optimization import
 )
 from parameter_variability.console import console
 from parameter_variability.bayes.pypesto.icg_body_flat.experiment_factory import (
-    true_par
+    pars_true_icg
 )
 
 def optimize_petab_xp(yaml_file: Path) -> list[dict]:
@@ -87,7 +87,7 @@ def visualize_timepoints_samples():
         # plot the mean
         for cat in df['category'].unique():
             for ax, par in zip(axs, df['parameters'].unique()):
-                ax.axhline(y=true_par[f"{par}_{cat}"].distribution.parameters['loc'],
+                ax.axhline(y=pars_true_icg[f"{par}_{cat}"].distribution.parameters['loc'],
                            label=f"{par} (exact)", linestyle="--", color=colors[cat])
 
                 df_cat = df[(df['category'] == cat) & (df['parameters'] == par)]
@@ -127,7 +127,7 @@ def visualize_priors():
     # plot the mean
     for cat in df['category'].unique():
         for ax, par in zip(axs, df['parameters'].unique()):
-            ax.axhline(y=true_par[f"{par}_{cat}"].distribution.parameters['loc'],
+            ax.axhline(y=pars_true_icg[f"{par}_{cat}"].distribution.parameters['loc'],
                        label=f"{par} (exact)", linestyle="--", color=colors[cat])
             for k, prior in enumerate(["exact", "biased"]):  # ["exact", "biased", "noprior"]
                 # TODO: plot x parameters in different subplots
