@@ -1,5 +1,9 @@
 from pathlib import Path
+from typing import Dict, Optional
+from itertools import product
+
 import matplotlib
+from lxml.html.diff import default_markup
 
 SMALL_SIZE = 13
 MEDIUM_SIZE = 18
@@ -23,6 +27,33 @@ from parameter_variability.bayes.pypesto.icg_body_flat.experiment_factory import
     pars_true_icg
 )
 
+def xps_selector(
+    xp_type: str,
+    conditions: Optional[Dict[str, list]]
+) -> list[str]:
+    """Select the xps that match the desired conditions."""
+    df = pd.read_csv(RESULTS_ICG / f'xps_{xp_type}' / 'results.tsv', sep='\t')
+
+    if not conditions:  # empty dict -> no filtering
+        return df
+
+    if 'n_t' in conditions:
+        conditions['n_t'] = [t - 1 for t in conditions['n_t']]
+
+    combinations = list(product(*(conditions[col] for col in conditions)))
+
+    matching_indices = set()
+
+    for comb in combinations:
+        comb_dict = dict(zip(conditions.keys(), comb))
+        mask = pd.Series(True, index=df.index)
+        for col, val in comb_dict.items():
+            mask &= df[col].eq(val)
+        matching_indices.update(df[mask].index)
+
+    return df.loc[list(matching_indices)].sort_index()['id'].unique().tolist()
+
+
 def optimize_petab_xp(yaml_file: Path) -> list[dict]:
     """Optimize single petab problem using PyPesto."""
     pypesto_sampler = PyPestoSampler(yaml_file=yaml_file)
@@ -44,10 +75,16 @@ def optimize_petab_xp(yaml_file: Path) -> list[dict]:
     return results
 
 
-def optimize_petab_xps(exp_type: str):
-    yaml_files = sorted(
-        [f for f in (RESULTS_ICG / exp_type).glob("**/petab.yaml")])
-    console.print(yaml_files)
+def optimize_petab_xps(exp_type: str, xp_ids: list[str]):
+
+    xp_path = RESULTS_ICG / f'xps_{exp_type}'
+    yaml_files: list[Path] = []
+    for xp in xp_path.iterdir():
+        if xp.is_dir() and xp.name in xp_ids:
+            for yaml_file in xp.glob("**/petab.yaml"):
+                yaml_files.append(yaml_file)
+
+    yaml_files = sorted(yaml_files)
 
     infos = []
     for yaml_file in yaml_files:
@@ -56,7 +93,7 @@ def optimize_petab_xps(exp_type: str):
         infos.extend(results)
 
     df = pd.DataFrame(infos)
-    df.to_csv(RESULTS_ICG / exp_type / f"bayes_results.tsv", sep="\t", index=False)
+    df.to_csv(RESULTS_ICG / f'xps_{exp_type}' / f"bayes_results.tsv", sep="\t", index=False)
     console.print(df)
     return df
 
@@ -161,10 +198,20 @@ def visualize_priors():
 if __name__ == "__main__":
     # FIXME: Remove AMICI Models everytime the Observed Compartments are redefined
     #   or for every run
-    # optimize_petab_xps(exp_type="prior")
-    optimize_petab_xps(exp_type="n")
-    optimize_petab_xps(exp_type="Nt")
 
-    visualize_timepoints_samples() # Only for n and Nt exps
+    xp_ids = xps_selector(
+        xp_type='all',
+        conditions={
+            'n_t': [11, 21, 41, 81],
+            'noise_cv': [0.0, 0.001, 0.01]
+        })
+    console.print(xp_ids)
+
+    optimize_petab_xps(
+        exp_type='all',
+        xp_ids=xp_ids
+    )
+
+    # visualize_timepoints_samples() # Only for n and Nt exps
     # visualize_priors()
 
