@@ -51,7 +51,14 @@ def xps_selector(
             mask &= df[col].eq(val)
         matching_indices.update(df[mask].index)
 
-    return df.loc[list(matching_indices)].sort_index()['id'].unique().tolist()
+
+    df_res = df.loc[list(matching_indices)].sort_index()
+
+    if df_res.empty:
+        raise console.print("No XPs were selected. Check if conditions are correct",
+                            style="warning")
+
+    return df_res['id'].unique().tolist()
 
 
 def optimize_petab_xp(yaml_file: Path) -> list[dict]:
@@ -202,6 +209,7 @@ if __name__ == "__main__":
     xp_ids = xps_selector(
         xp_type='all',
         conditions={
+            'prior_type': ['prior_biased', 'exact_prior'],
             'n_t': [11, 21, 41, 81],
             'noise_cv': [0.0, 0.001, 0.01]
         })
