@@ -16,9 +16,8 @@ matplotlib.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 matplotlib.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 matplotlib.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 import pandas as pd
-from matplotlib import pyplot as plt
 from parameter_variability import RESULTS_ICG
-from parameter_variability.bayes.pypesto.petab_optimization import (
+from parameter_variability.petab_optimization import (
     PyPestoSampler
 )
 from parameter_variability.console import console

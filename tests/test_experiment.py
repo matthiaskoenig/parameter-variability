@@ -1,6 +1,6 @@
 from pymetadata.console import console
 
-from parameter_variability.bayes.pypesto.experiment import (
+from parameter_variability.experiment import (
     example_experiment,
     example_experiment_list,
     PETabExperiment,

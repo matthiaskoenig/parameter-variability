@@ -6,12 +6,12 @@ from itertools import product
 from parameter_variability.console import console
 from parameter_variability import RESULTS_ICG
 
-from parameter_variability.bayes.pypesto.petab_factory import create_petabs
-from parameter_variability.bayes.pypesto.run_optimization import (
+from parameter_variability.petab_factory import create_petabs
+from parameter_variability.run_optimization import (
     xps_selector, optimize_petab_xps
 )
-from parameter_variability.bayes.pypesto.experiment import *
-from parameter_variability.bayes.pypesto.utils import uuid_alphanumeric
+from parameter_variability.experiment import *
+from parameter_variability.utils import uuid_alphanumeric
 
 
 # -------------------------------------------------------------------------------------

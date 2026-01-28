@@ -1,17 +1,17 @@
 """Factory to create the various sampling experiments."""
-from parameter_variability.bayes.pypesto.experiment import *
+from parameter_variability.experiment import *
 from pymetadata.console import console
 
 from rich.progress import track
 from itertools import product
 from typing import Optional
 
-from parameter_variability.bayes.pypesto.run_optimization import xps_selector, \
+from parameter_variability.run_optimization import xps_selector, \
     optimize_petab_xps
 from parameter_variability.console import console
-from parameter_variability.bayes.pypesto.petab_factory import create_petabs
+from parameter_variability.petab_factory import create_petabs
 from parameter_variability import RESULTS_SIMPLE_CHAIN
-from parameter_variability.bayes.pypesto.utils import uuid_alphanumeric
+from parameter_variability.utils import uuid_alphanumeric
 
 observables_simple_chain: list[Observable] = [
     Observable(

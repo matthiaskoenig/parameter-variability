@@ -10,14 +10,12 @@ import numpy as np
 from rich.progress import track
 
 import xarray as xr
-from parameter_variability import BAYES_DIR, MEASUREMENT_TIME_UNIT_COLUMN, \
+from parameter_variability import MEASUREMENT_TIME_UNIT_COLUMN, \
     MEASUREMENT_UNIT_COLUMN, MODELS
-from parameter_variability.console import console
-from parameter_variability.bayes.pypesto.experiment import Group, DistributionType, \
+from parameter_variability.experiment import Group, DistributionType, \
     Noise, Observable, PETabExperimentList, PETabExperiment
 from dataclasses import dataclass
 from enum import Enum
-from scipy.stats import lognorm
 
 
 class Category(str, Enum):
@@ -92,9 +90,12 @@ def plot_samples(
 ) -> None:
     n_rows = np.max(np.array([len(v) for k, v in samples.items()]))
     # plot distributions
-    f, axs = plt.subplots(n_rows, dpi=300, layout="constrained", squeeze=False)
+
     if n_rows == 1:
+        f, axs = plt.subplots(n_rows, dpi=300, layout="constrained", squeeze=False)
         axs = axs.reshape(-1)
+    else:
+        f, axs = plt.subplots(n_rows, dpi=300, layout="constrained")
 
     for category, parameters in samples.items():
         for ax, (par, data) in zip(axs, parameters.items()):
