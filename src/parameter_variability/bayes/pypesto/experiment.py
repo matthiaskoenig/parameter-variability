@@ -2,7 +2,7 @@
 from __future__ import annotations
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Union, List
+from typing import Optional, Union, List, Any
 from pydantic_yaml import parse_yaml_raw_as, to_yaml_str
 from parameter_variability.console import console
 
@@ -184,11 +184,23 @@ class PETabExperimentList(BaseModel):
             d["n_t"] = [g.sampling.steps for g in exp.groups]
             d["noise_cv"] = [g.sampling.noise.cv for g in exp.groups]
 
+            parameters: List[Any] = []
+            pars_per_group = [g.sampling.parameters for g in exp.groups]
+            for pars in pars_per_group:
+                par_ls = []
+                for par in pars:
+                    par_det = {par.id: par.distribution.parameters,
+                               'dsn_type': str(par.distribution.type)}
+                    par_ls.append(par_det)
+
+                parameters.append(par_ls)
+            d['parameters'] = parameters
+
             # d = exp.model_dump(mode='python')
             items.append(d)
 
         df = pd.DataFrame(data=items)
-        cols_with_ls = ["groups", "n", "n_t", "noise_cv"]
+        cols_with_ls = ["groups", "n", "n_t", "noise_cv", "parameters"]
         #
         # for col in cols_with_ls:
         #     df[col] = df[col].apply(literal_eval)
