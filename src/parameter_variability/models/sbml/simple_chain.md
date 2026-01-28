@@ -27,6 +27,6 @@ S2 = 0.0  # [-/-] S2 in liver
 R1 = k1 * S1  # [-/-]   
 
 # odes
-d S1/dt = -R1 / liver  # [-/-/] S1  
-d S2/dt = R1 / liver  # [-/-/] S2  
+d S1/dt = -R1 / liver  # [-/-/-] S1  
+d S2/dt = R1 / liver  # [-/-/-] S2  
 ```

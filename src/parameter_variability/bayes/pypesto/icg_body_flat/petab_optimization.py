@@ -52,6 +52,10 @@ class PyPestoSampler:
         np.random.seed(1)
 
         console.rule("Optimization", style="white")
+        # TODO: store much more information on the optimization run;
+        # runtime, settings, success, optimization options
+
+        # THis is performing the optimization
         self.result = pypesto.optimize.minimize(
             problem=self.pypesto_problem,
             optimizer=optimizer,

@@ -201,8 +201,8 @@ if __name__ == "__main__":
 
     definitions = {
         "all": {
-            #"n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
-            #"prior_types": ['no_prior', 'prior_biased', 'exact_prior'],
+            "n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
+            "prior_types": ['no_prior', 'prior_biased', 'exact_prior'],
             "n_timepoints": [2, 3, 4, 5, 11, 21, 41, 81],
             "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
         },

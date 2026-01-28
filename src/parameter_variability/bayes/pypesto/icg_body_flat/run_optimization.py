@@ -83,6 +83,7 @@ def optimize_petab_xp(yaml_file: Path) -> list[dict]:
 
 
 def optimize_petab_xps(exp_type: str, xp_ids: list[str]):
+    """Optimize the given PEtab problems."""
 
     xp_path = RESULTS_ICG / f'xps_{exp_type}'
     yaml_files: list[Path] = []
@@ -206,19 +207,23 @@ if __name__ == "__main__":
     # FIXME: Remove AMICI Models everytime the Observed Compartments are redefined
     #   or for every run
 
-    xp_ids = xps_selector(
-        xp_type='all',
-        conditions={
-            'prior_type': ['prior_biased', 'exact_prior'],
-            'n_t': [11, 21, 41, 81],
-            'noise_cv': [0.0, 0.001, 0.01]
-        })
-    console.print(xp_ids)
+    # xp_ids = xps_selector(
+    #     xp_type='all',
+    #     conditions={
+    #         'prior_type': ['prior_biased', 'exact_prior'],
+    #         'n_t': [11, 21, 41, 81],
+    #         'noise_cv': [0.0, 0.001, 0.01]
+    #     })
+    # console.print(xp_ids)
 
-    optimize_petab_xps(
-        exp_type='all',
-        xp_ids=xp_ids
-    )
+    # optimize_petab_xps(
+    #     exp_type='all',
+    #     xp_ids=xp_ids
+    # )
+
+    yaml_path = Path("/home/mkoenig/git/parameter-variability/results/icg_body_flat/xps_all/1a4bKyK5fJxx1C1O5n0D/petab.yaml")
+    results = optimize_petab_xp(yaml_file=yaml_path)
+    console.print(results)
 
     # visualize_timepoints_samples() # Only for n and Nt exps
     # visualize_priors()
