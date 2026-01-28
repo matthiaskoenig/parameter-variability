@@ -6,8 +6,10 @@ from itertools import product
 from parameter_variability.console import console
 from parameter_variability import RESULTS_ICG
 
-from parameter_variability.bayes.pypesto.icg_body_flat.petab_factory import \
-    create_petabs
+from parameter_variability.bayes.pypesto.petab_factory import create_petabs
+from parameter_variability.bayes.pypesto.run_optimization import (
+    xps_selector, optimize_petab_xps
+)
 from parameter_variability.bayes.pypesto.experiment import *
 from parameter_variability.bayes.pypesto.utils import uuid_alphanumeric
 
@@ -198,12 +200,12 @@ def icg_experiment_factory(
 
 
 if __name__ == "__main__":
-
+    # Set up experiments
     definitions = {
         "all": {
-            "n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
-            "prior_types": ['no_prior', 'prior_biased', 'exact_prior'],
-            "n_timepoints": [2, 3, 4, 5, 11, 21, 41, 81],
+            #"n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
+            "prior_types": ['prior_biased', 'exact_prior'],
+            "n_timepoints": [11, 21, 41, 81],
             "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
         },
         # "samples": {
@@ -225,4 +227,22 @@ if __name__ == "__main__":
         # xps.to_yaml_file(RESULTS_ICG / f"xps_{key}.yaml")
         create_petabs(xps, directory=RESULTS_ICG / f"xps_{key}", show_plot=False)
         console.print()
+
+    # Optimizer
+    console.rule("Optimization", align="center")
+    xp_ids = xps_selector(
+        results_dir=RESULTS_ICG,
+        xp_type='all',
+        conditions={
+            'prior_type': ['prior_biased', 'exact_prior'],
+            'n_t': [11, 21, 41, 81],
+            'noise_cv': [0.0, 0.001, 0.01]
+        })
+    console.print(xp_ids)
+
+    optimize_petab_xps(
+        results_dir=RESULTS_ICG,
+        exp_type='all',
+        xp_ids=xp_ids
+    )
 

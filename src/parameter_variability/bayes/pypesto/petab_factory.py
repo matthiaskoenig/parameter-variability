@@ -39,6 +39,7 @@ class PKPDParameters(str, Enum):
     """ICG Parameters"""
     LI__ICGIM_Vmax = "LI__ICGIM_Vmax"
     BW = "BW"
+    k1 = "k1"
 
 
 @dataclass
@@ -91,7 +92,9 @@ def plot_samples(
 ) -> None:
     n_rows = np.max(np.array([len(v) for k, v in samples.items()]))
     # plot distributions
-    f, axs = plt.subplots(n_rows, dpi=300, layout="constrained")
+    f, axs = plt.subplots(n_rows, dpi=300, layout="constrained", squeeze=False)
+    if n_rows == 1:
+        axs = axs.reshape(-1)
 
     for category, parameters in samples.items():
         for ax, (par, data) in zip(axs, parameters.items()):
