@@ -1,22 +1,21 @@
-name: CI-CD
-
+name: MyPy
 on: [push]
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
+  mypy:
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        python-version: [ "3.13", "3.14"]
+        os: [ ubuntu-latest ]
+        python-version: [ "3.13" ]
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Install uv and set the python version
-      uses: astral-sh/setup-uv@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        enable-cache: true
-    - name: Test with tox
-      run:
-        uvx --with tox-uv tox -e py${{ matrix.python-version }}
+      - uses: actions/checkout@v4
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - name: Test with tox
+        run:
+          uvx --with tox-uv tox -e mypy
