@@ -1,9 +1,12 @@
 .venv
 .python-version
+.tox
+build/
 .idea
 data
 **/.DS_Store
 __pycache__
 src/parameter_variability.egg-info
+uv.lock
 
 results

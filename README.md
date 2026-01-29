@@ -1,4 +1,4 @@
-# Bayesian models for ODE models in SBML 
+# Bayesian models for ODE models in SBML
 
 This project implements Bayesian models using [PyMC](https://www.pymc.io) on top of ODE-based models encoded in the [Systems Biology Markup Language](https://sbml.org/) (SBML).
 
@@ -29,10 +29,10 @@ uv pip install -e .
 ## ODE model
 As an example PBPK model (see figure below), a simple PK model is implemented consisting of three compartments, `gut`, `central` and `peripheral`. The substance `y` can be transferred from the gut to the central compartment via `absorption`. The substance `y` can be distributed in the peripheral compartment via `R1` or return from the peripheral to the central compartment via `R2`. Substance 'y' is removed from the central compartment by `clearance`.
 
-<img src="./src/parameter_variability/models/sbml/simple_pk.png" alt="simple_pk model simulation" width="200"/>
+<img src="src/parvar/models/sbml/simple_pk.png" alt="simple_pk model simulation" width="200"/>
 
-The SBML of the model is available from 
-[simple_pk.xml](./src/parameter_variability/models/sbml/simple_pk.xml).
+The SBML of the model is available from
+[simple_pk.xml](src/parvar/models/sbml/simple_pk.xml).
 
 The resulting ODEs of the model are
 ```bash
@@ -44,12 +44,12 @@ area: [m^2]
 length: [m]
 
 # Parameters `p`
-CL = 1.0  # [l/min] 
-Q = 1.0  # [l/min] 
-Vcent = 1.0  # [l] 
-Vgut = 1.0  # [l] 
-Vperi = 1.0  # [l] 
-k = 1.0  # [l/min] 
+CL = 1.0  # [l/min]
+Q = 1.0  # [l/min]
+Vcent = 1.0  # [l]
+Vgut = 1.0  # [l]
+Vperi = 1.0  # [l]
+k = 1.0  # [l/min]
 
 # Initial conditions `x0`
 y_cent = 0.0  # [mmol/l] Vcent
@@ -71,14 +71,14 @@ d y_peri/dt = R1 / Vperi - R2 / Vperi  # [mmol/l/min]
 
 An example output of the model is provided here
 
-<img src="./src/parameter_variability/models/sbml/simple_pk_simulation.png" alt="simple_pk simulation" width="250"/>
+<img src="src/parvar/models/sbml/simple_pk_simulation.png" alt="simple_pk simulation" width="250"/>
 
 
 ## Bayesian model
-To generate the toy example, the two-compartment model is fed draws from an idealized random distribution for each parameter. These are called `true_thetas'. 
-A forward simulation is then run to generate a run simulation for each theta. 
+To generate the toy example, the two-compartment model is fed draws from an idealized random distribution for each parameter. These are called `true_thetas'.
+A forward simulation is then run to generate a run simulation for each theta.
 
-After adding noise to the simulation(s), a Bayesian model fits the data and draws samples from a posterior distribution. 
+After adding noise to the simulation(s), a Bayesian model fits the data and draws samples from a posterior distribution.
 The empirical distribution of these samples should contain the `true_thetas'.
 
 Current modelled parameters:
@@ -117,24 +117,10 @@ Plots of results for the analysis on the Gut compartment
 
 
 # License
-
-* Source Code: [LGPLv3](http://opensource.org/licenses/LGPL-3.0)
-* Documentation: [CC BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/)
-
-The parameter-variability source is released under both the GPL and LGPL licenses version 2 or later. You may choose which license you choose to use the software under.
-
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU General Public License or the GNU Lesser General Public
-License as published by the Free Software Foundation, either version 2 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
+- Source Code: [MIT](https://opensource.org/license/MIT)
+- Documentation: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 
 # Funding
-
 Matthias König is supported by the Federal Ministry of Education and Research (BMBF, Germany) within the research network Systems Medicine of the Liver (**LiSyM**, grant number 031L0054) and by the German Research Foundation (DFG) within the Research Unit Programme FOR 5151 [QuaLiPerF](https://qualiperf.de) (Quantifying Liver Perfusion-Function Relationship in Complex Resection - A Systems Medicine Approach)" by grant number 436883643 and by grant number 465194077 (Priority Programme SPP 2311, Subproject SimLivA).
 
-© 2023-2024 Antonio Alvarez and [Matthias König](https://livermetabolism.com)
+© 2023-2026 Antonio Alvarez and [Matthias König](https://livermetabolism.com)
