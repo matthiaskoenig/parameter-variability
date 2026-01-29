@@ -31,9 +31,10 @@ class PyPestoSampler:
     def load_problem(self):
         self.petab_problem: Problem = petab.v1.Problem.from_yaml(self.yaml_file)
         importer = pt.PetabImporter(self.petab_problem)
-        self.pypesto_problem = importer.create_problem(verbose=True)
 
-        self.fig_path = self.yaml_file.parents[0] / "figs"
+        self.pypesto_problem = importer.create_problem(verbose=True)
+        self.results_path = self.yaml_file.parents[0] / "results"
+        self.fig_path = self.results_path / "figs"
         self.fig_path.mkdir(parents=True, exist_ok=True)
 
     def optimizer(self, plot: bool = True):

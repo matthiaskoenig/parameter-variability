@@ -18,3 +18,8 @@ matplotlib.rc("legend", fontsize=SMALL_SIZE)  # legend fontsize
 matplotlib.rc("figure", titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 __all__ = ["plt"]
+
+colors = {
+    "MALE": "tab:blue",
+    "FEMALE": "tab:red",
+}
