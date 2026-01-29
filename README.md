@@ -18,12 +18,11 @@ Install graphviz library
 sudo apt -y install graphviz graphviz-dev
 ```
 
-### virtual environment
+### python environment
 Create a virtual environment with `uv` and install the package (https://docs.astral.sh/uv/getting-started/installation/)
 
 ```bash
-uv venv
-uv pip install -e .
+uv sync
 ```
 
 

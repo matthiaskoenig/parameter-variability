@@ -96,7 +96,7 @@ def example_experiment_list() -> PETabExperimentList:
     )
 
 
-def test_petab_experiment():
+def test_petab_experiment() -> None:
     exp = example_experiment()
     assert exp
 
