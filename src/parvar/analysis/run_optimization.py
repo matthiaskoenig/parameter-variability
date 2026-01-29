@@ -13,7 +13,7 @@ def xps_selector(
     results_dir: Path, xp_type: str, conditions: Optional[Dict[str, list]]
 ) -> list[str]:
     """Select the xps that match the desired conditions."""
-    df = pd.read_csv(results_dir / f"xps_{xp_type}" / "results.tsv", sep="\t")
+    df = pd.read_csv(results_dir / "xps" / xp_type / "results.tsv", sep="\t")
 
     if not conditions:  # empty dict -> no filtering
         return df
@@ -62,13 +62,16 @@ def optimize_petab_xp(yaml_file: Path) -> list[dict]:
             }
         )
 
+    df_results = pd.DataFrame(results)
+    df_results.to_csv(yaml_file.parent / "optimization_results.tsv", sep="\t")
+
     return results
 
 
 def optimize_petab_xps(results_dir: Path, exp_type: str, xp_ids: list[str]):
     """Optimize the given PEtab problems."""
 
-    xp_path = results_dir / f"xps_{exp_type}"
+    xp_path = results_dir / "xps" / exp_type
     yaml_files: list[Path] = []
     for xp in xp_path.iterdir():
         if xp.is_dir() and xp.name in xp_ids:
@@ -85,7 +88,7 @@ def optimize_petab_xps(results_dir: Path, exp_type: str, xp_ids: list[str]):
 
     df = pd.DataFrame(infos)
     df.to_csv(
-        results_dir / f"xps_{exp_type}" / "bayes_results.tsv", sep="\t", index=False
+        results_dir / "xps" / exp_type / "bayes_results.tsv", sep="\t", index=False
     )
     console.print(df)
     return df

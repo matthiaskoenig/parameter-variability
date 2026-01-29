@@ -8,6 +8,7 @@ from rich.progress import track
 
 from parvar.analysis.experiment import *
 from parvar.analysis.petab_factory import create_petabs_for_definitions
+from parvar.analysis.run_optimization import xps_selector, optimize_petab_xps
 from parvar.analysis.utils import uuid_alphanumeric
 
 
@@ -165,7 +166,7 @@ definitions = {
     "all": {
         # "n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
         "prior_types": ["prior_biased", "exact_prior"],
-        "n_timepoints": [11, 21, 41, 81],
+        "n_timepoints": [2, 3, 4, 5, 11, 21, 41, 81],
         "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
     },
     "samples": {
@@ -191,3 +192,22 @@ if __name__ == "__main__":
     create_petabs_for_definitions(
         definitions, factory, results_path=RESULTS_SIMPLE_CHAIN
     )
+
+    xps_ids = xps_selector(
+        results_dir=RESULTS_SIMPLE_CHAIN,
+        xp_type='all',
+        conditions={
+            "prior_type": ["prior_biased", "exact_prior"],
+            "n_t": [11, 21, 41, 81],
+            "noise_cv": [0.1, 0.2, 0.5],
+        }
+    )
+
+    console.print(xps_ids)
+
+    optimize_petab_xps(
+        results_dir=RESULTS_SIMPLE_CHAIN,
+        exp_type='all',
+        xp_ids=xps_ids,
+    )
+
