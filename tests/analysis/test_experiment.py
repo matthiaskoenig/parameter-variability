@@ -1,4 +1,5 @@
 from parvar.analysis.experiment import *
+from pymetadata.console import console
 
 
 def example_experiment() -> PETabExperiment:
@@ -85,19 +86,78 @@ def example_experiment() -> PETabExperiment:
     return petab_experiment
 
 
-def test_experiment():
-    pass
-
-
-def test_experiment_list() -> None:
-    """Test creation of experiment list."""
-    exp_list = PETabExperimentList(
+def example_experiment_list() -> PETabExperimentList:
+    """Example experiments."""
+    return PETabExperimentList(
         experiments=[
             example_experiment(),
             example_experiment(),
         ]
     )
+
+
+def test_petab_experiment():
+    exp = example_experiment()
+    assert exp
+
+
+def test_petab_experiment_list() -> None:
+    """Test creation of experiment list."""
+    exp_list = example_experiment_list()
     assert exp_list
 
     df = exp_list.to_dataframe()
     assert not df.empty
+
+
+def test_experiment_list_to_json():
+    experiment_list = example_experiment_list()
+    json = experiment_list.to_json()
+    assert json
+
+
+def test_experiment():
+    """Test the complete workflow."""
+    experiment = example_experiment()
+    experiment.print_schema()
+    experiment.print_json()
+    experiment.print_yaml()
+
+    console.rule("Reading data", style="white", align="left")
+    yaml = experiment.to_yaml()
+    experiment_new = PETabExperiment.from_yaml(yaml)
+    assert experiment_new
+
+
+def test_print_schema():
+    experiment = example_experiment()
+    experiment.print_schema()
+
+
+def test_to_json():
+    experiment = example_experiment()
+    json = experiment.to_json()
+    assert json
+
+
+def test_print_json():
+    experiment = example_experiment()
+    experiment.print_json()
+
+
+def test_to_yaml():
+    experiment = example_experiment()
+    yaml = experiment.to_yaml()
+    assert yaml
+
+
+def test_print_yaml():
+    experiment = example_experiment()
+    experiment.print_yaml()
+
+
+def test_write_read_yaml():
+    experiment = example_experiment()
+    yaml = experiment.to_yaml()
+    experiment_new = PETabExperiment.from_yaml(yaml)
+    assert experiment_new

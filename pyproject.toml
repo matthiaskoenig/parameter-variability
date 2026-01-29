@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "parvar"
 version = "0.1.0"
@@ -33,7 +37,6 @@ dependencies = [
     "pandas>=2.2.3",
     "pydantic",
     "pydantic-yaml",
-    "yaml",
 
     "matplotlib>=3.10.0",
 
@@ -68,3 +71,12 @@ Homepage = "https://github.com/matthiaskoenig/parameter-variability"
 Repository = "https://github.com/matthiaskoenig/parameter-variability"
 Documentation = "https://github.com/matthiaskoenig/parameter-variability"
 Issues = "https://github.com/matthiaskoenig/parameter-variability/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/parvar"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.version]
+path = "./src/parvar/__init__.py"
