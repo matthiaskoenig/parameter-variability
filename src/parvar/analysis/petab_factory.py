@@ -46,11 +46,18 @@ colors = {
 
 
 class PKPDParameters(str, Enum):
-    """ICG Parameters"""
+    """Parameters in PKPD Models"""
 
+    # simple_chain
+    k1 = "k1"
+
+    # simple_pk
+    CL = "CL"
+    k = "k"
+
+    # icg_body_flat
     LI__ICGIM_Vmax = "LI__ICGIM_Vmax"
     BW = "BW"
-    k1 = "k1"
 
 
 @dataclass
