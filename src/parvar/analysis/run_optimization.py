@@ -85,7 +85,7 @@ def optimize_petab_xps(results_dir: Path, exp_type: str, xp_ids: list[str]):
 
     df = pd.DataFrame(infos)
     df.to_csv(
-        RESULTS_ICG / f"xps_{exp_type}" / "bayes_results.tsv", sep="\t", index=False
+        results_dir / f"xps_{exp_type}" / "bayes_results.tsv", sep="\t", index=False
     )
     console.print(df)
     return df
