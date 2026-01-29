@@ -1,5 +1,5 @@
 [project]
-name = "parameter_variability"
+name = "parvar"
 version = "0.1.0"
 description = "Parameter variability in SBML models"
 readme = "README.md"
@@ -33,6 +33,7 @@ dependencies = [
     "pandas>=2.2.3",
     "pydantic",
     "pydantic-yaml",
+    "yaml",
 
     "matplotlib>=3.10.0",
 

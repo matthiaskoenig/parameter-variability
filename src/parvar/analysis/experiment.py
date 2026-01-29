@@ -16,8 +16,8 @@ from pymetadata.console import console
 class DistributionType(str, Enum):
     """Type of prior."""
 
-    NORMAL: str = "normal"
-    LOGNORMAL: str = "lognormal"
+    NORMAL = "normal"
+    LOGNORMAL = "lognormal"
 
 
 class BaseModel(PydanticBaseModel):
@@ -27,10 +27,7 @@ class BaseModel(PydanticBaseModel):
 
 
 class Distribution(BaseModel):
-    """Parameter dictionary for the priors.
-
-    FIXME: add some validation
-    """
+    """Parameter dictionary for the priors."""
 
     parameters: dict[str, float]
     type: DistributionType = DistributionType.LOGNORMAL
@@ -51,7 +48,6 @@ class Parameter(BaseModel):
     distribution: Distribution
 
 
-# TODO: finish Observables integration
 class Observable(BaseModel):
     """Observables settings for sampling"""
 
@@ -165,14 +161,7 @@ class PETabExperimentList(BaseModel):
     experiments: list[PETabExperiment]
 
     def to_yaml_file(self, path: Path):
-        # json_ = self.model_dump_json(indent=2)
-        # console.print(json_)
-        # console.rule(style="white")
-        # yml = to_yaml_str(self)
-        # console.print(yml)
-        # console.rule(style="white")
-
-        # Dump PETabExperiments into YAML file
+        """Dump PETabExperiments into YAML file."""
         with open(path, "w") as f:
             exps_m = self.model_dump(mode="json")
             yaml.dump(exps_m, f, sort_keys=False, indent=2)
@@ -223,99 +212,6 @@ class PETabExperimentList(BaseModel):
         return self.model_dump_json(indent=2)
 
 
-def example_experiment() -> PETabExperiment:
-    """Example of a PETabExperiment."""
-
-    # Define the true values of the parameters for distribution sampling
-    true_par: dict[str, Parameter] = {
-        "BW_MALE": Parameter(
-            id="BW",
-            distribution=Distribution(
-                type=DistributionType.LOGNORMAL, parameters={"loc": 75.0, "scale": 10}
-            ),
-        ),
-        "LI__ICGIM_Vmax_MALE": Parameter(
-            id="LI__ICGIM_Vmax",
-            distribution=Distribution(
-                type=DistributionType.LOGNORMAL,
-                parameters={"loc": 0.0369598840327503, "scale": 0.01},
-            ),
-        ),
-        "BW_FEMALE": Parameter(
-            id="BW",
-            distribution=Distribution(
-                type=DistributionType.LOGNORMAL, parameters={"loc": 65.0, "scale": 10}
-            ),
-        ),
-        "LI__ICGIM_Vmax_FEMALE": Parameter(
-            id="LI__ICGIM_Vmax",
-            distribution=Distribution(
-                type=DistributionType.LOGNORMAL,
-                parameters={"loc": 0.02947, "scale": 0.01},
-            ),
-        ),
-    }
-
-    observables: List[Observable] = [
-        Observable(
-            id="Cve_plasma_icg",
-            starting_value=0,
-        ),
-    ]
-
-    # example experiment
-    petab_experiment = PETabExperiment(
-        id="noise",
-        model="icg_body_flat",
-        prior_type="exact",
-        dosage={"IVDOSE_icg": 10.0},
-        groups=[
-            Group(
-                id="MALE",
-                sampling=Sampling(
-                    n_samples=100,
-                    steps=20,
-                    parameters=[true_par["BW_MALE"], true_par["LI__ICGIM_Vmax_MALE"]],
-                    noise=Noise(add_noise=True, cv=0.05),
-                    observables=observables,
-                ),
-                estimation=Estimation(
-                    parameters=[true_par["BW_MALE"], true_par["LI__ICGIM_Vmax_MALE"]]
-                ),
-            ),
-            Group(
-                id="FEMALE",
-                sampling=Sampling(
-                    n_samples=100,
-                    steps=20,
-                    parameters=[
-                        true_par["BW_FEMALE"],
-                        true_par["LI__ICGIM_Vmax_FEMALE"],
-                    ],
-                    noise=Noise(add_noise=True, cv=0.05),
-                    observables=observables,
-                ),
-                estimation=Estimation(
-                    parameters=[
-                        true_par["BW_FEMALE"],
-                        true_par["LI__ICGIM_Vmax_FEMALE"],
-                    ]
-                ),
-            ),
-        ],
-    )
-    return petab_experiment
-
-
-def example_experiment_list() -> PETabExperimentList:
-    return PETabExperimentList(
-        experiments=[
-            example_experiment(),
-            example_experiment(),
-        ]
-    )
-
-
 __all__ = [
     "DistributionType",
     "Distribution",
@@ -328,20 +224,3 @@ __all__ = [
     "Noise",
     "Observable",
 ]
-
-if __name__ == "__main__":
-    from pymetadata.console import console
-
-    # experiment = example_experiment()
-    # experiment.print_schema()
-    # experiment.print_json()
-    # experiment.print_yaml()
-    #
-    # console.rule("Reading data", style="white", align="left")
-    # yaml = experiment.to_yaml()
-    # experiment_new = PETabExperiment.from_yaml(yaml)
-    # console.print(experiment_new)
-
-    experiment_list = example_experiment_list()
-    df = experiment_list.to_dataframe()
-    console.print(df)

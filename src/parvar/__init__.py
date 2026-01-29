@@ -6,7 +6,6 @@ __version__ = "0.1.0"
 
 BASE_DIR = Path(__file__).parent.parent.parent
 RESULTS_DIR = BASE_DIR / "results"
-
 MODELS_DIR = Path(__file__).parent / "models" / "sbml"
 
 # simple chain model
