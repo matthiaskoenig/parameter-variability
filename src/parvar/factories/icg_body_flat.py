@@ -8,8 +8,7 @@ from pymetadata.console import console
 
 from parvar import RESULTS_ICG
 from parvar.analysis.experiment import *
-from parvar.analysis.petab_factory import create_petabs
-from parvar.analysis.run_optimization import xps_selector, optimize_petab_xps
+from parvar.analysis.petab_factory import create_petabs_for_definitions
 from parvar.analysis.utils import uuid_alphanumeric
 
 # -------------------------------------------------------------------------------------
@@ -134,10 +133,7 @@ exp_base = PETabExperiment(
 )
 
 
-# -------------------------------------------------------------------------------------
-
-
-def icg_experiment_factory(
+def factory(
     n_samples: Optional[list[int]] = None,
     n_timepoints: Optional[list[int]] = None,
     noise_cvs: Optional[list[float]] = None,
@@ -224,46 +220,31 @@ def icg_experiment_factory(
     return exp_list
 
 
+definitions = {
+    "all": {
+        # "n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
+        "prior_types": ["prior_biased", "exact_prior"],
+        "n_timepoints": [11, 21, 41, 81],
+        "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
+    },
+    "samples": {
+        "n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
+    },
+    "prior_types": {
+        "prior_types": ["no_prior", "prior_biased", "exact_prior"],
+    },
+    "timepoints": {
+        "n_timepoints": [2, 3, 4, 5, 11, 21, 41, 81],
+    },
+    "cvs": {
+        "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
+    },
+}
+
+
 if __name__ == "__main__":
-    # Set up experiments
-    definitions = {
-        "all": {
-            # "n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
-            "prior_types": ["prior_biased", "exact_prior"],
-            "n_timepoints": [11, 21, 41, 81],
-            "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
-        },
-        # "samples": {
-        #     "n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
-        # },
-        # "prior_types": {
-        #     "prior_types": ['no_prior', 'prior_biased', 'exact_prior'],
-        # },
-        # "timepoints": {
-        #     "n_timepoints": [2, 3, 4, 5, 11, 21, 41, 81],
-        # },
-        # "cvs": {
-        #     "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
-        # },
-    }
-    for key, definition in definitions.items():
-        console.rule(f"{key.upper()}", style="bold white", align="center")
-        xps = icg_experiment_factory(**definition)
-        # xps.to_yaml_file(RESULTS_ICG / f"xps_{key}.yaml")
-        create_petabs(xps, directory=RESULTS_ICG / f"xps_{key}", show_plot=False)
-        console.print()
+    from parvar import RESULTS_ICG
 
-    # Optimizer
-    console.rule("Optimization", align="center")
-    xp_ids = xps_selector(
-        results_dir=RESULTS_ICG,
-        xp_type="all",
-        conditions={
-            "prior_type": ["prior_biased", "exact_prior"],
-            "n_t": [11, 21, 41, 81],
-            "noise_cv": [0.0, 0.001, 0.01],
-        },
-    )
-    console.print(xp_ids)
-
-    optimize_petab_xps(results_dir=RESULTS_ICG, exp_type="all", xp_ids=xp_ids)
+    # select subset
+    # definitions = {k:v for k,v in definitions if k=="timepoints"}
+    create_petabs_for_definitions(definitions, factory, results_path=RESULTS_ICG)

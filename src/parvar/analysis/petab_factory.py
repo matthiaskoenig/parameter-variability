@@ -2,8 +2,8 @@ import shutil
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Optional, List, Union
-
+from typing import Optional, List, Union, Callable
+from pymetadata.console import console
 import numpy as np
 import pandas as pd
 import roadrunner
@@ -27,6 +27,7 @@ MEASUREMENT_UNIT_COLUMN = "measurementUnit"
 MEASUREMENT_TIME_UNIT_COLUMN = "timeUnit"
 
 
+# FIXME: this is too specific, generalize
 class Category(str, Enum):
     """Categories."""
 
@@ -496,10 +497,10 @@ def create_petab_example(
 
 
 def create_petabs(
-    exps: PETabExperimentList, directory: Path, show_plot: bool = True
+    exps: PETabExperimentList, results_path: Path, show_plot: bool = True
 ) -> list[Path]:
     """Create Petab files for list of experiments."""
-    directory.mkdir(parents=True, exist_ok=True)
+    results_path.mkdir(parents=True, exist_ok=True)
     yaml_files: list[Path] = []
 
     for ke in track(
@@ -507,17 +508,17 @@ def create_petabs(
     ):
         xp = exps.experiments[ke]
         yaml_file = create_petab_for_experiment(
-            experiment=xp, directory=directory, show_plot=show_plot
+            experiment=xp, directory=results_path, show_plot=show_plot
         )
         yaml_files.append(yaml_file)
 
         # Dump PETabExperiment into YAML file
-        with open(directory / f"{xp.id}" / "xp.yaml", "w") as f:
+        with open(results_path / f"{xp.id}" / "xp.yaml", "w") as f:
             ex_m = xp.model_dump(mode="json")
             yaml.dump(ex_m, f, sort_keys=False, indent=2)
 
     df_res = exps.to_dataframe()
-    df_res.to_csv(directory / "results.tsv", sep="\t", index=False)
+    df_res.to_csv(results_path / "results.tsv", sep="\t", index=False)
 
     return yaml_files
 
@@ -596,3 +597,18 @@ def create_petab_for_experiment(
     )
 
     return yaml_file
+
+
+def create_petabs_for_definitions(
+    definitions: dict, factory: Callable, results_path: Path
+):
+    """Create PETabs for given definitions."""
+
+    for key, definition in definitions.items():
+        console.rule(f"{key.upper()}", style="bold white", align="center")
+        xps = factory(**definition)
+
+        create_petabs(
+            xps, results_path=results_path / "xps" / f"{key}", show_plot=False
+        )
+        console.print()
