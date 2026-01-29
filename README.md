@@ -1,3 +1,5 @@
+[![GitHub Actions CI/CD Status](https://github.com/matthiaskoenig/parameter-variability/workflows/CI-CD/badge.svg)](https://github.com/matthiaskoenig/parameter-variability/actions/workflows/main.yml)
+
 # Bayesian models for ODE models in SBML
 
 This project implements Bayesian models using [PyMC](https://www.pymc.io) on top of ODE-based models encoded in the [Systems Biology Markup Language](https://sbml.org/) (SBML).
