@@ -7,11 +7,14 @@ from parvar.factories.icg_body_flat import definitions as definitions_icg
 from parvar.factories.icg_body_flat import factory as factory_icg
 from parvar.factories.simple_chain import definitions as definitions_simple_chain
 from parvar.factories.simple_chain import factory as factory_simple_chain
+from parvar.factories.simple_pk import definitions as definitions_simple_pk
+from parvar.factories.simple_pk import factory as factory_simple_pk
 
 
 testdata = [
     (definitions_simple_chain, factory_simple_chain),
     (definitions_icg, factory_icg),
+    (definitions_simple_pk, factory_simple_pk),
 ]
 
 
