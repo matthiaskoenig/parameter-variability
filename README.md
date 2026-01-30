@@ -10,20 +10,40 @@ This project implements Bayesian models using [PyMC](https://www.pymc.io) on top
 
 
 ## Installation
-
-### libraries
-Install graphviz library
-
-```bash
-sudo apt -y install graphviz graphviz-dev
-```
-
-### python environment
-Create a virtual environment with `uv` and install the package (https://docs.astral.sh/uv/getting-started/installation/)
+### Running
+Create a virtual environment with `uv`(https://docs.astral.sh/uv/getting-started/installation/)
 
 ```bash
 uv sync
 ```
+### Development
+For development setup via the following which installs the development dependencies
+and the pre-commit.
+```bash
+# install core dependencies
+uv sync
+
+# install dev dependencies
+uv pip install -r pyproject.toml --extra dev
+uv tool install tox --with tox-uv
+
+# setup pre-commit
+uv pip install pre-commit
+pre-commit install
+pre-commit run
+```
+
+### Testing with tox
+Run single tox target
+```bash
+tox r -e py314
+```
+Run all tests in parallel
+```bash
+tox run-parallel
+```
+
+
 
 
 # Example
