@@ -8,7 +8,6 @@ from parvar import RESULTS_SIMPLE_PK
 from parvar.analysis.experiment import *
 from parvar.analysis.petab_factory import create_petabs_for_definitions
 from parvar.analysis.utils import uuid_alphanumeric
-from parvar.factories.icg_body_flat import pars_biased_icg
 
 observables_simple_pk: list[Observable] = [
     Observable(
@@ -22,7 +21,7 @@ observables_simple_pk: list[Observable] = [
     Observable(
         id="y_peri",
         starting_value=0,
-    )
+    ),
 ]
 
 pars_true: dict[str, Parameter] = {
@@ -50,7 +49,6 @@ pars_true: dict[str, Parameter] = {
             type=DistributionType.LOGNORMAL, parameters={"loc": 1.0, "scale": 1}
         ),
     ),
-
 }
 
 pars_biased: dict[str, Parameter] = {
@@ -78,7 +76,6 @@ pars_biased: dict[str, Parameter] = {
             type=DistributionType.LOGNORMAL, parameters={"loc": 1.5, "scale": 1}
         ),
     ),
-
 }
 
 true_sampling: dict[str, Sampling] = {
@@ -117,7 +114,8 @@ exp_base = PETabExperiment(
                 parameters=[
                     pars_true["CL_MALE"],
                     pars_true["k_MALE"],
-                ]),
+                ]
+            ),
         ),
         Group(
             id="FEMALE",
@@ -126,7 +124,8 @@ exp_base = PETabExperiment(
                 parameters=[
                     pars_true["CL_FEMALE"],
                     pars_true["k_FEMALE"],
-                ]),
+                ]
+            ),
         ),
     ],
 )
@@ -233,10 +232,6 @@ definitions = {
 
 
 if __name__ == "__main__":
-    from parvar import RESULTS_SIMPLE_CHAIN
-
     # select subset
     # definitions = {k:v for k,v in definitions if k=="timepoints"}
-    create_petabs_for_definitions(
-        definitions, factory, results_path=RESULTS_SIMPLE_PK
-    )
+    create_petabs_for_definitions(definitions, factory, results_path=RESULTS_SIMPLE_PK)
