@@ -18,7 +18,9 @@ testdata = [
 ]
 
 
-@pytest.mark.parametrize("definitions, factory", testdata, ids=["simple_chain", "icg"])
+@pytest.mark.parametrize(
+    "definitions, factory", testdata, ids=["simple_chain", "icg", "simple_pk"]
+)
 def test_factory(definitions: dict, factory: Callable, tmp_path: Path) -> None:
     """Test the factory."""
     create_petabs_for_definitions(
