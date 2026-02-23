@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Union, List, Any
+from typing import Optional, Union, List
 
 import pandas as pd
 import yaml
