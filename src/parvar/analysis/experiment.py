@@ -11,6 +11,7 @@ import yaml
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic_yaml import parse_yaml_raw_as, to_yaml_str
 from pymetadata.console import console
+from copy import deepcopy
 
 
 class DistributionType(str, Enum):
@@ -173,37 +174,32 @@ class PETabExperimentList(BaseModel):
             d = {}
             d["id"] = exp.id
             d["model"] = exp.model
-            d["n_groups"] = len(exp.groups)
-            d["groups"] = [g.id for g in exp.groups]
             d["prior_type"] = exp.prior_type
-            d["n"] = [g.sampling.n_samples for g in exp.groups]
-            d["n_t"] = [g.sampling.steps for g in exp.groups]
-            d["noise_cv"] = [g.sampling.noise.cv for g in exp.groups]
+            d["n_groups"] = len(exp.groups)
+            for g in exp.groups:
+                d_group = deepcopy(d)
 
-            parameters: List[Any] = []
-            pars_per_group = [g.sampling.parameters for g in exp.groups]
-            for pars in pars_per_group:
-                par_ls = []
-                for par in pars:
-                    par_det = {
-                        par.id: par.distribution.parameters,
-                        "dsn_type": str(par.distribution.type),
-                    }
-                    par_ls.append(par_det)
+                d_group["group"] = g.id
+                d_group["n"] = g.sampling.n_samples
+                d_group["n_t"] = g.sampling.steps
+                d_group["noise_cv"] = g.sampling.noise.cv
 
-                parameters.append(par_ls)
-            d["parameters"] = parameters
+                for par in g.sampling.parameters:
+                    d_par = deepcopy(d_group)
 
-            # d = exp.model_dump(mode='python')
-            items.append(d)
+                    d_par['parameter'] = par.id
+                    d_par['dsn_type'] = str(par.distribution.type)
+                    d_par['dsn_par'] = par.distribution.parameters
+
+                    items.append(d_par)
 
         df = pd.DataFrame(data=items)
-        cols_with_ls = ["groups", "n", "n_t", "noise_cv", "parameters"]
-        #
-        # for col in cols_with_ls:
-        #     df[col] = df[col].apply(literal_eval)
-        #
-        df = df.explode(cols_with_ls)
+        # cols_with_ls = ["groups", "n", "n_t", "noise_cv", "parameters"]
+        # #
+        # # for col in cols_with_ls:
+        # #     df[col] = df[col].apply(literal_eval)
+        # #
+        # df = df.explode(cols_with_ls)
 
         return df
 

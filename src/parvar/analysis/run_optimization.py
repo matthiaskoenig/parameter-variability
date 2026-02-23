@@ -5,7 +5,6 @@ from typing import Dict, Optional
 import pandas as pd
 from pymetadata.console import console
 
-from parvar import RESULTS_ICG
 from parvar.analysis.petab_optimization import PyPestoSampler
 from parvar.analysis.utils import get_group_from_pid, get_parameter_from_pid
 
@@ -57,9 +56,9 @@ def optimize_petab_xp(yaml_file: Path) -> list[dict]:
     for pid, stats in results_petab.items():
         results.append(
             {
-                "xp": yaml_file.parent.name,
-                "groups": get_group_from_pid(pid),
-                "parameters": get_parameter_from_pid(pid),
+                "id": yaml_file.parent.name,
+                "group": get_group_from_pid(pid),
+                "parameter": get_parameter_from_pid(pid),
                 "pid": pid,
                 **stats,
             }

@@ -1,11 +1,11 @@
-from pathlib import Path
+# from pathlib import Path
 
 from pymetadata.console import console
 
-from parvar import RESULTS_ICG, RESULTS_SIMPLE_CHAIN
+from parvar import RESULTS_ICG #, RESULTS_SIMPLE_CHAIN
 from parvar.analysis.run_optimization import (
     xps_selector,
-    optimize_petab_xp,
+    # optimize_petab_xp,
     optimize_petab_xps,
 )
 
