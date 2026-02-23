@@ -7,6 +7,7 @@ from pymetadata.console import console
 
 from parvar import RESULTS_ICG
 from parvar.analysis.petab_optimization import PyPestoSampler
+from parvar.analysis.utils import get_group_from_pid, get_parameter_from_pid
 
 
 def xps_selector(
@@ -57,6 +58,8 @@ def optimize_petab_xp(yaml_file: Path) -> list[dict]:
         results.append(
             {
                 "xp": yaml_file.parent.name,
+                "groups": get_group_from_pid(pid),
+                "parameters": get_parameter_from_pid(pid),
                 "pid": pid,
                 **stats,
             }
