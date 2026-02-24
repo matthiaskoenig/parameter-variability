@@ -8,8 +8,7 @@ from rich.progress import track
 
 from parvar.analysis.experiment import *
 from parvar.analysis.petab_factory import create_petabs_for_definitions
-from parvar.analysis.run_optimization import xps_selector, optimize_petab_xps, \
-    run_optimizations
+from parvar.analysis.run_optimization import run_optimizations
 from parvar.analysis.utils import uuid_alphanumeric
 
 
