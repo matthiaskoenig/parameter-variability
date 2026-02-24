@@ -10,10 +10,10 @@ from parvar.analysis.utils import get_group_from_pid, get_parameter_from_pid
 
 
 def xps_selector(
-    results_dir: Path, xp_type: str, conditions: Optional[Dict[str, list]]
+    results_path: Path, xp_type: str, conditions: Optional[Dict[str, list]]
 ) -> list[str]:
     """Select the xps that match the desired conditions."""
-    df = pd.read_csv(results_dir / "xps" / xp_type / "results.tsv", sep="\t")
+    df = pd.read_csv(results_path / "xps" / xp_type / "results.tsv", sep="\t")
 
     if not conditions:  # empty dict -> no filtering
         return df
@@ -70,10 +70,10 @@ def optimize_petab_xp(yaml_file: Path) -> list[dict]:
     return results
 
 
-def optimize_petab_xps(results_dir: Path, exp_type: str, xp_ids: list[str]):
+def optimize_petab_xps(results_path: Path, xp_type: str, xp_ids: list[str]):
     """Optimize the given PEtab problems."""
 
-    xp_path = results_dir / "xps" / exp_type
+    xp_path = results_path / "xps" / xp_type
     yaml_files: list[Path] = []
     for xp in xp_path.iterdir():
         if xp.is_dir() and xp.name in xp_ids:
@@ -90,7 +90,29 @@ def optimize_petab_xps(results_dir: Path, exp_type: str, xp_ids: list[str]):
 
     df = pd.DataFrame(infos)
     df.to_csv(
-        results_dir / "xps" / exp_type / "bayes_results.tsv", sep="\t", index=False
+        results_path / "xps" / xp_type / "bayes_results.tsv", sep="\t", index=False
     )
     console.print(df)
     return df
+
+def run_optimizations(
+    results_path: Path,
+    xps_selection: dict[str, dict]
+) -> None:
+
+    for xp_type, conditions in xps_selection.items():
+        console.rule(f"Selection for {xp_type}", align="center")
+
+        xp_ids = xps_selector(
+            results_path=results_path,
+            xp_type=xp_type,
+            conditions=conditions,
+        )
+
+        console.print(xp_ids)
+
+        optimize_petab_xps(
+            results_path=results_path,
+            xp_type=xp_type,
+            xp_ids=xp_ids,
+        )

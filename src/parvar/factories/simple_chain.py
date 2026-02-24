@@ -194,7 +194,7 @@ if __name__ == "__main__":
     )
 
     xps_ids = xps_selector(
-        results_dir=RESULTS_SIMPLE_CHAIN,
+        results_path=RESULTS_SIMPLE_CHAIN,
         xp_type='all',
         conditions={
             "prior_type": ["prior_biased", "exact_prior"],
@@ -206,8 +206,8 @@ if __name__ == "__main__":
     console.print(xps_ids)
 
     optimize_petab_xps(
-        results_dir=RESULTS_SIMPLE_CHAIN,
-        exp_type='all',
+        results_path=RESULTS_SIMPLE_CHAIN,
+        xp_type='all',
         xp_ids=xps_ids,
     )
 
