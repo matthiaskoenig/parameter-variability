@@ -9,6 +9,7 @@ from pymetadata.console import console
 from parvar import RESULTS_ICG
 from parvar.analysis.experiment import *
 from parvar.analysis.petab_factory import create_petabs_for_definitions
+from parvar.analysis.run_optimization import run_optimizations
 from parvar.analysis.utils import uuid_alphanumeric
 
 # -------------------------------------------------------------------------------------
@@ -224,21 +225,21 @@ definitions = {
     "all": {
         # "n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
         "prior_types": ["prior_biased", "exact_prior"],
-        "n_timepoints": [11, 21, 41, 81],
-        "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
+        #"n_timepoints": [11, 21, 41, 81],
+        "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2,  0.5],
     },
-    "samples": {
-        "n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
-    },
-    "prior_types": {
-        "prior_types": ["no_prior", "prior_biased", "exact_prior"],
-    },
-    "timepoints": {
-        "n_timepoints": [2, 3, 4, 5, 11, 21, 41, 81],
-    },
-    "cvs": {
-        "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
-    },
+    # "samples": {
+    #     "n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
+    # },
+    # "prior_types": {
+    #     "prior_types": ["no_prior", "prior_biased", "exact_prior"],
+    # },
+    # "timepoints": {
+    #     "n_timepoints": [2, 3, 4, 5, 11, 21, 41, 81],
+    # },
+    # "cvs": {
+    #     "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
+    # },
 }
 
 
@@ -248,3 +249,20 @@ if __name__ == "__main__":
     # select subset
     # definitions = {k:v for k,v in definitions if k=="timepoints"}
     create_petabs_for_definitions(definitions, factory, results_path=RESULTS_ICG)
+
+    xps_selection = {
+        'all': {
+            "prior_type": [
+                # "prior_biased",
+                "exact_prior"
+            ],
+            # "n_t": [11, 21, 41, 81],
+            "noise_cv": [
+                # 0.0,
+                # 0.001,
+                0.01
+            ],
+        }
+    }
+
+    run_optimizations(results_path=RESULTS_ICG, xps_selection=xps_selection)
