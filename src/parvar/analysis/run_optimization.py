@@ -1,6 +1,6 @@
 from itertools import product
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import pandas as pd
 from pymetadata.console import console
@@ -11,15 +11,15 @@ from parvar.analysis.utils import get_group_from_pid, get_parameter_from_pid
 
 def xps_selector(
     results_path: Path, xp_type: str, conditions: Optional[Dict[str, list]]
-) -> list[str]:
+) -> Union[list[str], pd.DataFrame]:
     """Select the xps that match the desired conditions."""
     df = pd.read_csv(results_path / "xps" / xp_type / "results.tsv", sep="\t")
 
     if not conditions:  # empty dict -> no filtering
         return df
 
-    if "n_t" in conditions:
-        conditions["n_t"] = [t - 1 for t in conditions["n_t"]]
+    if "timepoints" in conditions:
+        conditions["timepoints"] = [t - 1 for t in conditions["timepoints"]]
 
     combinations = list(product(*(conditions[col] for col in conditions)))
 
@@ -96,11 +96,11 @@ def optimize_petab_xps(results_path: Path, xp_type: str, xp_ids: list[str]):
     return df
 
 def run_optimizations(
-    results_path: Path,
-    xps_selection: dict[str, dict]
+    optimizations: dict[str, dict],
+    results_path: Path
 ) -> None:
 
-    for xp_type, conditions in xps_selection.items():
+    for xp_type, conditions in optimizations.items():
         console.rule(f"Selection for {xp_type}", align="center")
 
         xp_ids = xps_selector(

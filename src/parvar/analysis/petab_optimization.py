@@ -234,7 +234,7 @@ class PyPestoSampler:
 #
 #     pypesto_sampler.optimizer()
 #
-#     pypesto_sampler.bayesian_sampler(n_samples=1000)
+#     pypesto_sampler.bayesian_sampler(samples=1000)
 #
 #     pypesto_sampler.results_hdi()
 #

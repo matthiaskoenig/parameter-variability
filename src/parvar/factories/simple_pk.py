@@ -4,9 +4,9 @@ from typing import Optional
 from rich.progress import track
 from pymetadata.console import console
 
-from parvar import RESULTS_SIMPLE_PK
 from parvar.analysis.experiment import *
 from parvar.analysis.petab_factory import create_petabs_for_definitions
+from parvar.analysis.run_optimization import run_optimizations
 from parvar.analysis.utils import uuid_alphanumeric
 
 observables_simple_pk: list[Observable] = [
@@ -132,20 +132,20 @@ exp_base = PETabExperiment(
 
 
 def factory(
-    n_samples: Optional[list[int]] = None,
-    n_timepoints: Optional[list[int]] = None,
+    samples: Optional[list[int]] = None,
+    timepoints: Optional[list[int]] = None,
     noise_cvs: Optional[list[float]] = None,
     prior_types: list[str] = None,
 ) -> PETabExperimentList:
     """Factory for simple chain experiments."""
     # handle default values
-    if n_samples is None:
-        n_samples = [20]
-        console.print(f"Using default number of samples: {n_samples}", style="warning")
-    if n_timepoints is None:
-        n_timepoints = [20]
+    if samples is None:
+        samples = [20]
+        console.print(f"Using default number of samples: {samples}", style="warning")
+    if timepoints is None:
+        timepoints = [20]
         console.print(
-            f"Using default number of timepoints: {n_timepoints}", style="warning"
+            f"Using default number of timepoints: {timepoints}", style="warning"
         )
     if noise_cvs is None:
         noise_cvs = [0.1]
@@ -164,13 +164,13 @@ def factory(
     experiments = []
 
     console.rule()
-    console.print(f"{n_samples=}", style="info")
-    console.print(f"{n_timepoints=}", style="info")
+    console.print(f"{samples=}", style="info")
+    console.print(f"{timepoints=}", style="info")
     console.print(f"{noise_cvs=}", style="info")
     console.print(f"{prior_types=}", style="info")
     console.rule()
 
-    tuples = list(product(prior_types, n_samples, n_timepoints, noise_cvs))
+    tuples = list(product(prior_types, samples, timepoints, noise_cvs))
     for kt in track(
         range(len(tuples)), description="Creating experiment definitions..."
     ):
@@ -211,27 +211,50 @@ def factory(
 
 definitions = {
     "all": {
-        # "n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
+        # "samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
         "prior_types": ["prior_biased", "exact_prior"],
-        "n_timepoints": [11, 21, 41, 81],
+        "timepoints": [11, 21, 41, 81],
         "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
     },
     "samples": {
-        "n_samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
+        "samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
     },
     "prior_types": {
         "prior_types": ["no_prior", "prior_biased", "exact_prior"],
     },
     "timepoints": {
-        "n_timepoints": [2, 3, 4, 5, 11, 21, 41, 81],
+        "timepoints": [2, 3, 4, 5, 11, 21, 41, 81],
     },
     "cvs": {
         "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
     },
 }
 
+optimizations = {
+    'all': {
+        "prior_type": [
+            # "prior_biased",
+            "exact_prior"
+            ],
+            # "n_t": [11, 21, 41, 81],
+        "noise_cv": [
+            # 0.0,
+            # 0.001,
+            0.001
+            ],
+        },
+    'timepoints': {
+        "timepoints": [5, 11, 81],
+    }
+}
 
 if __name__ == "__main__":
+    from parvar import RESULTS_SIMPLE_PK
     # select subset
     # definitions = {k:v for k,v in definitions if k=="timepoints"}
     create_petabs_for_definitions(definitions, factory, results_path=RESULTS_SIMPLE_PK)
+
+    run_optimizations(
+        optimizations=optimizations,
+        results_path=RESULTS_SIMPLE_PK
+    )

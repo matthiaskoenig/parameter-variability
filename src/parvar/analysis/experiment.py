@@ -180,8 +180,8 @@ class PETabExperimentList(BaseModel):
                 d_group = deepcopy(d)
 
                 d_group["group"] = g.id
-                d_group["n"] = g.sampling.n_samples
-                d_group["n_t"] = g.sampling.steps
+                d_group["samples"] = g.sampling.n_samples
+                d_group["timepoints"] = g.sampling.steps
                 d_group["noise_cv"] = g.sampling.noise.cv
 
                 for par in g.sampling.parameters:
