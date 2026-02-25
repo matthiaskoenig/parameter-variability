@@ -14,20 +14,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Python dev files (Ubuntu only)
+    - name: Install Python dev files and HDF5 support (Ubuntu only)
       run: |
            if [ "$RUNNER_OS" == "Linux" ]; then
-               sudo add-apt-repository ppa:deadsnakes/ppa && sudo apt-get update && sudo apt-get install -y python${{ matrix.python-version }}-dev
+               sudo add-apt-repository ppa:deadsnakes/ppa && sudo apt-get update && sudo apt-get install -y python${{ matrix.python-version }}-dev libhdf5-serial-dev
            fi
       shell: bash
-    - name: Install HDF5 support (Ubuntu only)
-      run: |
-        if [ "$RUNNER_OS" == "Linux" ]; then
-            sudo apt-get update && sudo apt-get install -y libhdf5-serial-dev
-        fi
-      shell: bash
-
-
     - name: Install uv and set the python version
       uses: astral-sh/setup-uv@v5
       with:
