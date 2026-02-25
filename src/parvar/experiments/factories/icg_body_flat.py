@@ -1,15 +1,7 @@
 """Factory to create the various sampling experiments."""
 
-from itertools import product
-from typing import Optional
-
-from rich.progress import track
-from pymetadata.console import console
-
 from parvar.experiments.experiment import *
 from parvar.experiments.petab_factory import create_petabs_for_definitions
-from parvar.optimization.run_optimization import run_optimizations
-from parvar.experiments.utils import uuid_alphanumeric
 
 # -------------------------------------------------------------------------------------
 # General definitions for ICG model
@@ -133,93 +125,6 @@ exp_base = PETabExperiment(
 )
 
 
-def factory(
-    samples: Optional[list[int]] = None,
-    timepoints: Optional[list[int]] = None,
-    noise_cvs: Optional[list[float]] = None,
-    prior_types: list[str] = None,
-) -> PETabExperimentList:
-    """Factory for creating all ICG experiments.
-
-    :param xps_path: Path to xps file
-    :param samples: Number of samples to generate
-    :param prior_types: List of prior types
-    :param timepoints: Number of timepoints to generate
-    :param noise_cvs: List of CV noise values
-
-    :return: PETabExperimentList
-    """
-    # handle default values
-    if samples is None:
-        samples = [20]
-        console.print(f"Using default number of samples: {samples}", style="warning")
-    if timepoints is None:
-        timepoints = [20]
-        console.print(
-            f"Using default number of timepoints: {timepoints}", style="warning"
-        )
-    if noise_cvs is None:
-        noise_cvs = [0.1]
-        console.print(f"Using default CVS: {noise_cvs}", style="warning")
-    if prior_types is None:
-        prior_types = ["no_prior"]
-        console.print(f"Using default priors: {prior_types}", style="warning")
-
-    # check prior types
-    supported_prior_types = ["no_prior", "prior_biased", "exact_prior"]
-    for prior_type in prior_types:
-        if prior_type not in supported_prior_types:
-            raise ValueError(f"Unsupported prior type: {prior_type}")
-
-    # create all experiments
-    experiments = []
-
-    console.rule()
-    console.print(f"{samples=}", style="info")
-    console.print(f"{timepoints=}", style="info")
-    console.print(f"{noise_cvs=}", style="info")
-    console.print(f"{prior_types=}", style="info")
-    console.rule()
-
-    tuples = list(product(prior_types, samples, timepoints, noise_cvs))
-    for kt in track(
-        range(len(tuples)), description="Creating experiment definitions..."
-    ):
-        # current settings
-        (prior_type, n_sample, n_timepoint, cv) = tuples[kt]
-
-        # copy base experiment
-        exp_n = exp_base.model_copy(deep=True)
-        exp_n.id = uuid_alphanumeric()
-        exp_n.prior_type = prior_type
-
-        for g in exp_n.groups:
-            g.sampling.n_samples = n_sample
-            g.sampling.steps = n_timepoint - 1
-            g.sampling.noise.cv = cv
-
-            if exp_n.prior_type == "no_prior":
-                g.estimation = Estimation(parameters=[])
-
-            elif exp_n.prior_type == "prior_biased":
-                pars_id = [par for par in pars_biased_icg if g.id in par]
-                g.estimation = Estimation(
-                    parameters=[pars_biased_icg[par] for par in pars_id]
-                )
-
-            elif exp_n.prior_type == "exact_prior":
-                pars_id = [par for par in pars_true_icg if g.id in par]
-                g.estimation = Estimation(
-                    parameters=[pars_true_icg[par] for par in pars_id]
-                )
-
-        experiments.append(exp_n)
-
-    exp_list = PETabExperimentList(experiments=experiments)
-
-    return exp_list
-
-
 definitions = {
     "all": {
         # "samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
@@ -241,23 +146,30 @@ definitions = {
     },
 }
 
-optimizations = {
-    "all": {
-        "prior_type": [
-            # "prior_biased",
-            "exact_prior"
-        ],
-        # "n_t": [11, 21, 41, 81],
-        "noise_cv": [
-            # 0.0,
-            # 0.001,
-            0.01
-        ],
-    },
-    "timepoints": {
-        "timepoints": [5, 11, 81],
-    },
+factory_data = {
+    "exp_base": exp_base,
+    "pars_true": pars_true_icg,
+    "pars_biased": pars_biased_icg,
 }
+
+
+# optimizations = {
+#     "all": {
+#         "prior_type": [
+#             # "prior_biased",
+#             "exact_prior"
+#         ],
+#         # "n_t": [11, 21, 41, 81],
+#         "noise_cv": [
+#             # 0.0,
+#             # 0.001,
+#             0.01
+#         ],
+#     },
+#     "timepoints": {
+#         "timepoints": [5, 11, 81],
+#     },
+# }
 
 
 if __name__ == "__main__":
@@ -266,12 +178,10 @@ if __name__ == "__main__":
     # select subset
     # definitions = {k:v for k,v in definitions if k=="timepoints"}
     create_petabs_for_definitions(
-        {k: v for (k, v) in definitions.items() if k == "all"},
-        factory,
-        results_path=RESULTS_ICG,
+        results_path=RESULTS_ICG, definitions=definitions, factory_data=factory_data
     )
 
-    run_optimizations(
-        {k: v for (k, v) in optimizations.items() if k == "all"},
-        results_path=RESULTS_ICG,
-    )
+    # run_optimizations(
+    #     {k: v for (k, v) in optimizations.items() if k == "all"},
+    #     results_path=RESULTS_ICG,
+    # )

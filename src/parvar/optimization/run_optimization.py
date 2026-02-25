@@ -1,115 +1,27 @@
-from itertools import product
-from pathlib import Path
-from typing import Dict, Optional, Union
+from parvar import RESULTS_SIMPLE_PK, RESULTS_SIMPLE_CHAIN, RESULTS_ICG
+from parvar.optimization.petab_optimization import run_optimizations
 
-import pandas as pd
-from pymetadata.console import console
+optimizations = {
+    "all": {
+        "prior_type": [
+            # "prior_biased",
+            "exact_prior"
+        ],
+        # "n_t": [11, 21, 41, 81],
+        "noise_cv": [
+            # 0.0,
+            # 0.001,
+            0.001
+        ],
+    },
+    "timepoints": {
+        "timepoints": [5, 11, 81],
+    },
+}
 
-from parvar.optimization.petab_optimization import PyPestoSampler
-from parvar.experiments.utils import get_group_from_pid, get_parameter_from_pid
+if __name__ == "__main__":
+    run_optimizations(optimizations=optimizations, results_path=RESULTS_SIMPLE_PK)
 
+    run_optimizations(optimizations=optimizations, results_path=RESULTS_SIMPLE_CHAIN)
 
-def xps_selector(
-    results_path: Path, xp_type: str, conditions: Optional[Dict[str, list]]
-) -> Union[list[str], pd.DataFrame]:
-    """Select the xps that match the desired conditions."""
-    df = pd.read_csv(results_path / "xps" / xp_type / "results.tsv", sep="\t")
-
-    if not conditions:  # empty dict -> no filtering
-        return df
-
-    if "timepoints" in conditions:
-        conditions["timepoints"] = [t - 1 for t in conditions["timepoints"]]
-
-    combinations = list(product(*(conditions[col] for col in conditions)))
-
-    matching_indices = set()
-
-    for comb in combinations:
-        comb_dict = dict(zip(conditions.keys(), comb))
-        mask = pd.Series(True, index=df.index)
-        for col, val in comb_dict.items():
-            mask &= df[col].eq(val)
-        matching_indices.update(df[mask].index)
-
-    df_res = df.loc[list(matching_indices)].sort_index()
-
-    if df_res.empty:
-        raise console.print(
-            "No XPs were selected. Check if conditions are correct", style="warning"
-        )
-
-    return df_res["id"].unique().tolist()
-
-
-def optimize_petab_xp(yaml_file: Path) -> list[dict]:
-    """Optimize single petab problem using PyPesto."""
-    pypesto_sampler = PyPestoSampler(yaml_file=yaml_file)
-    pypesto_sampler.load_problem()
-    pypesto_sampler.optimizer()
-    pypesto_sampler.bayesian_sampler(n_samples=1000)
-    pypesto_sampler.results_hdi()
-    # pypesto_sampler.results_median()
-
-    results = []
-    results_petab = pypesto_sampler.results_dict()
-    for pid, stats in results_petab.items():
-        results.append(
-            {
-                "id": yaml_file.parent.name,
-                "group": get_group_from_pid(pid),
-                "parameter": get_parameter_from_pid(pid),
-                "pid": pid,
-                **stats,
-            }
-        )
-
-    df_results = pd.DataFrame(results)
-    df_results.to_csv(yaml_file.parent / "optimization_results.tsv", sep="\t")
-
-    return results
-
-
-def optimize_petab_xps(results_path: Path, xp_type: str, xp_ids: list[str]):
-    """Optimize the given PEtab problems."""
-
-    xp_path = results_path / "xps" / xp_type
-    yaml_files: list[Path] = []
-    for xp in xp_path.iterdir():
-        if xp.is_dir() and xp.name in xp_ids:
-            for yaml_file in xp.glob("**/petab.yaml"):
-                yaml_files.append(yaml_file)
-
-    yaml_files = sorted(yaml_files)
-
-    infos = []
-    for yaml_file in yaml_files:
-        console.rule(yaml_file.name, style="white", align="left")
-        results: list[dict] = optimize_petab_xp(yaml_file)
-        infos.extend(results)
-
-    df = pd.DataFrame(infos)
-    df.to_csv(
-        results_path / "xps" / xp_type / "bayes_results.tsv", sep="\t", index=False
-    )
-    console.print(df)
-    return df
-
-
-def run_optimizations(optimizations: dict[str, dict], results_path: Path) -> None:
-    for xp_type, conditions in optimizations.items():
-        console.rule(f"Selection for {xp_type}", align="center")
-
-        xp_ids = xps_selector(
-            results_path=results_path,
-            xp_type=xp_type,
-            conditions=conditions,
-        )
-
-        console.print(xp_ids)
-
-        optimize_petab_xps(
-            results_path=results_path,
-            xp_type=xp_type,
-            xp_ids=xp_ids,
-        )
+    run_optimizations(optimizations=optimizations, results_path=RESULTS_ICG)
