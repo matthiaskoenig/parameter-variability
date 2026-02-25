@@ -42,22 +42,30 @@ class PyPestoSampler:
         self.fig_path.mkdir(parents=True, exist_ok=True)
 
     def optimizer(self, plot: bool = True):
+        # FIXME: this should also be general settings
         optimizer_options = {"maxiter": 1e4, "fatol": 1e-12, "frtol": 1e-12}
 
+        # FIXME: add optimizer option "Fides"
         optimizer = pypesto.optimize.FidesOptimizer(
             options=optimizer_options, verbose=logging.WARN
         )
+        # FIXME: add option for the startpoint method.
         startpoint_method = pypesto.startpoint.uniform
         # save optimizer trace
         # history_options = pypesto.HistoryOptions(trace_record=True)
         opt_options = pypesto.optimize.OptimizeOptions()
         console.print(opt_options)
 
+        # FIXME: this should be in settings;
         n_starts = 100  # usually a value >= 100 should be used
+
+        # FIXME: flag for the engine;
         engine = pypesto.engine.MultiProcessEngine()
 
         # Set seed for reproducibility
-        np.random.seed(1)
+        # FIXME: this should be an optional seed setting
+        seed = 1
+        np.random.seed(seed)
 
         console.rule("Optimization", style="white")
         # TODO: store much more information on the optimization run;
@@ -263,6 +271,10 @@ def xps_selector(
 
 def optimize_petab_xp(yaml_file: Path) -> list[dict]:
     """Optimize single petab problem using PyPesto."""
+
+    # FIXME: add settings dictionary to this function
+    # n_samples
+
     pypesto_sampler = PyPestoSampler(yaml_file=yaml_file)
     pypesto_sampler.load_problem()
     pypesto_sampler.optimizer()

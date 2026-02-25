@@ -22,20 +22,8 @@ from parvar.experiments.factories.simple_pk import (
 )
 
 optim = {
-    "all": {
-        "prior_type": [
-            # "prior_biased",
-            "exact_prior"
-        ],
-        # "n_t": [11, 21, 41, 81],
-        "noise_cv": [
-            # 0.0,
-            # 0.001,
-            0.001
-        ],
-    },
     "timepoints": {
-        "timepoints": [5, 11, 81],
+        "timepoints": [5],
     },
 }
 
