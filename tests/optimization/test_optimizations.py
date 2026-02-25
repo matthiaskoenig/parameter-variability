@@ -39,7 +39,7 @@ testdata = [
     testdata,
     ids=["simple_chain", "icg", "simple_pk"],
 )
-def test_factory(
+def test_optimization(
     definitions: dict, factory_data: dict, optimizations: dict, tmp_path: Path
 ) -> None:
     """Test the optimizers."""
