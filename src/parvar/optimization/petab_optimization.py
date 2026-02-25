@@ -1,6 +1,7 @@
 """Optimization using petab and pypesto."""
 
 import logging
+import warnings
 from copy import deepcopy
 from dataclasses import dataclass
 from itertools import product
@@ -41,35 +42,53 @@ class PyPestoSampler:
         self.fig_path = self.results_path / "figs"
         self.fig_path.mkdir(parents=True, exist_ok=True)
 
-    def optimizer(self, plot: bool = True):
-        # FIXME: this should also be general settings
-        optimizer_options = {"maxiter": 1e4, "fatol": 1e-12, "frtol": 1e-12}
+    def optimizer(
+        self,
+        maxiter: Optional[float] = 1e4,
+        fatol: Optional[float] = 1e-12,
+        frtol: Optional[float] = 1e-12,
+        optim: Optional[str] = "fides",
+        startpoint_method: Optional[str] = "uniform",
+        n_starts: Optional[int] = 100,
+        plot: bool = True,
+        seed: Optional[int] = 1,
+    ):
+        optimizer_options = {"maxiter": maxiter, "fatol": fatol, "frtol": frtol}
 
-        # FIXME: add optimizer option "Fides"
-        optimizer = pypesto.optimize.FidesOptimizer(
-            options=optimizer_options, verbose=logging.WARN
-        )
-        # FIXME: add option for the startpoint method.
-        startpoint_method = pypesto.startpoint.uniform
+        if optim == "fides":
+            optimizer = pypesto.optimize.FidesOptimizer(
+                options=optimizer_options, verbose=logging.WARN
+            )
+
+        else:
+            warnings.warn(f"Optimizer {optim} not supported.\nDefaulting to Fides")
+
+            optimizer = pypesto.optimize.FidesOptimizer(
+                options=optimizer_options, verbose=logging.WARN
+            )
+
+        if startpoint_method == "uniform":
+            startpoint_method = pypesto.startpoint.uniform
+
+        else:
+            warnings.warn(
+                f"Startpoint method {startpoint_method} not supported.\nDefaulting to uniform"
+            )
+            startpoint_method = pypesto.startpoint.uniform
+
         # save optimizer trace
         # history_options = pypesto.HistoryOptions(trace_record=True)
         opt_options = pypesto.optimize.OptimizeOptions()
         console.print(opt_options)
 
-        # FIXME: this should be in settings;
-        n_starts = 100  # usually a value >= 100 should be used
-
         # FIXME: flag for the engine;
         engine = pypesto.engine.MultiProcessEngine()
 
         # Set seed for reproducibility
-        # FIXME: this should be an optional seed setting
-        seed = 1
-        np.random.seed(seed)
+        if seed:
+            np.random.seed(seed)
 
         console.rule("Optimization", style="white")
-        # TODO: store much more information on the optimization run;
-        # runtime, settings, success, optimization options
 
         # THis is performing the optimization
         self.result = pypesto.optimize.minimize(
