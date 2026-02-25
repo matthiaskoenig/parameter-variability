@@ -17,9 +17,17 @@ Create a virtual environment with `uv`(https://docs.astral.sh/uv/getting-started
 uv sync
 ```
 ### Development
+On ubuntu install the python dev files via
+```bash
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt-get update
+sudo apt-get install -y python3.14-dev
+```
+
 For development setup via the following which installs the development dependencies
 and the pre-commit.
 ```bash
+
 # install core dependencies
 uv sync
 

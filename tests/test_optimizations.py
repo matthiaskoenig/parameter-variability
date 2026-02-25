@@ -1,3 +1,5 @@
+"""Test optimization of PEtab problems."""
+
 import pytest
 from pathlib import Path
 from typing import Callable
@@ -23,17 +25,15 @@ testdata = [
     (definitions_simple_pk, factory_simple_pk, optimizations_simple_pk),
 ]
 
+
 @pytest.mark.parametrize(
-    "definitions, factory, optimizations", testdata, ids=["simple_chain", "icg", "simple_pk"]
+    "definitions, factory, optimizations",
+    testdata,
+    ids=["simple_chain", "icg", "simple_pk"],
 )
-
 def test_optimizations(
-    definitions: dict,
-    factory: Callable,
-    optimizations: dict,
-    tmp_path: Path
+    definitions: dict, factory: Callable, optimizations: dict, tmp_path: Path
 ) -> None:
-
     create_petabs_for_definitions(
         definitions={k: v for (k, v) in definitions.items() if k == "timepoints"},
         factory=factory,

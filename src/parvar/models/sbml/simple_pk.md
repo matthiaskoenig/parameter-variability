@@ -16,7 +16,7 @@ Q = 1.0  # [l/min] distribution Q
 Vcent = 1.0  # [l] central compartment
 Vgut = 1.0  # [l] gut compartment
 Vperi = 1.0  # [l] peripheral compartment
-k = 1.0  # [l/min] absorption rate
+k_abs = 1.0  # [l/min] absorption rate
 ```
 
 ## Initial conditions `x0`
@@ -29,7 +29,7 @@ y_peri = 0.0  # [mmol/l] y peripheral in Vperi
 ## ODE system
 ```
 # y
-ABSORPTION = k * y_gut  # [mmol/min] absorption
+ABSORPTION = k_abs * y_gut  # [mmol/min] absorption
 CLEARANCE = CL * y_cent  # [mmol/min] clearance
 R1 = Q * y_cent  # [mmol/min] transport peripheral (R1)
 R2 = Q * y_peri  # [mmol/min] transport central (R2)
