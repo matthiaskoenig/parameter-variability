@@ -1,119 +1,121 @@
+"""Factory to create the various sampling experiments."""
+
 from itertools import product
 from typing import Optional
 
 from rich.progress import track
 from pymetadata.console import console
 
-from parvar.analysis.experiment import *
-from parvar.analysis.petab_factory import create_petabs_for_definitions
-from parvar.analysis.run_optimization import run_optimizations
-from parvar.analysis.utils import uuid_alphanumeric
+from parvar.experiments.experiment import *
+from parvar.experiments.petab_factory import create_petabs_for_definitions
+from parvar.optimization.run_optimization import run_optimizations
+from parvar.experiments.utils import uuid_alphanumeric
 
-observables_simple_pk: list[Observable] = [
+# -------------------------------------------------------------------------------------
+# General definitions for ICG model
+# -------------------------------------------------------------------------------------
+
+# Observables in model
+# FIXME: this should be venous plasma and liver
+observables_icg: list[Observable] = [
     Observable(
-        id="y_cent",
+        id="Cre_plasma_icg",
         starting_value=0,
     ),
     Observable(
-        id="y_gut",
-        starting_value=1,
-    ),
-    Observable(
-        id="y_peri",
+        id="Cgi_plasma_icg",
         starting_value=0,
     ),
 ]
 
-pars_true: dict[str, Parameter] = {
-    "CL_MALE": Parameter(
-        id="CL",
+# True parameters for sampling
+pars_true_icg: dict[str, Parameter] = {
+    "BW_MALE": Parameter(
+        id="BW",
         distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 1.0, "scale": 1}
+            type=DistributionType.LOGNORMAL, parameters={"loc": 75.0, "scale": 10}
+        ),
+    ),  # bodyweight [kg] (loc: mean;
+    "LI__ICGIM_Vmax_MALE": Parameter(
+        id="LI__ICGIM_Vmax",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL,
+            parameters={"loc": 0.0369598840327503, "scale": 0.01},
         ),
     ),
-    "CL_FEMALE": Parameter(
-        id="CL",
+    "BW_FEMALE": Parameter(
+        id="BW",
         distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 0.5, "scale": 1}
+            type=DistributionType.LOGNORMAL, parameters={"loc": 65.0, "scale": 10}
         ),
-    ),
-    "k_MALE": Parameter(
-        id="k",
+    ),  # bodyweight [kg] (loc: mean;
+    "LI__ICGIM_Vmax_FEMALE": Parameter(
+        id="LI__ICGIM_Vmax",
         distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 0.5, "scale": 1}
-        ),
-    ),
-    "k_FEMALE": Parameter(
-        id="k",
-        distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 1.0, "scale": 1}
-        ),
-    ),
-}
-
-pars_biased: dict[str, Parameter] = {
-    "CL_MALE": Parameter(
-        id="CL",
-        distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 1.5, "scale": 1}
-        ),
-    ),
-    "CL_FEMALE": Parameter(
-        id="CL",
-        distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 1.5, "scale": 1}
-        ),
-    ),
-    "k_MALE": Parameter(
-        id="k",
-        distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 1.5, "scale": 1}
-        ),
-    ),
-    "k_FEMALE": Parameter(
-        id="k",
-        distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 1.5, "scale": 1}
+            type=DistributionType.LOGNORMAL, parameters={"loc": 0.02947, "scale": 0.01}
         ),
     ),
 }
 
+# Biased parameters
+pars_biased_icg: dict[str, Parameter] = {
+    "BW_MALE": Parameter(
+        id="BW",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 10.0, "scale": 0.2}
+        ),
+    ),
+    "LI__ICGIM_Vmax_MALE": Parameter(
+        id="LI__ICGIM_Vmax",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 10.0, "scale": 0.2}
+        ),
+    ),
+    "BW_FEMALE": Parameter(
+        id="BW",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 30.0, "scale": 20}
+        ),
+    ),
+    "LI__ICGIM_Vmax_FEMALE": Parameter(
+        id="LI__ICGIM_Vmax",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 0.02, "scale": 0.2}
+        ),
+    ),
+}
+
+# True sampling
 true_sampling: dict[str, Sampling] = {
     "MALE": Sampling(
-        n_samples=20,
+        n_samples=100,
         steps=20,
-        parameters=[
-            pars_true["CL_MALE"],
-            pars_true["k_MALE"],
-        ],
+        parameters=[pars_true_icg["BW_MALE"], pars_true_icg["LI__ICGIM_Vmax_MALE"]],
         noise=Noise(add_noise=True, cv=0.05),
-        observables=observables_simple_pk,
+        observables=observables_icg,
     ),
     "FEMALE": Sampling(
-        n_samples=20,
+        n_samples=100,
         steps=20,
-        parameters=[
-            pars_true["CL_FEMALE"],
-            pars_true["k_FEMALE"],
-        ],
+        parameters=[pars_true_icg["BW_FEMALE"], pars_true_icg["LI__ICGIM_Vmax_FEMALE"]],
         noise=Noise(add_noise=True, cv=0.05),
-        observables=observables_simple_pk,
+        observables=observables_icg,
     ),
 }
-
 
 exp_base = PETabExperiment(
     id="empty",
-    model="simple_pk",
+    model="icg_body_flat",
     prior_type="empty",
+    dosage={"IVDOSE_icg": 10.0},
     groups=[
         Group(
             id="MALE",
             sampling=true_sampling["MALE"],
             estimation=Estimation(
                 parameters=[
-                    pars_true["CL_MALE"],
-                    pars_true["k_MALE"],
+                    pars_true_icg["BW_MALE"],
+                    pars_true_icg["LI__ICGIM_Vmax_MALE"],
                 ]
             ),
         ),
@@ -122,8 +124,8 @@ exp_base = PETabExperiment(
             sampling=true_sampling["FEMALE"],
             estimation=Estimation(
                 parameters=[
-                    pars_true["CL_FEMALE"],
-                    pars_true["k_FEMALE"],
+                    pars_true_icg["BW_FEMALE"],
+                    pars_true_icg["LI__ICGIM_Vmax_FEMALE"],
                 ]
             ),
         ),
@@ -137,7 +139,16 @@ def factory(
     noise_cvs: Optional[list[float]] = None,
     prior_types: list[str] = None,
 ) -> PETabExperimentList:
-    """Factory for simple chain experiments."""
+    """Factory for creating all ICG experiments.
+
+    :param xps_path: Path to xps file
+    :param samples: Number of samples to generate
+    :param prior_types: List of prior types
+    :param timepoints: Number of timepoints to generate
+    :param noise_cvs: List of CV noise values
+
+    :return: PETabExperimentList
+    """
     # handle default values
     if samples is None:
         samples = [20]
@@ -191,15 +202,15 @@ def factory(
                 g.estimation = Estimation(parameters=[])
 
             elif exp_n.prior_type == "prior_biased":
-                pars_id = [par for par in pars_biased if g.id in par]
+                pars_id = [par for par in pars_biased_icg if g.id in par]
                 g.estimation = Estimation(
-                    parameters=[pars_biased[par] for par in pars_id]
+                    parameters=[pars_biased_icg[par] for par in pars_id]
                 )
 
             elif exp_n.prior_type == "exact_prior":
-                pars_id = [par for par in pars_true if g.id in par]
+                pars_id = [par for par in pars_true_icg if g.id in par]
                 g.estimation = Estimation(
-                    parameters=[pars_true[par] for par in pars_id]
+                    parameters=[pars_true_icg[par] for par in pars_id]
                 )
 
         experiments.append(exp_n)
@@ -213,7 +224,7 @@ definitions = {
     "all": {
         # "samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
         "prior_types": ["prior_biased", "exact_prior"],
-        "timepoints": [11, 21, 41, 81],
+        # "timepoints": [11, 21, 41, 81],
         "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
     },
     "samples": {
@@ -231,30 +242,36 @@ definitions = {
 }
 
 optimizations = {
-    'all': {
+    "all": {
         "prior_type": [
             # "prior_biased",
             "exact_prior"
-            ],
-            # "n_t": [11, 21, 41, 81],
+        ],
+        # "n_t": [11, 21, 41, 81],
         "noise_cv": [
             # 0.0,
             # 0.001,
-            0.001
-            ],
-        },
-    'timepoints': {
+            0.01
+        ],
+    },
+    "timepoints": {
         "timepoints": [5, 11, 81],
-    }
+    },
 }
 
+
 if __name__ == "__main__":
-    from parvar import RESULTS_SIMPLE_PK
+    from parvar import RESULTS_ICG
+
     # select subset
     # definitions = {k:v for k,v in definitions if k=="timepoints"}
-    create_petabs_for_definitions(definitions, factory, results_path=RESULTS_SIMPLE_PK)
+    create_petabs_for_definitions(
+        {k: v for (k, v) in definitions.items() if k == "all"},
+        factory,
+        results_path=RESULTS_ICG,
+    )
 
     run_optimizations(
-        optimizations=optimizations,
-        results_path=RESULTS_SIMPLE_PK
+        {k: v for (k, v) in optimizations.items() if k == "all"},
+        results_path=RESULTS_ICG,
     )

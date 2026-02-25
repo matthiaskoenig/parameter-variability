@@ -2,25 +2,30 @@ import shutil
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Optional, List, Union, Callable
-from pymetadata.console import console
+from typing import Optional, List, Union
+from itertools import product
+import yaml
+
 import numpy as np
 import pandas as pd
 import roadrunner
-import xarray
 import xarray as xr
-import yaml
+
 from matplotlib import pyplot as plt
+
+from pymetadata.console import console
 from rich.progress import track
 
 from parvar import MODELS
-from parvar.analysis.experiment import (
+from parvar.experiments.utils import uuid_alphanumeric
+from parvar.experiments.experiment import (
     Group,
     DistributionType,
     Noise,
     Observable,
     PETabExperimentList,
     PETabExperiment,
+    Estimation,
 )
 
 MEASUREMENT_UNIT_COLUMN = "measurementUnit"
@@ -48,12 +53,14 @@ colors = {
 class PKPDParameters(str, Enum):
     """Parameters in PKPD Models"""
 
+    # FIXME: this should not be here, too specific
+
     # simple_chain
     k1 = "k1"
 
     # simple_pk
     CL = "CL"
-    k = "k"
+    k_abs = "k_abs"
 
     # icg_body_flat
     LI__ICGIM_Vmax = "LI__ICGIM_Vmax"
@@ -259,7 +266,7 @@ class ODESampleSimulator:
 
 
 def plot_simulations(
-    dsets: dict[Category, xarray.Dataset],
+    dsets: dict[Category, xr.Dataset],
     fig_path: Optional[Path] = None,
     show_plot: bool = True,
 ):
@@ -304,7 +311,7 @@ def plot_simulations(
 
 
 def create_petab_example(
-    dfs: dict[Category, xarray.Dataset],
+    dfs: dict[Category, xr.Dataset],
     groups: List[Group],
     petab_path: Path,
     param: Union[str, List[str]],
@@ -606,14 +613,95 @@ def create_petab_for_experiment(
     return yaml_file
 
 
+def model_experiment_factory(
+    exp_base: PETabExperiment,
+    prior_types: list[str] = None,
+    pars_true: Optional[dict] = None,
+    pars_biased: Optional[dict] = None,
+    samples: Optional[list[int]] = None,
+    timepoints: Optional[list[int]] = None,
+    noise_cvs: Optional[list[float]] = None,
+) -> PETabExperimentList:
+    """Factory for creating all experiments."""
+    # handle default values
+    if samples is None:
+        samples = [20]
+        console.print(f"Using default number of samples: {samples}", style="warning")
+    if timepoints is None:
+        timepoints = [20]
+        console.print(
+            f"Using default number of timepoints: {timepoints}", style="warning"
+        )
+    if noise_cvs is None:
+        noise_cvs = [0.1]
+        console.print(f"Using default CVS: {noise_cvs}", style="warning")
+    if prior_types is None:
+        prior_types = ["no_prior"]
+        console.print(f"Using default priors: {prior_types}", style="warning")
+
+    # check prior types
+    supported_prior_types = ["no_prior", "prior_biased", "exact_prior"]
+    for prior_type in prior_types:
+        if prior_type not in supported_prior_types:
+            raise ValueError(f"Unsupported prior type: {prior_type}")
+
+    # create all experiments
+    experiments = []
+
+    console.rule()
+    console.print(f"{samples=}", style="info")
+    console.print(f"{timepoints=}", style="info")
+    console.print(f"{noise_cvs=}", style="info")
+    console.print(f"{prior_types=}", style="info")
+    console.rule()
+
+    tuples = list(product(prior_types, samples, timepoints, noise_cvs))
+    for kt in track(
+        range(len(tuples)), description="Creating experiment definitions..."
+    ):
+        # current settings
+        (prior_type, n_sample, n_timepoint, cv) = tuples[kt]
+
+        # copy base experiment
+        exp_n = exp_base.model_copy(deep=True)
+        exp_n.id = uuid_alphanumeric()
+        exp_n.prior_type = prior_type
+
+        for g in exp_n.groups:
+            g.sampling.n_samples = n_sample
+            g.sampling.steps = n_timepoint - 1
+            g.sampling.noise.cv = cv
+
+            if exp_n.prior_type == "no_prior":
+                g.estimation = Estimation(parameters=[])
+
+            elif exp_n.prior_type == "prior_biased":
+                pars_id = [par for par in pars_biased if g.id in par]
+                g.estimation = Estimation(
+                    parameters=[pars_biased[par] for par in pars_id]
+                )
+
+            elif exp_n.prior_type == "exact_prior":
+                pars_id = [par for par in pars_true if g.id in par]
+                g.estimation = Estimation(
+                    parameters=[pars_true[par] for par in pars_id]
+                )
+
+        experiments.append(exp_n)
+
+    exp_list = PETabExperimentList(experiments=experiments)
+
+    return exp_list
+
+
 def create_petabs_for_definitions(
-    definitions: dict, factory: Callable, results_path: Path
+    definitions: dict, results_path: Path, factory_data: dict
 ):
     """Create PETabs for given definitions."""
 
     for key, definition in definitions.items():
         console.rule(f"{key.upper()}", style="bold white", align="center")
-        xps = factory(**definition)
+        xps = model_experiment_factory(**definition, **factory_data)
 
         create_petabs(
             xps, results_path=results_path / "xps" / f"{key}", show_plot=False

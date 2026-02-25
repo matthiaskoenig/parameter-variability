@@ -1,4 +1,4 @@
-from parvar.analysis.experiment import *
+from parvar.experiments.experiment import *
 from pymetadata.console import console
 
 

@@ -187,9 +187,9 @@ class PETabExperimentList(BaseModel):
                 for par in g.sampling.parameters:
                     d_par = deepcopy(d_group)
 
-                    d_par['parameter'] = par.id
-                    d_par['dsn_type'] = str(par.distribution.type)
-                    d_par['dsn_par'] = par.distribution.parameters
+                    d_par["parameter"] = par.id
+                    d_par["dsn_type"] = str(par.distribution.type)
+                    d_par["dsn_par"] = par.distribution.parameters
 
                     items.append(d_par)
 

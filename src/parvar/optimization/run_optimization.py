@@ -5,8 +5,8 @@ from typing import Dict, Optional, Union
 import pandas as pd
 from pymetadata.console import console
 
-from parvar.analysis.petab_optimization import PyPestoSampler
-from parvar.analysis.utils import get_group_from_pid, get_parameter_from_pid
+from parvar.optimization.petab_optimization import PyPestoSampler
+from parvar.experiments.utils import get_group_from_pid, get_parameter_from_pid
 
 
 def xps_selector(
@@ -95,11 +95,8 @@ def optimize_petab_xps(results_path: Path, xp_type: str, xp_ids: list[str]):
     console.print(df)
     return df
 
-def run_optimizations(
-    optimizations: dict[str, dict],
-    results_path: Path
-) -> None:
 
+def run_optimizations(optimizations: dict[str, dict], results_path: Path) -> None:
     for xp_type, conditions in optimizations.items():
         console.rule(f"Selection for {xp_type}", align="center")
 

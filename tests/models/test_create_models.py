@@ -1,4 +1,4 @@
-from parvar.create_models import run_all
+from parvar.models.create_models import run_all
 
 
 def test_create_models() -> None:

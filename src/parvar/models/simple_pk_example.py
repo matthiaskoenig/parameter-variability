@@ -47,7 +47,7 @@ def parameter_scan(r: roadrunner.RoadRunner, results_path: Path) -> None:
 
     results = {}
 
-    for parameter, par_name in zip([ks, cls, qs], ["k", "CL", "Q"]):
+    for parameter, par_name in zip([ks, cls, qs], ["k_abs", "CL", "Q"]):
         results_par = []
         for value in parameter:
             # reset to a clean state
