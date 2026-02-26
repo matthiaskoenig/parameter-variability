@@ -1,7 +1,6 @@
 """Factory to create the various sampling experiments."""
 
 from parvar.experiments.experiment import *
-from parvar.experiments.petab_factory import create_petabs_for_definitions
 
 # -------------------------------------------------------------------------------------
 # General definitions for ICG model
@@ -125,63 +124,8 @@ exp_base = PETabExperiment(
 )
 
 
-definitions = {
-    "all": {
-        # "samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
-        "prior_types": ["prior_biased", "exact_prior"],
-        # "timepoints": [11, 21, 41, 81],
-        "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
-    },
-    "samples": {
-        "samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],
-    },
-    "prior_types": {
-        "prior_types": ["no_prior", "prior_biased", "exact_prior"],
-    },
-    "timepoints": {
-        "timepoints": [2, 3, 4, 5, 11, 21, 41, 81],
-    },
-    "cvs": {
-        "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
-    },
-}
-
 factory_data = {
     "exp_base": exp_base,
     "pars_true": pars_true_icg,
     "pars_biased": pars_biased_icg,
 }
-
-
-# optimizations = {
-#     "all": {
-#         "prior_type": [
-#             # "prior_biased",
-#             "exact_prior"
-#         ],
-#         # "n_t": [11, 21, 41, 81],
-#         "noise_cv": [
-#             # 0.0,
-#             # 0.001,
-#             0.01
-#         ],
-#     },
-#     "timepoints": {
-#         "timepoints": [5, 11, 81],
-#     },
-# }
-
-
-if __name__ == "__main__":
-    from parvar import RESULTS_ICG
-
-    # select subset
-    # definitions = {k:v for k,v in definitions if k=="timepoints"}
-    create_petabs_for_definitions(
-        results_path=RESULTS_ICG, definitions=definitions, factory_data=factory_data
-    )
-
-    # run_optimizations(
-    #     {k: v for (k, v) in optimizations.items() if k == "all"},
-    #     results_path=RESULTS_ICG,
-    # )

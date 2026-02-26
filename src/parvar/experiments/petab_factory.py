@@ -2,7 +2,7 @@ import shutil
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Optional, List, Union
+from typing import Optional, Union, Any
 from itertools import product
 import yaml
 
@@ -28,6 +28,7 @@ from parvar.experiments.experiment import (
     Estimation,
 )
 
+DEFINITIONS_FILENAME = "definitions.tsv"
 MEASUREMENT_UNIT_COLUMN = "measurementUnit"
 MEASUREMENT_TIME_UNIT_COLUMN = "timeUnit"
 
@@ -180,7 +181,7 @@ class ODESampleSimulator:
         integrator: roadrunner.Integrator = self.r.integrator
         integrator.setSetting("absolute_tolerance", abs_tol)
         integrator.setSetting("relative_tolerance", rel_tol)
-        self.ids: List[str] = self.r.getIds()
+        self.ids: list[str] = self.r.getIds()
 
     @staticmethod
     def add_noise(
@@ -242,7 +243,7 @@ class ODESampleSimulator:
 
             if simulation_settings.observables:
                 observables = simulation_settings.observables
-                obs_ls: List[str] = []
+                obs_ls: list[str] = []
                 for observed in observables:
                     if observed.id[0] != "[" or observed.id[-1] != "]":
                         observed.id = "[" + observed.id + "]"
@@ -312,9 +313,9 @@ def plot_simulations(
 
 def create_petab_example(
     dfs: dict[Category, xr.Dataset],
-    groups: List[Group],
+    groups: list[Group],
     petab_path: Path,
-    param: Union[str, List[str]],
+    param: Union[str, list[str]],
     sbml_path: Path,
     initial_values: Optional[dict[str, int]] = None,
 ) -> Path:
@@ -326,17 +327,17 @@ def create_petab_example(
     petab_path.mkdir(parents=True, exist_ok=True)
 
     # Create all files and copy all the files
-    measurement_ls: List[pd.DataFrame] = []
-    condition_ls: List[dict[str, Optional[str, float, int]]] = []
-    parameter_ls: List[dict[str, Optional[str, float, int]]] = []
-    observable_ls: List[dict[str, Optional[str, float, int]]] = []
+    measurement_ls: list[pd.DataFrame] = []
+    condition_ls: list[dict[str, Optional[str, float, int]]] = []
+    parameter_ls: list[dict[str, Optional[str, float, int]]] = []
+    observable_ls: list[dict[str, Optional[str, float, int]]] = []
 
     if isinstance(param, str):
         param = [param]
 
     # for j, gen in enumerate(sim_dfs['gender'].values):
     for j, (cat, data) in enumerate(dfs.items()):
-        measurement_pop: List[pd.DataFrame] = []
+        measurement_pop: list[pd.DataFrame] = []
 
         sim_df = data
 
@@ -480,7 +481,7 @@ def create_petab_example(
     # Create Petab YAML
     petab_path_rel = petab_path.relative_to(petab_path.parents[0])
 
-    petab_yaml: dict[str, Optional[str, List[dict[str, List]]]] = {}
+    petab_yaml: dict[str, Optional[str, list[dict[str, list]]]] = {}
     petab_yaml["format_version"] = 1
     petab_yaml["parameter_file"] = str(
         petab_path_rel / f"parameters_{sbml_path.stem}.tsv"
@@ -532,7 +533,7 @@ def create_petabs(
             yaml.dump(ex_m, f, sort_keys=False, indent=2)
 
     df_res = exps.to_dataframe()
-    df_res.to_csv(results_path / "results.tsv", sep="\t", index=False)
+    df_res.to_csv(results_path / DEFINITIONS_FILENAME, sep="\t", index=False)
 
     return yaml_files
 
@@ -707,3 +708,67 @@ def create_petabs_for_definitions(
             xps, results_path=results_path / "xps" / f"{key}", show_plot=False
         )
         console.print()
+
+
+def select_all_experiments(
+    results_path: Path,
+) -> list[Path]:
+    """Select all the experiments."""
+    # get all yaml files
+    xps_path = results_path / "xps"
+    yaml_files: list[Path] = [p for p in xps_path.glob("**/petab.yaml")]
+    return yaml_files
+
+
+def select_experiments(
+    results_path: Path, definitions: dict[str, dict[str, Any]]
+) -> list[Path]:
+    """Select the experiments that match the desired optimization conditions.
+
+    Used to select a subset of the existing experiments.
+    Returns a list of yaml paths for the PETabs problems
+    """
+
+    def xp_ids_for_conditions(df: pd.DataFrame, conditions: dict[str, Any]) -> set[str]:
+        """Get all xp ids for conditions."""
+
+        # select all
+        xp_ids: set
+        xp_ids = {xid for xid in df["id"].unique()}
+
+        # collect combinations
+        if conditions:
+            if "timepoints" in conditions:
+                conditions["timepoints"] = [t - 1 for t in conditions["timepoints"]]
+
+            combinations = list(product(*(conditions[col] for col in conditions)))
+            matching_indices = set()
+            for comb in combinations:
+                comb_dict = dict(zip(conditions.keys(), comb))
+                mask = pd.Series(True, index=df.index)
+                for col, val in comb_dict.items():
+                    mask &= df[col].eq(val)
+                matching_indices.update(df[mask].index)
+
+            df_selected = df.loc[list(matching_indices)].sort_index()
+            xp_ids = {xid for xid in df_selected["id"].unique()}
+
+        return xp_ids
+
+    yaml_files: list[Path] = []
+    for xp_type, conditions in definitions.items():
+        console.rule(f"Selection for {xp_type}", align="center")
+
+        # base path of experiments
+        xp_path = results_path / "xps" / xp_type
+
+        # read the definition dataframe
+        df = pd.read_csv(xp_path / DEFINITIONS_FILENAME, sep="\t")
+        xp_ids = xp_ids_for_conditions(df, conditions)
+
+        # get yamls for xp
+        yaml_files.extend(
+            [p for p in xp_path.glob("**/petab.yaml") if p.parent.name in xp_ids]
+        )
+
+    return yaml_files

@@ -1,24 +1,35 @@
-from parvar import RESULTS_SIMPLE_PK, RESULTS_SIMPLE_CHAIN, RESULTS_ICG
-from parvar.optimization.petab_optimization import run_optimizations
+"""Run example optimizations with model."""
 
-optimizations = {
-    "all": {
-        "prior_type": ["prior_biased", "exact_prior"],
-        # "timepoints": [11, 21, 41, 81],
-        "noise_cv": [
-            # 0.0,
-            0.001,
-            0.01,
-        ],
-    },
-    "timepoints": {
-        "timepoints": [5, 11, 81],
-    },
-}
+from pathlib import Path
+
+from pymetadata.console import console
+
+from parvar import RESULTS_SIMPLE_PK, RESULTS_SIMPLE_CHAIN, RESULTS_ICG
+from parvar.experiments.petab_factory import select_all_experiments
+from parvar.optimization.petab_optimization import optimize_experiments
+
 
 if __name__ == "__main__":
-    run_optimizations(optimizations=optimizations, results_path=RESULTS_SIMPLE_PK)
+    for results_path in [
+        RESULTS_SIMPLE_PK,
+        RESULTS_SIMPLE_CHAIN,
+        RESULTS_ICG,
+    ]:
+        console.rule(results_path.name, align="left", style="white")
 
-    run_optimizations(optimizations=optimizations, results_path=RESULTS_SIMPLE_CHAIN)
+        # select problems to optimize
+        # yaml_paths: list[Path] = select_experiments(
+        #     results_path=results_path,
+        #     definitions=definitions_subset,
+        # )
+        # console.print(f"YAML paths: {len(yaml_paths)}")
+        # console.rule()
 
-    run_optimizations(optimizations=optimizations, results_path=RESULTS_ICG)
+        # select all problems to optimize
+        yaml_paths: list[Path] = select_all_experiments(
+            results_path=results_path,
+        )
+        console.print(f"YAML paths: {len(yaml_paths)}")
+
+        # optimize
+        optimize_experiments(yaml_paths=yaml_paths)

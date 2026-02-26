@@ -4,9 +4,8 @@ import logging
 import warnings
 from copy import deepcopy
 from dataclasses import dataclass
-from itertools import product
 from pathlib import Path
-from typing import Callable, Optional, Dict, Union
+from typing import Callable, Optional
 
 import arviz as az
 import numpy as np
@@ -252,58 +251,48 @@ class PyPestoSampler:
     #         console.print(medians.sel(parameter=par).data_vars.variables)
 
 
-def xps_selector(
-    results_path: Path, xp_type: str, conditions: Optional[Dict[str, list]]
-) -> Union[list[str], pd.DataFrame]:
-    """Select the xps that match the desired conditions."""
-    df = pd.read_csv(results_path / "xps" / xp_type / "results.tsv", sep="\t")
+def optimize_experiments(yaml_paths: list[Path]) -> None:
+    """Optimize PETab problems locally.
 
-    if not conditions:  # empty dict -> no filtering
-        return df
-
-    if "timepoints" in conditions:
-        conditions["timepoints"] = [t - 1 for t in conditions["timepoints"]]
-
-    combinations = list(product(*(conditions[col] for col in conditions)))
-
-    matching_indices = set()
-
-    for comb in combinations:
-        comb_dict = dict(zip(conditions.keys(), comb))
-        mask = pd.Series(True, index=df.index)
-        for col, val in comb_dict.items():
-            mask &= df[col].eq(val)
-        matching_indices.update(df[mask].index)
-
-    df_res = df.loc[list(matching_indices)].sort_index()
-
-    if df_res.empty:
-        raise console.print(
-            "No XPs were selected. Check if conditions are correct", style="warning"
-        )
-
-    return df_res["id"].unique().tolist()
+    For remote execution and multiprocessing see below.
+    """
+    for yaml_path in yaml_paths:
+        optimize_experiment(yaml_path)
 
 
-def optimize_petab_xp(yaml_file: Path) -> list[dict]:
+def optimize_experiments_server(yaml_paths: list[Path]) -> None:
+    """Optimize PETab problems."""
+
+    # This has to use multiprocessing and distribute the problems on the server
+    # FIXME: multiprocessing and resource management
+    # Distribute files to server;
+
+    for yaml_path in yaml_paths:
+        # FIXME: correct settings for optimization
+        optimize_experiment(yaml_path)
+
+
+def optimize_experiment(yaml_path: Path):
     """Optimize single petab problem using PyPesto."""
+
+    console.print(yaml_path)
 
     # FIXME: add settings dictionary to this function
     # n_samples
-
-    pypesto_sampler = PyPestoSampler(yaml_file=yaml_file, n_samples=1000)
+    pypesto_sampler = PyPestoSampler(yaml_file=yaml_path, n_samples=1000)
     pypesto_sampler.load_problem()
     pypesto_sampler.optimizer()
     pypesto_sampler.bayesian_sampler()
     pypesto_sampler.results_hdi()
     # pypesto_sampler.results_median()
 
+    # collect results for parameters
     results = []
     results_petab = pypesto_sampler.results_dict()
     for pid, stats in results_petab.items():
         results.append(
             {
-                "id": yaml_file.parent.name,
+                "id": yaml_path.parent.name,
                 "group": get_group_from_pid(pid),
                 "parameter": get_parameter_from_pid(pid),
                 "pid": pid,
@@ -311,52 +300,7 @@ def optimize_petab_xp(yaml_file: Path) -> list[dict]:
             }
         )
 
-    df_results = pd.DataFrame(results)
-    df_results.to_csv(yaml_file.parent / "optimization_results.tsv", sep="\t")
-
-    return results
-
-
-def optimize_petab_xps(results_path: Path, xp_type: str, xp_ids: list[str]):
-    """Optimize the given PEtab problems."""
-
-    xp_path = results_path / "xps" / xp_type
-    yaml_files: list[Path] = []
-    for xp in xp_path.iterdir():
-        if xp.is_dir() and xp.name in xp_ids:
-            for yaml_file in xp.glob("**/petab.yaml"):
-                yaml_files.append(yaml_file)
-
-    yaml_files = sorted(yaml_files)
-
-    infos = []
-    for yaml_file in yaml_files:
-        console.rule(yaml_file.name, style="white", align="left")
-        results: list[dict] = optimize_petab_xp(yaml_file)
-        infos.extend(results)
-
-    df = pd.DataFrame(infos)
-    df.to_csv(
-        results_path / "xps" / xp_type / "bayes_results.tsv", sep="\t", index=False
-    )
+    # write results
+    df = pd.DataFrame(results)
     console.print(df)
-    return df
-
-
-def run_optimizations(optimizations: dict[str, dict], results_path: Path) -> None:
-    for xp_type, conditions in optimizations.items():
-        console.rule(f"Selection for {xp_type}", align="center")
-
-        xp_ids = xps_selector(
-            results_path=results_path,
-            xp_type=xp_type,
-            conditions=conditions,
-        )
-
-        console.print(xp_ids)
-
-        optimize_petab_xps(
-            results_path=results_path,
-            xp_type=xp_type,
-            xp_ids=xp_ids,
-        )
+    df.to_csv(yaml_path.parent / "optimization_results.tsv", sep="\t")
