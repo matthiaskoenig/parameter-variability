@@ -3,15 +3,12 @@ from parvar.optimization.petab_optimization import run_optimizations
 
 optimizations = {
     "all": {
-        "prior_type": [
-            # "prior_biased",
-            "exact_prior"
-        ],
-        # "n_t": [11, 21, 41, 81],
+        "prior_type": ["prior_biased", "exact_prior"],
+        # "timepoints": [11, 21, 41, 81],
         "noise_cv": [
             # 0.0,
-            # 0.001,
-            0.001
+            0.001,
+            0.01,
         ],
     },
     "timepoints": {

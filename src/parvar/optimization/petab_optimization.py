@@ -32,6 +32,7 @@ class PyPestoSampler:
     petab_problem: petab.v1.Problem = None
     pypesto_problem: pypesto.Problem = None
     result: pypesto.Result = None
+    n_samples: int = 10_000
 
     def load_problem(self):
         self.petab_problem: Problem = petab.v1.Problem.from_yaml(self.yaml_file)
@@ -151,24 +152,18 @@ class PyPestoSampler:
             plt.savefig(str(self.fig_path) + "/04_opt_scatter.png")
 
     def bayesian_sampler(
-        self,
-        sampler: Callable = pypesto.sample.AdaptiveMetropolisSampler(),
-        n_samples: int = 10_000,
+        self, sampler: Callable = pypesto.sample.AdaptiveMetropolisSampler()
     ):
         self.result = pypesto.sample.sample(
             problem=self.pypesto_problem,
             sampler=sampler,
-            n_samples=n_samples,
+            n_samples=self.n_samples,
             result=self.result,
         )
 
         pypesto.sample.effective_sample_size(result=self.result)
-        ess = self.result.sample_result.effective_sample_size
-        print(
-            f"Effective sample size per computation time: "
-            f"{round(ess / self.result.sample_result.time, 2)}"
-        )
 
+        # Plots
         pypesto.visualize.sampling_fval_traces(self.result)
         plt.tight_layout()
         plt.savefig(str(self.fig_path) + "/06_sampling_fval_traces.png")
@@ -231,6 +226,8 @@ class PyPestoSampler:
                 "mean": float(np.mean(values)),
                 "std": float(np.std(values)),
                 "median": float(np.median(values)),
+                "ess": self.result.sample_result.effective_sample_size,
+                "n_samples": self.n_samples,
                 "values": values,
             }
 
@@ -294,10 +291,10 @@ def optimize_petab_xp(yaml_file: Path) -> list[dict]:
     # FIXME: add settings dictionary to this function
     # n_samples
 
-    pypesto_sampler = PyPestoSampler(yaml_file=yaml_file)
+    pypesto_sampler = PyPestoSampler(yaml_file=yaml_file, n_samples=1000)
     pypesto_sampler.load_problem()
     pypesto_sampler.optimizer()
-    pypesto_sampler.bayesian_sampler(n_samples=1000)
+    pypesto_sampler.bayesian_sampler()
     pypesto_sampler.results_hdi()
     # pypesto_sampler.results_median()
 
