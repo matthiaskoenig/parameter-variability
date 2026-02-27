@@ -91,6 +91,13 @@ class SimulationSettings:
     # skip_error_column: Optional[List[str]] = None
 
 
+def lognorm_par_transform(loc: float, scale: float) -> tuple[float, float]:
+    sigma_ln = np.sqrt(np.log(1 + (scale / loc) ** 2))
+    mu_ln = np.log(loc) - sigma_ln**2 / 2
+
+    return mu_ln, sigma_ln
+
+
 def create_samples_parameters(
     parameters: dict[Category, dict[PKPDParameters, LognormParameters]],
     seed: Optional[int] = 1234,
@@ -107,8 +114,7 @@ def create_samples_parameters(
             s = lnpars.sigma
             m = lnpars.mu
 
-            sigma_ln = np.sqrt(np.log(1 + (s / m) ** 2))
-            mu_ln = np.log(m) - sigma_ln**2 / 2
+            mu_ln, sigma_ln = lognorm_par_transform(s, m)
             sample_par[par] = np.random.lognormal(mu_ln, sigma_ln, size=lnpars.n)
         samples[category] = sample_par
 
@@ -637,7 +643,7 @@ def model_experiment_factory(
         noise_cvs = [0.1]
         console.print(f"Using default CVS: {noise_cvs}", style="warning")
     if prior_types is None:
-        prior_types = ["no_prior"]
+        prior_types = ["exact_prior"]
         console.print(f"Using default priors: {prior_types}", style="warning")
 
     # check prior types
