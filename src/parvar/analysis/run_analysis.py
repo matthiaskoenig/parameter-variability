@@ -70,66 +70,88 @@ def prior_types_plot(
     df: pd.DataFrame,
 ) -> None:
     pars = df["parameter"].unique()
-    # groups = df["group"].unique()
+    groups = df["group"].unique()
     prior_types = df["prior_type"].unique()
     fig, axs = plt.subplots(nrows=len(prior_types), ncols=len(pars))
 
     # offset = lambda p: transforms.ScaledTranslation(p / 72., 0,
     #                                                 plt.gcf().dpi_scale_trans)
     # trans = plt.gca().transData
-    for ax, p in zip(axs, pars):
-        for g in ["FEMALE"]:
-            df_gp = df[(df["group"] == g) & (df["parameter"] == p)]
-            console.print(df_gp[["group", "parameter", "timepoints"]])
+    pc_x = 0
+    pc_y = 0
+    for pr in prior_types:
+        for p in pars:
+            offset = 0
+            if pc_y > len(pars) - 1:
+                pc_y = 0
 
-            markersize = 15
-            # real values
-            ax.plot(
-                df_gp["timepoints"],
-                df_gp["sample_loc"],
-                ".",
-                markersize=markersize,
-                markeredgecolor="black",
-                label=f"{g} (real)",
-                color=colors[g],
-            )
-            # ax.plot(
-            #     df_gp['prior_type'],
-            #     df_gp['bayes_sampler_median'],
-            #     '*',
-            #     label=g,
-            #     color=colors[g]
-            #     # transform=trans + offset(0.5)
-            # )
+            for g in groups:
+                slicer = (
+                    (df["group"] == g)
+                    & (df["parameter"] == p)
+                    & (df["prior_type"] == pr)
+                )
 
-            # estimate
-            ax.plot(
-                df_gp["timepoints"],
-                df_gp["bayes_sampler_median"],
-                "*",
-                color=colors[g],
-                markersize=markersize,
-                markeredgecolor="black",
-                label=f"{g} (estimated)",
-                # yerr=[df_gp['hdi_low'],df_gp['hdi_high']],
-            )
+                df_gp = df[slicer]
 
-            console.print(f"{p}: {df_gp[['hdi_low', 'hdi_high']].to_numpy().tolist()}")
-            median = df_gp["bayes_sampler_median"]
-            yerr_lower = median - df_gp["hdi_low"]
-            yerr_upper = df_gp["hdi_high"] - median
-            yerr = np.vstack([yerr_lower, yerr_upper])
+                markersize = 15
+                # real values
+                axs[pc_x, pc_y].plot(
+                    df_gp["timepoints"] + offset,
+                    df_gp["sample_loc"],
+                    ".",
+                    markersize=markersize,
+                    markeredgecolor="black",
+                    label=f"{g} (real)",
+                    color=colors[g],
+                )
+                # ax.plot(
+                #     df_gp['prior_type'],
+                #     df_gp['bayes_sampler_median'],
+                #     '*',
+                #     label=g,
+                #     color=colors[g]
+                #     # transform=trans + offset(0.5)
+                # )
 
-            console.print(yerr)
+                # estimate
+                axs[pc_x, pc_y].plot(
+                    df_gp["timepoints"] + offset,
+                    df_gp["bayes_sampler_median"],
+                    "+",
+                    color=colors[g],
+                    markersize=markersize,
+                    markeredgecolor="black",
+                    label=f"{g} (estimated)",
+                    # yerr=[df_gp['hdi_low'],df_gp['hdi_high']],
+                )
 
-            ax.errorbar(
-                x=df_gp["timepoints"],
-                y=df_gp["bayes_sampler_median"],
-                yerr=yerr,
-                color=colors[g],
-                linestyle="",
-            )
-            ax.set_title(p)
+                console.print(
+                    f"{p}: {df_gp[['hdi_low', 'hdi_high']].to_numpy().tolist()}"
+                )
+                median = df_gp["bayes_sampler_median"]
+                yerr_lower = median - df_gp["hdi_low"]
+                yerr_upper = df_gp["hdi_high"] - median
+                yerr = np.vstack([yerr_lower, yerr_upper])
+
+                axs[pc_x, pc_y].errorbar(
+                    x=df_gp["timepoints"] + offset,
+                    y=df_gp["bayes_sampler_median"],
+                    yerr=yerr,
+                    color=colors[g],
+                    linestyle="dashed",
+                )
+
+                offset += 0.5
+                console.print(f"{pc_x}, {pc_y}")
+
+            if pc_x == 0:
+                axs[pc_x, pc_y].set_title(p)
+
+            pc_y += 1
+
+        pc_x += 1
+
     plt.legend()
     plt.show()
 

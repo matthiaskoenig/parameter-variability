@@ -4,6 +4,7 @@ from typing import Any
 
 definitions_minimal: dict[str, dict[str, Any]] = {
     "timepoints": {
+        "prior_types": ["prior_biased", "exact_prior"],
         "timepoints": [5, 11],
     },
 }
