@@ -1,7 +1,8 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
-from console import console
+from pymetadata.console import console
 
 from parvar import RESULTS_SIMPLE_PK
 from parvar.analysis.utils import extract_key_from_dict
@@ -14,6 +15,8 @@ def join_optimization_results(
     results_path: Path,
     xp_type: str,
 ) -> pd.DataFrame:
+    """Join the experiment setup with the results."""
+
     directories: Path = results_path / "xps" / xp_type
     filenames = [d for d in directories.glob("**/optimization_results.tsv")]
 
@@ -58,6 +61,7 @@ def join_optimization_results(
     ]
 
     df = df_join[col_order]
+    df.to_csv(directories / "definitions_results.tsv", sep="\t")
 
     return df
 
@@ -77,11 +81,16 @@ def prior_types_plot(
         for g in ["FEMALE"]:
             df_gp = df[(df["group"] == g) & (df["parameter"] == p)]
             console.print(df_gp[["group", "parameter", "timepoints"]])
+
+            markersize = 15
+            # real values
             ax.plot(
                 df_gp["timepoints"],
                 df_gp["sample_loc"],
                 ".",
-                label=g,
+                markersize=markersize,
+                markeredgecolor="black",
+                label=f"{g} (real)",
                 color=colors[g],
             )
             # ax.plot(
@@ -92,20 +101,33 @@ def prior_types_plot(
             #     color=colors[g]
             #     # transform=trans + offset(0.5)
             # )
+
+            # estimate
             ax.plot(
                 df_gp["timepoints"],
                 df_gp["bayes_sampler_median"],
                 "*",
                 color=colors[g],
+                markersize=markersize,
+                markeredgecolor="black",
+                label=f"{g} (estimated)",
                 # yerr=[df_gp['hdi_low'],df_gp['hdi_high']],
             )
+
             console.print(f"{p}: {df_gp[['hdi_low', 'hdi_high']].to_numpy().tolist()}")
+            median = df_gp["bayes_sampler_median"]
+            yerr_lower = median - df_gp["hdi_low"]
+            yerr_upper = df_gp["hdi_high"] - median
+            yerr = np.vstack([yerr_lower, yerr_upper])
+
+            console.print(yerr)
+
             ax.errorbar(
-                df_gp["timepoints"],
-                df_gp["bayes_sampler_median"],
-                uplims=df_gp["hdi_high"].to_list(),
-                # yerr=df_gp[['hdi_low','hdi_high']].to_numpy().tolist(),
+                x=df_gp["timepoints"],
+                y=df_gp["bayes_sampler_median"],
+                yerr=yerr,
                 color=colors[g],
+                linestyle="",
             )
             ax.set_title(p)
     plt.legend()
@@ -116,6 +138,7 @@ if __name__ == "__main__":
     results = join_optimization_results(
         results_path=RESULTS_SIMPLE_PK, xp_type="timepoints"
     )
+    console.print(results)
 
     # results.to_csv(analysis.results_path / "xps" / "join.tsv", sep="\t", index=False)
     # console.print(

@@ -44,6 +44,7 @@ class PyPestoSampler:
 
     def optimizer(
         self,
+        # FIXME: settings in data structure
         maxiter: Optional[float] = 1e4,
         fatol: Optional[float] = 1e-12,
         frtol: Optional[float] = 1e-12,
@@ -59,17 +60,14 @@ class PyPestoSampler:
             optimizer = pypesto.optimize.FidesOptimizer(
                 options=optimizer_options, verbose=logging.WARN
             )
-
         else:
             warnings.warn(f"Optimizer {optim} not supported.\nDefaulting to Fides")
-
             optimizer = pypesto.optimize.FidesOptimizer(
                 options=optimizer_options, verbose=logging.WARN
             )
 
         if startpoint_method == "uniform":
             startpoint_method = pypesto.startpoint.uniform
-
         else:
             warnings.warn(
                 f"Startpoint method {startpoint_method} not supported.\nDefaulting to uniform"
