@@ -72,7 +72,7 @@ def prior_types_plot(
     pars = df["parameter"].unique()
     groups = df["group"].unique()
     prior_types = df["prior_type"].unique()
-    fig, axs = plt.subplots(nrows=len(prior_types), ncols=len(pars))
+    fig, axs = plt.subplots(nrows=len(prior_types), ncols=len(pars), dpi=300)
 
     # offset = lambda p: transforms.ScaledTranslation(p / 72., 0,
     #                                                 plt.gcf().dpi_scale_trans)
@@ -126,9 +126,6 @@ def prior_types_plot(
                     # yerr=[df_gp['hdi_low'],df_gp['hdi_high']],
                 )
 
-                console.print(
-                    f"{p}: {df_gp[['hdi_low', 'hdi_high']].to_numpy().tolist()}"
-                )
                 median = df_gp["bayes_sampler_median"]
                 yerr_lower = median - df_gp["hdi_low"]
                 yerr_upper = df_gp["hdi_high"] - median
@@ -152,7 +149,25 @@ def prior_types_plot(
 
         pc_x += 1
 
-    plt.legend()
+    handles = []
+    labels = []
+    for ax in fig.axes:
+        h, lab = ax.get_legend_handles_labels()
+        handles.extend(h)
+        labels.extend(lab)
+
+    # Remove duplicates (optional)
+    by_label = dict(zip(labels, handles))
+
+    # Figure-level legend, outside to the right
+    plt.legend(
+        by_label.values(),
+        by_label.keys(),
+        loc="upper left",
+        bbox_to_anchor=(1.02, 1.0),  # x>1 puts it outside to the right
+        borderaxespad=0.0,
+    )
+    plt.tight_layout()
     plt.show()
 
 

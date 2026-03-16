@@ -27,21 +27,22 @@ def example_simple_chain() -> None:
         results.append(df)
 
     f, ax = plt.subplots(dpi=DPI, layout="constrained", figsize=(6, 6))
+    labels = {"[S1]": r"$S_1$", "[S2]": r"$S_2$"}
     for sid in ["[S1]", "[S2]"]:
         for kdf, df in enumerate(results):
             ax.plot(
                 df.time,
                 df[sid],
-                label=sid if kdf == 0 else "__nolabel__",
+                label=labels[sid] if kdf == 0 else "__nolabel__",
                 linestyle="-" if sid == "[S1]" else "--",
                 # marker="o",
                 # markeredgecolor="black",
-                color="black" if sid == "[S2]" else "black",
+                color="blue" if sid == "[S2]" else "orange",
             )
         # ax.legend()
 
     ax.legend()
-    f.suptitle("Parameter scan k1")
+    # f.suptitle("Parameter scan k1")
     ax.set_xlabel("Time", fontweight="bold")
     ax.set_ylabel("Plasma Concentration", fontweight="bold")
     plt.show()

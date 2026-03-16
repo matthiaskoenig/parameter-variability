@@ -3,7 +3,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 
-DPI = 300
+DPI = 360
 
 SMALL_SIZE = 12
 MEDIUM_SIZE = 15

@@ -21,9 +21,15 @@ def reference_simulation(r: roadrunner.RoadRunner, results_path: Path) -> None:
     s = r.simulate(start=0, end=10, steps=400)  # [min]
     df: pd.DataFrame = pd.DataFrame(s, columns=s.colnames)
 
-    f.suptitle("Reference simulation")
+    labels = {
+        "[y_gut]": r"$y_{gut}$",
+        "[y_cent]": r"$y_{cent}$",
+        "[y_peri]": r"$y_{peri}$",
+    }
+
+    # f.suptitle("Reference simulation")
     for sid in ["[y_gut]", "[y_cent]", "[y_peri]"]:
-        ax.plot(df.time, df[sid], label=sid)
+        ax.plot(df.time, df[sid], label=labels[sid])
 
         # ax.legend()
 
@@ -62,7 +68,7 @@ def parameter_scan(r: roadrunner.RoadRunner, results_path: Path) -> None:
         results[par_name] = results_par
 
     f, axes = plt.subplots(nrows=3, ncols=1, figsize=(7, 13), dpi=300)
-    f.suptitle("Parameter scan")
+    # f.suptitle("Parameter scan")
     for parameter, ax in zip(results, axes):
         for sid in ["[y_cent]", "[y_gut]", "[y_peri]"]:
             for df in results[parameter]:
@@ -75,7 +81,8 @@ def parameter_scan(r: roadrunner.RoadRunner, results_path: Path) -> None:
                     markeredgecolor="black",
                 )
         # ax.legend()
-        ax.set_title(parameter)
+        par = parameter if parameter != "k_abs" else "k"
+        ax.set_title(par, fontsize=18)
         ax.set_xlabel("time [min]", fontweight="bold")
         ax.set_ylabel("concentration [mM]", fontweight="bold")
     plt.tight_layout()
