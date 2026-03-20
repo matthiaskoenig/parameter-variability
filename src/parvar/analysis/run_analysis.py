@@ -72,7 +72,9 @@ def prior_types_plot(
     pars = df["parameter"].unique()
     groups = df["group"].unique()
     prior_types = df["prior_type"].unique()
-    fig, axs = plt.subplots(nrows=len(prior_types), ncols=len(pars), dpi=300)
+    fig, axs = plt.subplots(
+        nrows=len(prior_types), ncols=len(pars), dpi=300, sharex=True
+    )
 
     # offset = lambda p: transforms.ScaledTranslation(p / 72., 0,
     #                                                 plt.gcf().dpi_scale_trans)
@@ -99,8 +101,8 @@ def prior_types_plot(
                 axs[pc_x, pc_y].plot(
                     df_gp["timepoints"] + offset,
                     df_gp["sample_loc"],
-                    ".",
-                    markersize=markersize,
+                    "X",
+                    markersize=markersize - 5,
                     markeredgecolor="black",
                     label=f"{g} (real)",
                     color=colors[g],
@@ -118,9 +120,9 @@ def prior_types_plot(
                 axs[pc_x, pc_y].plot(
                     df_gp["timepoints"] + offset,
                     df_gp["bayes_sampler_median"],
-                    "+",
+                    "d",
                     color=colors[g],
-                    markersize=markersize,
+                    markersize=markersize - 5,
                     markeredgecolor="black",
                     label=f"{g} (estimated)",
                     # yerr=[df_gp['hdi_low'],df_gp['hdi_high']],
@@ -145,12 +147,16 @@ def prior_types_plot(
             if pc_x == 0:
                 axs[pc_x, pc_y].set_title(p)
 
+            if pc_y == 0:
+                axs[pc_x, pc_y].set_ylabel(pr)
+
             pc_y += 1
 
         pc_x += 1
 
     handles = []
     labels = []
+    fig.supxlabel("timepoints")
     for ax in fig.axes:
         h, lab = ax.get_legend_handles_labels()
         handles.extend(h)
