@@ -3,7 +3,7 @@
 from parvar import RESULTS_SIMPLE_PK, RESULTS_SIMPLE_CHAIN, RESULTS_ICG
 from parvar.experiments.petab_factory import create_petabs_for_definitions
 
-from parvar.experiments.factories import definitions_minimal
+from parvar.experiments.factories import definitions_all
 from parvar.experiments.factories.simple_pk import (
     factory_data as factory_data_simple_pk,
 )
@@ -23,6 +23,7 @@ if __name__ == "__main__":
     ]:
         create_petabs_for_definitions(
             results_path=results_path,
-            definitions=definitions_minimal,
+            # definitions=definitions_minimal,
+            definitions=definitions_all,
             factory_data=factory_data,
         )
