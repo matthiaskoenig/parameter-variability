@@ -11,6 +11,14 @@ This project implements Bayesian models using [PyMC](https://www.pymc.io) on top
 
 ## Installation
 
+### Dependencies
+```bash
+sudo apt install -y build-essential cmake libhdf5-serial-dev
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install -y python3.14-dev
+```
+
 ### Running
 Create a virtual environment with `uv`(https://docs.astral.sh/uv/getting-started/installation/)
 
@@ -18,14 +26,6 @@ Create a virtual environment with `uv`(https://docs.astral.sh/uv/getting-started
 uv sync
 ```
 ### Development
-On ubuntu install the python dev files via
-```bash
-sudo apt-get install -y build-essential cmake
-sudo add-apt-repository ppa:deadsnakes/ppa
-sudo apt-get update
-sudo apt-get install -y python3.14-dev
-```
-
 For development setup via the following which installs the development dependencies
 and the pre-commit.
 ```bash

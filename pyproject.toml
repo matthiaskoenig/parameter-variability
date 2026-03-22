@@ -9,8 +9,8 @@ description = "Parameter variability in SBML models"
 readme = "README.md"
 requires-python = ">=3.13"
 authors = [
-	{name="Matthias König", email="konigmatt@googlemail.com"},
 	{name="Antonio Alvarez", email="antonio.alvarez@student.hu-berlin.de"},
+	{name="Matthias König", email="konigmatt@googlemail.com"},
 ]
 maintainers = [
 	{name="Matthias König", email="konigmatt@googlemail.com"}
@@ -20,7 +20,8 @@ classifiers = [
 	"Intended Audience :: Science/Research",
 	"License :: OSI Approved :: MIT License",
 	"Operating System :: OS Independent",
-   "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 	"Programming Language :: Python :: Implementation :: CPython",
 	"Topic :: Scientific/Engineering",
 	"Topic :: Scientific/Engineering :: Bio-Informatics",
