@@ -32,7 +32,8 @@ class PyPestoSampler:
     petab_problem: petab.v1.Problem = None
     pypesto_problem: pypesto.Problem = None
     result: pypesto.Result = None
-    n_samples: int = 10_000
+    n_samples: int = 5000
+    n_chains: int = 4
 
     def load_problem(self):
         self.petab_problem: Problem = petab.v1.Problem.from_yaml(self.yaml_file)
@@ -157,6 +158,7 @@ class PyPestoSampler:
             sampler=sampler,
             n_samples=self.n_samples,
             result=self.result,
+            n_chains=self.n_chains,
         )
 
         pypesto.sample.effective_sample_size(result=self.result)
@@ -287,7 +289,7 @@ def optimize_experiment(yaml_path: Path, caching: bool = True) -> bool:
     try:
         # FIXME: add settings dictionary to this function
         # n_samples
-        pypesto_sampler = PyPestoSampler(yaml_file=yaml_path, n_samples=1000)
+        pypesto_sampler = PyPestoSampler(yaml_file=yaml_path)
         pypesto_sampler.load_problem()
         pypesto_sampler.optimizer()
         pypesto_sampler.bayesian_sampler()
