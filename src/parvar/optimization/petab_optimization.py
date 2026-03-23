@@ -1,6 +1,7 @@
 """Optimization using petab and pypesto."""
 
 import logging
+import traceback
 import warnings
 from copy import deepcopy
 from dataclasses import dataclass
@@ -270,35 +271,53 @@ def optimize_experiments_server(yaml_paths: list[Path]) -> None:
         optimize_experiment(yaml_path)
 
 
-def optimize_experiment(yaml_path: Path):
-    """Optimize single petab problem using PyPesto."""
-
+def optimize_experiment(yaml_path: Path, caching: bool = True) -> bool:
+    """Optimize a single petab problem using PyPesto."""
+    console.print()
+    console.rule(style="white bold")
+    console.print(yaml_path.parent.name, style="white bold")
+    console.rule(style="white bold")
     console.print(yaml_path)
 
-    # FIXME: add settings dictionary to this function
-    # n_samples
-    pypesto_sampler = PyPestoSampler(yaml_file=yaml_path, n_samples=1000)
-    pypesto_sampler.load_problem()
-    pypesto_sampler.optimizer()
-    pypesto_sampler.bayesian_sampler()
-    pypesto_sampler.results_hdi()
-    # pypesto_sampler.results_median()
+    results_path = yaml_path.parent / "optimization_results.tsv"
+    if caching and results_path.exists():
+        console.print("Cached results: optimization results already exist.")
+        return True
 
-    # collect results for parameters
-    results = []
-    results_petab = pypesto_sampler.results_dict()
-    for pid, stats in results_petab.items():
-        results.append(
-            {
-                "id": yaml_path.parent.name,
-                "group": get_group_from_pid(pid),
-                "parameter": get_parameter_from_pid(pid),
-                "pid": pid,
-                **stats,
-            }
-        )
+    try:
+        # FIXME: add settings dictionary to this function
+        # n_samples
+        pypesto_sampler = PyPestoSampler(yaml_file=yaml_path, n_samples=1000)
+        pypesto_sampler.load_problem()
+        pypesto_sampler.optimizer()
+        pypesto_sampler.bayesian_sampler()
+        pypesto_sampler.results_hdi()
+        # pypesto_sampler.results_median()
 
-    # write results
-    df = pd.DataFrame(results)
-    console.print(df)
-    df.to_csv(yaml_path.parent / "optimization_results.tsv", sep="\t")
+        # collect results for parameters
+        results = []
+        results_petab = pypesto_sampler.results_dict()
+        for pid, stats in results_petab.items():
+            results.append(
+                {
+                    "id": yaml_path.parent.name,
+                    "group": get_group_from_pid(pid),
+                    "parameter": get_parameter_from_pid(pid),
+                    "pid": pid,
+                    **stats,
+                }
+            )
+
+        # write results
+        df = pd.DataFrame(results)
+        console.print(df)
+        df.to_csv(results_path, sep="\t")
+        return True
+
+    except Exception as e:
+        stack_trace = traceback.format_exc()
+        with open(yaml_path.parent / "optimization_error.txt", "w") as ferr:
+            ferr.write(stack_trace)
+            console.print(e)
+
+        return False
