@@ -6,7 +6,7 @@ import warnings
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Callable
 
 import arviz as az
 import numpy as np
@@ -150,10 +150,16 @@ class PyPestoSampler:
             pypesto.visualize.optimization_scatter(self.result)
             plt.savefig(str(self.fig_path) + "/04_opt_scatter.png")
 
-    def bayesian_sampler(self, sampler):
+    def bayesian_sampler(
+        self, sampler: Callable = pypesto.sample.AdaptiveMetropolisSampler()
+    ):
+        sampler_w_chains = pypesto.sample.AdaptiveParallelTemperingSampler(
+            internal_sampler=sampler,
+            n_chains=self.n_chains,
+        )
         self.result = pypesto.sample.sample(
             problem=self.pypesto_problem,
-            sampler=sampler,
+            sampler=sampler_w_chains,
             n_samples=self.n_samples,
             result=self.result,
         )
@@ -299,11 +305,7 @@ def optimize_experiment(
         pypesto_sampler = PyPestoSampler(yaml_file=yaml_path)
         pypesto_sampler.load_problem()
         pypesto_sampler.optimizer()
-        pypesto_sampler.bayesian_sampler(
-            sampler=pypesto.sample.AdaptiveMetropolisSampler(
-                n_chains=PyPestoSampler.n_chains
-            )
-        )
+        pypesto_sampler.bayesian_sampler()
         pypesto_sampler.results_hdi()
         # pypesto_sampler.results_median()
 
