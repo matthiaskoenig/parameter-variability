@@ -250,13 +250,13 @@ class PyPestoSampler:
     #         console.print(medians.sel(parameter=par).data_vars.variables)
 
 
-def optimize_experiments(yaml_paths: list[Path]) -> None:
+def optimize_experiments(yaml_paths: list[Path], caching: bool = True) -> None:
     """Optimize PETab problems locally.
 
     For remote execution and multiprocessing see below.
     """
     for yaml_path in yaml_paths:
-        optimize_experiment(yaml_path)
+        optimize_experiment(yaml_path, caching=caching)
 
 
 def optimize_experiments_server(yaml_paths: list[Path]) -> None:

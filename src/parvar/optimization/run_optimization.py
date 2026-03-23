@@ -29,7 +29,8 @@ if __name__ == "__main__":
         yaml_paths: list[Path] = select_all_experiments(
             results_path=results_path,
         )
+        yaml_paths = sorted(yaml_paths)
         console.print(f"YAML paths: {len(yaml_paths)}")
 
         # optimize
-        optimize_experiments(yaml_paths=yaml_paths)
+        optimize_experiments(yaml_paths=yaml_paths, caching=True)
