@@ -31,29 +31,25 @@ keywords = [
 	"variability",
 ]
 dependencies = [
-
     "sbmlutils>=0.9.6",
     "libroadrunner>=2.9.0",
     "numpy>=2.4.2",
     "pandas>=2.3.3",
     "pydantic",
     "pydantic-yaml",
-
     "matplotlib>=3.10.0",
-
     # optimization
     "pypesto>=0.5.8",
     "pypesto[fides]",
     "fides>=0.8.0",
     "petab>=0.8.1",
     "amici>=0.34.2",
-
     "arviz>=0.20.0",
     "rich>=13.9.4",
     "xarray>=2025.1.2",
     "graphviz",
-
     "pytest",
+    "pandas-stubs~=2.3.3",
 ]
 
 [project.optional-dependencies]

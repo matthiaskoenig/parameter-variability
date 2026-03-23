@@ -252,28 +252,34 @@ class PyPestoSampler:
     #         console.print(medians.sel(parameter=par).data_vars.variables)
 
 
-def optimize_experiments(yaml_paths: list[Path], caching: bool = True) -> None:
+def optimize_experiments(
+    results_dir: Path, yaml_paths: list[Path], caching: bool = True
+) -> None:
     """Optimize PETab problems locally.
 
     For remote execution and multiprocessing see below.
     """
     for yaml_path in yaml_paths:
-        optimize_experiment(yaml_path, caching=caching)
+        optimize_experiment(
+            results_dir=results_dir, yaml_path=yaml_path, caching=caching
+        )
 
 
-def optimize_experiments_server(yaml_paths: list[Path]) -> None:
-    """Optimize PETab problems."""
+# def optimize_experiments_server(yaml_paths: list[Path]) -> None:
+#     """Optimize PETab problems."""
+#
+#     # This has to use multiprocessing and distribute the problems on the server
+#     # FIXME: multiprocessing and resource management
+#     # Distribute files to server;
+#
+#     for yaml_path in yaml_paths:
+#         # FIXME: correct settings for optimization
+#         optimize_experiment(yaml_path)
 
-    # This has to use multiprocessing and distribute the problems on the server
-    # FIXME: multiprocessing and resource management
-    # Distribute files to server;
 
-    for yaml_path in yaml_paths:
-        # FIXME: correct settings for optimization
-        optimize_experiment(yaml_path)
-
-
-def optimize_experiment(yaml_path: Path, caching: bool = True) -> bool:
+def optimize_experiment(
+    results_dir: Path, yaml_path: Path, caching: bool = True
+) -> bool:
     """Optimize a single petab problem using PyPesto."""
     console.print()
     console.rule(style="white bold")
@@ -281,7 +287,9 @@ def optimize_experiment(yaml_path: Path, caching: bool = True) -> bool:
     console.rule(style="white bold")
     console.print(yaml_path)
 
-    results_path = yaml_path.parent / "optimization_results.tsv"
+    uid = yaml_path.parent
+    results_path = results_dir / f"{uid}_results.tsv"
+    error_path = results_dir / f"{uid}_errors.tsv"
     if caching and results_path.exists():
         console.print("Cached results: optimization results already exist.")
         return True
@@ -318,7 +326,7 @@ def optimize_experiment(yaml_path: Path, caching: bool = True) -> bool:
 
     except Exception as e:
         stack_trace = traceback.format_exc()
-        with open(yaml_path.parent / "optimization_error.txt", "w") as ferr:
+        with open(error_path, "w") as ferr:
             ferr.write(stack_trace)
             console.print(e)
 
