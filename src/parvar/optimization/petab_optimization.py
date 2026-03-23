@@ -278,15 +278,17 @@ def optimize_experiment(
     results_dir: Path, yaml_path: Path, caching: bool = True
 ) -> bool:
     """Optimize a single petab problem using PyPesto."""
+    uid = yaml_path.parent.name
+
     console.print()
     console.rule(style="white bold")
-    console.print(yaml_path.parent.name, style="white bold")
+    console.print(uid, style="white bold")
     console.rule(style="white bold")
     console.print(yaml_path)
 
-    uid = yaml_path.parent
     results_path = results_dir / f"{uid}_results.tsv"
     error_path = results_dir / f"{uid}_errors.tsv"
+
     if caching and results_path.exists():
         console.print("Cached results: optimization results already exist.")
         return True
@@ -323,6 +325,7 @@ def optimize_experiment(
         df = pd.DataFrame(results)
         console.print(df)
         df.to_csv(results_path, sep="\t")
+        console.print(f"Results saved to {results_path}", style="green bold")
         return True
 
     except Exception as e:
@@ -330,5 +333,7 @@ def optimize_experiment(
         with open(error_path, "w") as ferr:
             ferr.write(stack_trace)
             console.print(e)
+
+        console.print(f"Errors saved to {results_path}", style="red bold")
 
         return False
