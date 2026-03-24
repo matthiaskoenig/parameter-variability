@@ -366,7 +366,7 @@ def optimize_experiments_multicore(
     Necessary to ensure that no parallelization.
     """
 
-    n_cores = max(1, multiprocessing.cpu_count() - 1)
+    n_cores = multiprocessing.cpu_count()
     with multiprocessing.Pool(processes=n_cores) as pool:
         pool.map(
             functools.partial(

@@ -3,6 +3,9 @@
 from pathlib import Path
 
 from pymetadata.console import console
+import petab
+from pypesto import petab as pt
+
 
 from parvar import RESULTS_DIR, RESULTS_SIMPLE_PK, RESULTS_SIMPLE_CHAIN, RESULTS_ICG
 from parvar.experiments.petab_factory import select_all_experiments
@@ -35,6 +38,12 @@ if __name__ == "__main__":
         )
         yaml_paths = sorted(yaml_paths)
         console.print(f"YAML paths: {len(yaml_paths)}")
+
+        # create amici problem for models with petabs
+        if len(yaml_paths) > 0:
+            petab_problem = petab.v1.Problem.from_yaml(yaml_paths[0])
+            importer = pt.PetabImporter(petab_problem)
+            importer.create_problem(verbose=True)
 
         # optimize
         # optimize_experiments(
