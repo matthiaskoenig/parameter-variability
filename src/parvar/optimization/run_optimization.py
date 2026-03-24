@@ -6,11 +6,10 @@ from pymetadata.console import console
 
 from parvar import RESULTS_DIR, RESULTS_SIMPLE_PK, RESULTS_SIMPLE_CHAIN, RESULTS_ICG
 from parvar.experiments.petab_factory import select_all_experiments
-from parvar.optimization.petab_optimization import optimize_experiments
-
+from parvar.optimization.petab_optimization import optimize_experiments_multicore
 
 if __name__ == "__main__":
-    optimization_run: str = "2025-03-23_v3"
+    optimization_run: str = "2025-03-24_v1"
 
     for results_path in [
         RESULTS_SIMPLE_PK,
@@ -38,6 +37,13 @@ if __name__ == "__main__":
         console.print(f"YAML paths: {len(yaml_paths)}")
 
         # optimize
-        optimize_experiments(
-            results_dir=opt_results_dir, yaml_paths=yaml_paths, caching=True
+        # optimize_experiments(
+        #     results_dir=opt_results_dir,
+        #     yaml_paths=yaml_paths,
+        #     caching=False,
+        # )
+        optimize_experiments_multicore(
+            results_dir=opt_results_dir,
+            yaml_paths=yaml_paths,
+            caching=True,
         )

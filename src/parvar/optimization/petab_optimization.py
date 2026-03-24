@@ -1,8 +1,9 @@
 """Optimization using petab and pypesto."""
 
+import functools
 import logging
+import multiprocessing
 import traceback
-import warnings
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,11 +14,11 @@ import numpy as np
 import pandas as pd
 import petab
 import pypesto
-import pypesto.visualize.model_fit as model_fit
 import xarray as xr
 from matplotlib import pyplot as plt
 from petab.v1 import Problem
 from pypesto import petab as pt
+from pypesto.visualize import model_fit
 from pymetadata.console import console
 
 from parvar.experiments.utils import get_group_from_pid, get_parameter_from_pid
@@ -32,8 +33,6 @@ class PyPestoSampler:
     petab_problem: petab.v1.Problem = None
     pypesto_problem: pypesto.Problem = None
     result: pypesto.Result = None
-    n_samples: int = 5000
-    n_chains: int = 4
 
     def load_problem(self):
         self.petab_problem: Problem = petab.v1.Problem.from_yaml(self.yaml_file)
@@ -44,45 +43,92 @@ class PyPestoSampler:
         self.fig_path = self.results_path / "figs"
         self.fig_path.mkdir(parents=True, exist_ok=True)
 
-    def optimizer(
+    def print_optimization_results(self):
+        """Print output of the optimization results."""
+
+        console.rule("results", style="white")
+        console.print(self.result.summary())
+
+        # match to parameters
+        console.print("Parameters:")
+        console.print(self.petab_problem.parameter_df)
+        parameter_names = self.petab_problem.parameter_df.parameterName
+
+        # best fit
+        console.print("Best fit:")
+        best_fit: dict = self.result.optimize_result.list[0]
+        # console.print(best_fit)
+        popts = deepcopy(best_fit["x"])
+        for k, scale in enumerate(self.petab_problem.parameter_df.parameterScale):
+            # backtransformations
+            if scale == "lin":
+                continue
+            elif scale == "log10":
+                popts[k] = 10 ** popts[k]
+            elif scale == "log":
+                popts[k] = np.exp(popts[k])
+
+        console.print(dict(zip(parameter_names, popts)))
+
+    def plot_optimization_results(self):
+        """Create plots of the optimization results."""
+        model_fit.visualize_optimized_model_fit(
+            petab_problem=self.petab_problem,
+            result=self.result,
+            pypesto_problem=self.pypesto_problem,
+        )
+        # plt.show()
+        pypesto.visualize.waterfall(self.result)
+        plt.savefig(str(self.fig_path) + "/01_waterfall.png")
+
+        pypesto.visualize.parameters(self.result)
+        plt.savefig(str(self.fig_path) + "/02_parameters.png")
+
+        # pypesto.visualize.parameters_correlation_matrix(result)
+        console.rule("Parameter_hist", style="white")
+        # pypesto.visualize.parameter_hist(result=result, parameter_name="kabs")
+        # plt.savefig(str(fig_path) + '/03_parameters_hist.png')
+
+        pypesto.visualize.optimization_scatter(self.result)
+        plt.savefig(str(self.fig_path) + "/04_opt_scatter.png")
+
+    def run_optimization(
         self,
-        # FIXME: settings in data structure
         maxiter: Optional[float] = 1e4,
         fatol: Optional[float] = 1e-12,
         frtol: Optional[float] = 1e-12,
         optim: Optional[str] = "fides",
         startpoint_method: Optional[str] = "uniform",
         n_starts: Optional[int] = 100,
-        plot: bool = True,
         seed: Optional[int] = 1,
+        create_optimization_plots: bool = True,
+        engine: str = "SingleCoreEngine",
     ):
-        optimizer_options = {"maxiter": maxiter, "fatol": fatol, "frtol": frtol}
-
+        # Optimization
         if optim == "fides":
             optimizer = pypesto.optimize.FidesOptimizer(
-                options=optimizer_options, verbose=logging.WARN
+                options={"maxiter": maxiter, "fatol": fatol, "frtol": frtol},
+                verbose=logging.WARN,
             )
         else:
-            warnings.warn(f"Optimizer {optim} not supported.\nDefaulting to Fides")
-            optimizer = pypesto.optimize.FidesOptimizer(
-                options=optimizer_options, verbose=logging.WARN
-            )
+            raise ValueError(f"Optimizer {optim} not supported.")
 
         if startpoint_method == "uniform":
             startpoint_method = pypesto.startpoint.uniform
         else:
-            warnings.warn(
-                f"Startpoint method {startpoint_method} not supported.\nDefaulting to uniform"
-            )
-            startpoint_method = pypesto.startpoint.uniform
+            raise ValueError(f"Startpoint method '{startpoint_method}' not supported.")
 
         # save optimizer trace
         # history_options = pypesto.HistoryOptions(trace_record=True)
         opt_options = pypesto.optimize.OptimizeOptions()
-        console.print(opt_options)
+        # console.print(opt_options)
 
-        # FIXME: flag for the engine;
-        engine = pypesto.engine.MultiProcessEngine()
+        if engine == "MultiProcessEngine":
+            engine = pypesto.engine.MultiProcessEngine()
+        elif engine == "SingleCoreEngine":
+            engine = pypesto.engine.SingleCoreEngine()
+        else:
+            raise ValueError(f"Engine {engine} not supported.")
 
         # Set seed for reproducibility
         if seed:
@@ -90,7 +136,7 @@ class PyPestoSampler:
 
         console.rule("Optimization", style="white")
 
-        # THis is performing the optimization
+        # optimize
         self.result = pypesto.optimize.minimize(
             problem=self.pypesto_problem,
             optimizer=optimizer,
@@ -100,67 +146,25 @@ class PyPestoSampler:
             options=opt_options,
         )
 
-        def print_optimization_results(result: pypesto.Result):
-            """Print output of the optimization results."""
+        self.print_optimization_results()
 
-            console.rule("results", style="white")
-            console.print(result.summary())
-
-            # match to parameters
-            console.print("Parameters:")
-            console.print(self.petab_problem.parameter_df)
-            parameter_names = self.petab_problem.parameter_df.parameterName
-
-            # best fit
-            console.print("Best fit:")
-            best_fit: dict = result.optimize_result.list[0]
-            # console.print(best_fit)
-            popts = deepcopy(best_fit["x"])
-            for k, scale in enumerate(self.petab_problem.parameter_df.parameterScale):
-                # backtransformations
-                if scale == "lin":
-                    continue
-                elif scale == "log10":
-                    popts[k] = 10 ** popts[k]
-                elif scale == "log":
-                    popts[k] = np.exp(popts[k])
-
-            console.print(dict(zip(parameter_names, popts)))
-
-        print_optimization_results(self.result)
-
-        if plot:
-            model_fit.visualize_optimized_model_fit(
-                petab_problem=self.petab_problem,
-                result=self.result,
-                pypesto_problem=self.pypesto_problem,
-            )
-            # plt.show()
-            pypesto.visualize.waterfall(self.result)
-            plt.savefig(str(self.fig_path) + "/01_waterfall.png")
-
-            pypesto.visualize.parameters(self.result)
-            plt.savefig(str(self.fig_path) + "/02_parameters.png")
-
-            # pypesto.visualize.parameters_correlation_matrix(result)
-            console.rule("Parameter_hist", style="white")
-            # pypesto.visualize.parameter_hist(result=result, parameter_name="kabs")
-            # plt.savefig(str(fig_path) + '/03_parameters_hist.png')
-
-            pypesto.visualize.optimization_scatter(self.result)
-            plt.savefig(str(self.fig_path) + "/04_opt_scatter.png")
+        if create_optimization_plots:
+            self.plot_optimization_results()
 
     def bayesian_sampler(
-        self, sampler: Callable = pypesto.sample.AdaptiveMetropolisSampler()
+        self,
+        n_samples: int,
+        n_chains: int,
     ):
+        sampler: Callable = pypesto.sample.AdaptiveMetropolisSampler()
         sampler_w_chains = pypesto.sample.AdaptiveParallelTemperingSampler(
             internal_sampler=sampler,
-            n_chains=self.n_chains,
+            n_chains=n_chains,
         )
         self.result = pypesto.sample.sample(
             problem=self.pypesto_problem,
             sampler=sampler_w_chains,
-            n_samples=self.n_samples,
+            n_samples=n_samples,
             result=self.result,
         )
 
@@ -217,7 +221,7 @@ class PyPestoSampler:
             results[pid.item()] = hdi_values
         return results
 
-    def results_dict(self) -> dict:
+    def results_dict(self, settings: dict) -> dict:
         dset: xr.Dataset = self.get_posterior().posterior
         # get information on real parameter
 
@@ -230,7 +234,7 @@ class PyPestoSampler:
                 "std": float(np.std(values)),
                 "median": float(np.median(values)),
                 "ess": self.result.sample_result.effective_sample_size,
-                "n_samples": self.n_samples,
+                "n_samples": settings["n_samples"],
                 "values": values,
             }
 
@@ -239,49 +243,31 @@ class PyPestoSampler:
             results[pid]["hdi_low"] = float(hdi_values[0])
             results[pid]["hdi_high"] = float(hdi_values[1])
 
-        console.rule(style="blue bold")
-        console.print(results)
-        console.rule(style="blue bold")
-
         return results
 
-    # def results_median(self):
-    #     medians = self.get_posterior().median()
-    #     console.print('Medians: ')
-    #     console.print(medians.sel(parameter='k1_MALE'))
-    #     exit()
-    #     for par in medians['parameter']:
-    #         console.print(par.to_numpy())
-    #         console.print(medians.sel(parameter=par).data_vars.variables)
+    def results_df(self, uid: str, settings: dict):
+        # collect results for parameters
+        results = []
+        results_petab = self.results_dict(settings=settings)
+        for pid, stats in results_petab.items():
+            results.append(
+                {
+                    "id": uid,
+                    "group": get_group_from_pid(pid),
+                    "parameter": get_parameter_from_pid(pid),
+                    "pid": pid,
+                    **stats,
+                }
+            )
 
-
-def optimize_experiments(
-    results_dir: Path, yaml_paths: list[Path], caching: bool = True
-) -> None:
-    """Optimize PETab problems locally.
-
-    For remote execution and multiprocessing see below.
-    """
-    for yaml_path in yaml_paths:
-        optimize_experiment(
-            results_dir=results_dir, yaml_path=yaml_path, caching=caching
-        )
-
-
-# def optimize_experiments_server(yaml_paths: list[Path]) -> None:
-#     """Optimize PETab problems."""
-#
-#     # This has to use multiprocessing and distribute the problems on the server
-#     # FIXME: multiprocessing and resource management
-#     # Distribute files to server;
-#
-#     for yaml_path in yaml_paths:
-#         # FIXME: correct settings for optimization
-#         optimize_experiment(yaml_path)
+        return pd.DataFrame(results)
 
 
 def optimize_experiment(
-    results_dir: Path, yaml_path: Path, caching: bool = True
+    yaml_path: Path,
+    results_dir: Path,
+    caching: bool = True,
+    engine: str = "SingleCoreEngine",
 ) -> bool:
     """Optimize a single petab problem using PyPesto."""
     uid = yaml_path.parent.name
@@ -299,33 +285,42 @@ def optimize_experiment(
         console.print("Cached results: optimization results already exist.")
         return True
 
+    settings = dict(
+        maxiter=1e4,
+        fatol=1e-12,
+        frtol=1e-12,
+        optim="fides",
+        startpoint_method="uniform",
+        n_starts=100,
+        seed=1234,
+        create_optimization_plots=True,
+        engine=engine,
+        n_samples=5000,
+        n_chains=4,
+    )
+
     try:
-        # FIXME: add settings dictionary to this function
-        # n_samples
         pypesto_sampler = PyPestoSampler(yaml_file=yaml_path)
         pypesto_sampler.load_problem()
-        pypesto_sampler.optimizer()
-        pypesto_sampler.bayesian_sampler()
+        pypesto_sampler.run_optimization(
+            maxiter=settings["maxiter"],
+            fatol=settings["fatol"],
+            frtol=settings["frtol"],
+            optim=settings["optim"],
+            startpoint_method=settings["startpoint_method"],
+            n_starts=settings["n_starts"],
+            seed=settings["seed"],
+            create_optimization_plots=settings["create_optimization_plots"],
+            engine=settings["engine"],
+        )
+        pypesto_sampler.bayesian_sampler(
+            n_samples=settings["n_samples"],
+            n_chains=settings["n_chains"],
+        )
         pypesto_sampler.results_hdi()
-        # pypesto_sampler.results_median()
 
-        # collect results for parameters
-        results = []
-        results_petab = pypesto_sampler.results_dict()
-        for pid, stats in results_petab.items():
-            results.append(
-                {
-                    "id": yaml_path.parent.name,
-                    "group": get_group_from_pid(pid),
-                    "parameter": get_parameter_from_pid(pid),
-                    "pid": pid,
-                    **stats,
-                }
-            )
-
-        # write results
-        df = pd.DataFrame(results)
-        console.print(df)
+        # save DataFrame
+        df = pypesto_sampler.results_df(uid, settings)
         df.to_csv(results_path, sep="\t")
         console.print(f"Results saved to {results_path}", style="green bold")
         return True
@@ -339,3 +334,46 @@ def optimize_experiment(
         console.print(f"Errors saved to {results_path}", style="red bold")
 
         return False
+
+
+def optimize_experiments(
+    results_dir: Path,
+    yaml_paths: list[Path],
+    caching: bool = True,
+    engine: str = "MultiProcessEngine",
+) -> None:
+    """Optimize PETab problems serial.
+
+    For remote execution and multiprocessing see below.
+    """
+    for yaml_path in yaml_paths:
+        optimize_experiment(
+            yaml_path=yaml_path,
+            results_dir=results_dir,
+            caching=caching,
+            engine=engine,
+        )
+
+
+def optimize_experiments_multicore(
+    results_dir: Path,
+    yaml_paths: list[Path],
+    caching: bool = True,
+    engine: str = "SingleCoreEngine",
+) -> None:
+    """Optimize PETab problems multicore usage.
+
+    Necessary to ensure that no parallelization.
+    """
+
+    n_cores = max(1, multiprocessing.cpu_count() - 1)
+    with multiprocessing.Pool(processes=n_cores) as pool:
+        pool.map(
+            functools.partial(
+                optimize_experiment,
+                results_dir=results_dir,
+                caching=caching,
+                engine=engine,
+            ),
+            yaml_paths,
+        )
