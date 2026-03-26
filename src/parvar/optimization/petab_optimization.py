@@ -3,6 +3,7 @@
 import functools
 import logging
 import multiprocessing
+import time
 import traceback
 from copy import deepcopy
 from dataclasses import dataclass
@@ -33,6 +34,8 @@ class PyPestoSampler:
     petab_problem: petab.v1.Problem = None
     pypesto_problem: pypesto.Problem = None
     result: pypesto.Result = None
+    optim_duration: float = None
+    sampler_duration: float = None
 
     def load_problem(self):
         self.petab_problem: Problem = petab.v1.Problem.from_yaml(self.yaml_file)
@@ -235,6 +238,8 @@ class PyPestoSampler:
                 "median": float(np.median(values)),
                 "ess": self.result.sample_result.effective_sample_size,
                 "n_samples": settings["n_samples"],
+                "optim_duration": self.optim_duration,
+                "sampler_duration": self.sampler_duration,
                 "values": values,
             }
 
@@ -302,6 +307,7 @@ def optimize_experiment(
     try:
         pypesto_sampler = PyPestoSampler(yaml_file=yaml_path)
         pypesto_sampler.load_problem()
+        start = time.perf_counter()
         pypesto_sampler.run_optimization(
             maxiter=settings["maxiter"],
             fatol=settings["fatol"],
@@ -313,10 +319,14 @@ def optimize_experiment(
             create_optimization_plots=settings["create_optimization_plots"],
             engine=settings["engine"],
         )
+        pypesto_sampler.optim_duration = time.perf_counter() - start
+
+        start = time.perf_counter()
         pypesto_sampler.bayesian_sampler(
             n_samples=settings["n_samples"],
             n_chains=settings["n_chains"],
         )
+        pypesto_sampler.sampler_duration = time.perf_counter() - start
         pypesto_sampler.results_hdi()
 
         # save DataFrame
