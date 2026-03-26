@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from pymetadata.console import console
 
-from parvar import RESULTS_SIMPLE_PK
+from parvar import RESULTS_SIMPLE_PK, RESULTS_SIMPLE_CHAIN, RESULTS_ICG
 from parvar.analysis.utils import extract_key_from_dict
 
 from matplotlib import pyplot as plt
@@ -38,7 +38,6 @@ def join_optimization_results(
 
     df_bayes = pd.concat(df_ls)
     df_bayes.drop(["Unnamed: 0"], axis=1, inplace=True)
-    console.print(df_bayes.head())
     console.print(df_bayes.info())
 
     df_xp = pd.read_csv(directories / "definitions.tsv", sep="\t")
@@ -101,7 +100,7 @@ def reference_plot(
 
     fig = plt.figure(
         dpi=360,
-        figsize=(8, 10),
+        figsize=(len(pars) * 4, 10),
     )
 
     gs = gridspec.GridSpec(
@@ -218,12 +217,25 @@ def reference_plot(
         pc_y += 1
     fig.supylabel("Parameter Value")
 
-    # for ax in fig.axes:
-    #     h, lab = ax.get_legend_handles_labels()
-    #     handles.extend(h)
-    #     labels.extend(lab)
+    console.print(fig.axes[3].get_position())
 
-    # Remove duplicates (optional)
+    # row_axes = [(ax1, ax2), (ax3, ax4), (ax5, ax6)]
+    row_labels = ["Priors", "Timepoints", "Samples", "Coefficient Variation"]
+
+    for ax, label in zip(fig.axes, row_labels):
+        pos = ax.get_position()  # Bbox in figure fraction
+        mid_x = (len(pars) / 2) * (pos.x0 + pos.x1)  # horizontal centre of the row
+        label_y = pos.y0 - 0.03  # just below the row's bottom
+        fig.text(
+            mid_x,
+            label_y,
+            label,
+            ha="center",
+            va="top",
+            fontsize=12,
+            color="#444444",
+        )
+
     seen = set()
     unique_handles = []
     for h in legend_handles:
@@ -362,18 +374,19 @@ def reference_plot(
 
 
 if __name__ == "__main__":
-    RESULTS_SIMPLE_PK = append_server_result(RESULTS_SIMPLE_PK)
-
     reference = {
-        "prior_type": "exact_prior",
+        "prior_type": "prior_biased",
         "timepoints": 10,
         "samples": 10,
         "noise_cv": 0.001,
     }
-    results = join_optimization_results(results_path=RESULTS_SIMPLE_PK, xp_type="all")
-    console.print(results.info())
 
-    reference_plot(df=results, reference=reference)
+    for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
+        results_path = append_server_result(results_path=r)
+        results = join_optimization_results(results_path=results_path, xp_type="all")
+        console.print(results.info())
+
+        reference_plot(df=results, reference=reference)
 
     # results.to_csv(analysis.results_path / "xps" / "join.tsv", sep="\t", index=False)
     # console.print(
