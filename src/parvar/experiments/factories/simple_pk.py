@@ -43,7 +43,34 @@ pars_true: dict[str, Parameter] = {
     ),
 }
 
-pars_biased: dict[str, Parameter] = {
+pars_biased_1: dict[str, Parameter] = {
+    "CL_MALE": Parameter(
+        id="CL",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 4, "scale": 1}
+        ),
+    ),
+    "CL_FEMALE": Parameter(
+        id="CL",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 3, "scale": 1}
+        ),
+    ),
+    "k_abs_MALE": Parameter(
+        id="k_abs",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 5, "scale": 1}
+        ),
+    ),
+    "k_abs_FEMALE": Parameter(
+        id="k_abs",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 6, "scale": 1}
+        ),
+    ),
+}
+
+pars_biased_2: dict[str, Parameter] = {
     "CL_MALE": Parameter(
         id="CL",
         distribution=Distribution(
@@ -69,6 +96,7 @@ pars_biased: dict[str, Parameter] = {
         ),
     ),
 }
+
 
 true_sampling: dict[str, Sampling] = {
     "MALE": Sampling(
@@ -121,6 +149,11 @@ exp_base = PETabExperiment(
         ),
     ],
 )
+
+pars_biased = {
+    "prior_biased_1": pars_biased_1,
+    "prior_biased_2": pars_biased_2,
+}
 
 factory_data = {
     "exp_base": exp_base,

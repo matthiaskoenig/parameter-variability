@@ -24,7 +24,7 @@ pars_true: dict[str, Parameter] = {
     ),
 }
 
-pars_biased: dict[str, Parameter] = {
+pars_biased_1: dict[str, Parameter] = {
     "MALE": Parameter(
         id="k1",
         distribution=Distribution(
@@ -35,6 +35,21 @@ pars_biased: dict[str, Parameter] = {
         id="k1",
         distribution=Distribution(
             type=DistributionType.LOGNORMAL, parameters={"loc": 10.0, "scale": 0.2}
+        ),
+    ),
+}
+
+pars_biased_2: dict[str, Parameter] = {
+    "MALE": Parameter(
+        id="k1",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 2.0, "scale": 2}
+        ),
+    ),
+    "FEMALE": Parameter(
+        id="k1",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 3.0, "scale": 2}
         ),
     ),
 }
@@ -73,6 +88,11 @@ exp_base = PETabExperiment(
         ),
     ],
 )
+
+pars_biased = {
+    "prior_biased_1": pars_biased_1,
+    "prior_biased_2": pars_biased_2,
+}
 
 factory_data = {
     "exp_base": exp_base,

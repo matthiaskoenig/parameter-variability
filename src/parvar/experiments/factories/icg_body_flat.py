@@ -49,7 +49,7 @@ pars_true_icg: dict[str, Parameter] = {
 }
 
 # Biased parameters
-pars_biased_icg: dict[str, Parameter] = {
+pars_biased_icg_1: dict[str, Parameter] = {
     "BW_MALE": Parameter(
         id="BW",
         distribution=Distribution(
@@ -71,7 +71,34 @@ pars_biased_icg: dict[str, Parameter] = {
     "LI__ICGIM_Vmax_FEMALE": Parameter(
         id="LI__ICGIM_Vmax",
         distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 0.02, "scale": 0.2}
+            type=DistributionType.LOGNORMAL, parameters={"loc": 30, "scale": 20}
+        ),
+    ),
+}
+
+pars_biased_icg_2 = {
+    "BW_MALE": Parameter(
+        id="BW",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 60.0, "scale": 10}
+        ),
+    ),
+    "LI__ICGIM_Vmax_MALE": Parameter(
+        id="LI__ICGIM_Vmax",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 0.1, "scale": 1}
+        ),
+    ),
+    "BW_FEMALE": Parameter(
+        id="BW",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 50, "scale": 10}
+        ),
+    ),
+    "LI__ICGIM_Vmax_FEMALE": Parameter(
+        id="LI__ICGIM_Vmax",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 0.1, "scale": 1}
         ),
     ),
 }
@@ -123,9 +150,13 @@ exp_base = PETabExperiment(
     ],
 )
 
+pars_biased = {
+    "prior_biased_1": pars_biased_icg_1,
+    "prior_biased_2": pars_biased_icg_2,
+}
 
 factory_data = {
     "exp_base": exp_base,
     "pars_true": pars_true_icg,
-    "pars_biased": pars_biased_icg,
+    "pars_biased": pars_biased,  # TODO: be a dict with prior_types as keysx
 }
