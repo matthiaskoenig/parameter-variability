@@ -13,7 +13,7 @@ def runtime_plot(df: pd.DataFrame) -> None:
         3,
         figure=fig,
         wspace=0.35,
-        top=0.88,
+        top=0.95,
         bottom=0.1,  # margin for legend + xlabel
         left=0.07,
         right=0.97,
