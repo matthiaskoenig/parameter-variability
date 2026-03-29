@@ -73,6 +73,7 @@ def join_optimization_results(
         "samples",
         "timepoints",
         "noise_cv",
+        "optim_duration",
         "sample_loc",
         "sample_scale",
         "bayes_sampler_mean",
