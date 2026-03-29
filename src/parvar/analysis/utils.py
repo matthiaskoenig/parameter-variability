@@ -23,8 +23,8 @@ def extract_key_from_dict(s: pd.Series, key: str) -> pd.Series:
     return s.apply(parse_and_get)
 
 
-def append_server_result(results_path: Path) -> Path:
-    return results_path.parent / "server" / results_path.name
+def append_server_result(results_path: Path, which: str) -> Path:
+    return results_path.parent / "server" / which / results_path.name
 
 
 def join_optimization_results(

@@ -19,6 +19,7 @@ def reference_plot(
 ) -> None:
     pars = df["parameter"].unique()
     groups = df["group"].unique()
+    console.print(groups)
     # prior_types = df["prior_type"].unique()
     # noise_cv  = df['noise_cv'].unique()
 
@@ -62,6 +63,7 @@ def reference_plot(
         def plot_(ax: plt.Axes, df_: pd.DataFrame, col: str, handles: list[Any]):
             for g in groups:
                 df_g = df_[df_["group"] == g]
+                console.print(df_g)
                 ax.plot(
                     df_g[col],
                     df_g["bayes_sampler_median"],
@@ -77,7 +79,7 @@ def reference_plot(
                     linestyle="",
                     # linestyle="dashed"
                 )
-                console.print()
+                console.print(df_g["sample_loc"].tolist())
                 ax.axhline(
                     y=df_g["sample_loc"].tolist()[0],
                     label=f"{g} (real)",
@@ -307,14 +309,14 @@ def reference_plot(
 
 if __name__ == "__main__":
     reference = {
-        "prior_type": "prior_biased",
-        "timepoints": 10,
-        "samples": 10,
+        "prior_type": "prior_biased_2",
+        "timepoints": 9,
+        "samples": 40,
         "noise_cv": 0.001,
     }
 
     for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
-        results_path = append_server_result(results_path=r)
+        results_path = append_server_result(results_path=r, which="run_2")
         results = join_optimization_results(results_path=results_path, xp_type="all")
         console.print(results.info())
 
