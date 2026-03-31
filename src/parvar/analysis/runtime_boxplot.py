@@ -5,12 +5,12 @@ from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
 from parvar.analysis.utils import append_server_result, join_optimization_results
 
 
-def runtime_plot(df: pd.DataFrame) -> None:
+def runtime_boxplot(df: pd.DataFrame) -> None:
     fig = plt.figure(figsize=(16, 5))
 
     gs = gridspec.GridSpec(
         1,
-        3,
+        4,
         figure=fig,
         wspace=0.35,
         top=0.95,
@@ -18,7 +18,7 @@ def runtime_plot(df: pd.DataFrame) -> None:
         left=0.07,
         right=0.97,
     )
-    for i, c in enumerate(["samples", "timepoints", "noise_cv"]):
+    for i, c in enumerate(["prior_type", "samples", "timepoints", "noise_cv"]):
         ax = fig.add_subplot(gs[0, i])
         groups = [grp["optim_duration"].values for _, grp in df.groupby(c)]
         labels = [key for key, _ in df.groupby(c)]
@@ -47,4 +47,4 @@ if __name__ == "__main__":
         results_path = append_server_result(results_path=r, which="run_2")
         results = join_optimization_results(results_path=results_path, xp_type="all")
 
-        runtime_plot(results)
+        runtime_boxplot(results)
