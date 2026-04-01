@@ -24,10 +24,10 @@ if __name__ == "__main__":
         reference_plot(df=results, reference=reference, save_path=plot_path)
 
         # 2. Histogram plot
-        bias_histogram(df=results)
+        bias_histogram(df=results, save_path=plot_path)
 
         # 3. Runtime boxplot
-        runtime_boxplot(df=results)
+        runtime_boxplot(df=results, save_path=plot_path)
 
         # 4. ESS violin plot
-        ess_violinplot(df=results)
+        ess_violinplot(df=results, save_path=plot_path)
