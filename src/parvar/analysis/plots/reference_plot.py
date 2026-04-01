@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Dict, Any
 
 import numpy as np
@@ -16,6 +17,7 @@ from parvar.plots import colors
 def reference_plot(
     df: pd.DataFrame,
     reference: Dict[str, Any],
+    save_path: Path = None,
 ) -> None:
     pars = df["parameter"].unique()
     groups = df["group"].unique()
@@ -193,118 +195,11 @@ def reference_plot(
     )
 
     plt.tight_layout()
+
+    if save_path is not None:
+        plt.savefig(save_path)
+
     plt.show()
-
-
-# def prior_types_plot(
-#     df: pd.DataFrame,
-# ) -> None:
-#     pars = df["parameter"].unique()
-#     groups = df["group"].unique()
-#     prior_types = df["prior_type"].unique()
-#     fig, axs = plt.subplots(
-#         nrows=len(prior_types), ncols=len(pars), dpi=300, sharex=True
-#     )
-#
-#     # offset = lambda p: transforms.ScaledTranslation(p / 72., 0,
-#     #                                                 plt.gcf().dpi_scale_trans)
-#     # trans = plt.gca().transData
-#     pc_x = 0
-#     pc_y = 0
-#     for pr in prior_types:
-#         for p in pars:
-#             offset = 0
-#             if pc_y > len(pars) - 1:
-#                 pc_y = 0
-#
-#             for g in groups:
-#                 slicer = (
-#                     (df["group"] == g)
-#                     & (df["parameter"] == p)
-#                     & (df["prior_type"] == pr)
-#                 )
-#
-#                 df_gp = df[slicer]
-#
-#                 markersize = 15
-#                 # real values
-#                 axs[pc_x, pc_y].plot(
-#                     df_gp["timepoints"] + offset,
-#                     df_gp["sample_loc"],
-#                     "X",
-#                     markersize=markersize - 5,
-#                     markeredgecolor="black",
-#                     label=f"{g} (real)",
-#                     color=colors[g],
-#                 )
-#                 # ax.plot(
-#                 #     df_gp['prior_type'],
-#                 #     df_gp['bayes_sampler_median'],
-#                 #     '*',
-#                 #     label=g,
-#                 #     color=colors[g]
-#                 #     # transform=trans + offset(0.5)
-#                 # )
-#
-#                 # estimate
-#                 axs[pc_x, pc_y].plot(
-#                     df_gp["timepoints"] + offset,
-#                     df_gp["bayes_sampler_median"],
-#                     "d",
-#                     color=colors[g],
-#                     markersize=markersize - 5,
-#                     markeredgecolor="black",
-#                     label=f"{g} (estimated)",
-#                     # yerr=[df_gp['hdi_low'],df_gp['hdi_high']],
-#                 )
-#
-#                 median = df_gp["bayes_sampler_median"]
-#                 yerr_lower = median - df_gp["hdi_low"]
-#                 yerr_upper = df_gp["hdi_high"] - median
-#                 yerr = np.vstack([yerr_lower, yerr_upper])
-#
-#                 axs[pc_x, pc_y].errorbar(
-#                     x=df_gp["timepoints"] + offset,
-#                     y=df_gp["bayes_sampler_median"],
-#                     yerr=yerr,
-#                     color=colors[g],
-#                     linestyle="dashed",
-#                 )
-#
-#                 offset += 0.5
-#                 console.print(f"{pc_x}, {pc_y}")
-#
-#             if pc_x == 0:
-#                 axs[pc_x, pc_y].set_title(p)
-#
-#             if pc_y == 0:
-#                 axs[pc_x, pc_y].set_ylabel(pr)
-#
-#             pc_y += 1
-#
-#         pc_x += 1
-#
-#     handles = []
-#     labels = []
-#     fig.supxlabel("timepoints")
-#     for ax in fig.axes:
-#         h, lab = ax.get_legend_handles_labels()
-#         handles.extend(h)
-#         labels.extend(lab)
-#
-#     # Remove duplicates (optional)
-#     by_label = dict(zip(labels, handles))
-#
-#     # Figure-level legend, outside to the right
-#     plt.legend(
-#         by_label.values(),
-#         by_label.keys(),
-#         loc="upper left",
-#         bbox_to_anchor=(1.02, 1.0),  # x>1 puts it outside to the right
-#         borderaxespad=0.0,
-#     )
-#     plt.tight_layout()
-#     plt.show()
 
 
 if __name__ == "__main__":
@@ -321,14 +216,3 @@ if __name__ == "__main__":
         console.print(results.info())
 
         reference_plot(df=results, reference=reference)
-
-    # results.to_csv(analysis.results_path / "xps" / "join.tsv", sep="\t", index=False)
-    # console.print(
-    #     results[[
-    #     "prior_type",
-    #     "group",
-    #     "parameter",
-    #     "sample_loc",
-    #     "bayes_sampler_median"
-    #     ]])
-    # prior_types_plot(results)

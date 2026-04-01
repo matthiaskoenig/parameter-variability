@@ -1,0 +1,31 @@
+from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
+from parvar.analysis.plots.bias_histogram_plot import bias_histogram
+from parvar.analysis.plots.ess_violinplot import ess_violinplot
+from parvar.analysis.plots.reference_plot import reference_plot
+from parvar.analysis.plots.runtime_boxplot import runtime_boxplot
+from parvar.analysis.utils import append_server_result, join_optimization_results
+
+
+if __name__ == "__main__":
+    reference = {
+        "prior_type": "prior_biased_2",
+        "timepoints": 9,
+        "samples": 40,
+        "noise_cv": 0.001,
+    }
+
+    for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
+        results_path = append_server_result(results_path=r, which="run_2")
+        results = join_optimization_results(results_path=results_path, xp_type="all")
+
+        # 1. Reference plot
+        reference_plot(df=results, reference=reference)
+
+        # 2. Histogram plot
+        bias_histogram(df=results)
+
+        # 3. Runtime boxplot
+        runtime_boxplot(df=results)
+
+        # 4. ESS violin plot
+        ess_violinplot(df=results)

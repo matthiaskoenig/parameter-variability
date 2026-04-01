@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib import gridspec
@@ -5,7 +7,7 @@ from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
 from parvar.analysis.utils import append_server_result, join_optimization_results
 
 
-def runtime_boxplot(df: pd.DataFrame) -> None:
+def runtime_boxplot(df: pd.DataFrame, save_path: Path = None) -> None:
     fig = plt.figure(figsize=(16, 5))
 
     gs = gridspec.GridSpec(
@@ -39,6 +41,10 @@ def runtime_boxplot(df: pd.DataFrame) -> None:
     fig.supylabel("Runtime (s)", fontsize=12)
 
     plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path)
+
     plt.show()
 
 

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib import gridspec
@@ -7,6 +9,7 @@ from parvar.analysis.utils import append_server_result, join_optimization_result
 
 def ess_violinplot(
     df: pd.DataFrame,
+    save_path: Path = None,
 ) -> None:
     fig = plt.figure(figsize=(16, 5))
 
@@ -33,6 +36,9 @@ def ess_violinplot(
             pc.set_facecolor("steelblue")
             pc.set_alpha(0.6)
 
+        for i, grp in enumerate(groups):
+            ax.scatter([i] * len(grp), grp, color="navy", alpha=0.5, s=15, zorder=3)
+
         parts["cmedians"].set_color("navy")
         parts["cmins"].set_color("steelblue")
         parts["cmaxes"].set_color("steelblue")
@@ -40,7 +46,7 @@ def ess_violinplot(
 
         ax.set_xticks(range(len(labels)))
         ax.set_xticklabels(labels)
-        ax.set_title(c, fontsize=12)
+        # ax.set_title(c, fontsize=12)
         ax.set_xlabel(c, fontsize=10)
         # ax.set_ylabel("Effective Sample Size", fontsize=10)
 
@@ -60,6 +66,10 @@ def ess_violinplot(
     fig.supylabel("Effective Sample Size", fontsize=12)
 
     plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path)
+
     plt.show()
 
 
