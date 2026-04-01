@@ -197,7 +197,7 @@ def reference_plot(
     plt.tight_layout()
 
     if save_path is not None:
-        plt.savefig(save_path)
+        plt.savefig(save_path / "reference_plot.png")
 
     plt.show()
 

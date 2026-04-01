@@ -17,9 +17,11 @@ if __name__ == "__main__":
     for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
         results_path = append_server_result(results_path=r, which="run_2")
         results = join_optimization_results(results_path=results_path, xp_type="all")
+        plot_path = results_path.parent / "plots"
+        plot_path.mkdir(parents=True, exist_ok=True)
 
         # 1. Reference plot
-        reference_plot(df=results, reference=reference)
+        reference_plot(df=results, reference=reference, save_path=plot_path)
 
         # 2. Histogram plot
         bias_histogram(df=results)

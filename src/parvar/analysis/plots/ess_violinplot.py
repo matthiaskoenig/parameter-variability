@@ -68,7 +68,7 @@ def ess_violinplot(
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path)
+        plt.savefig(save_path / "ess_violinplot.png")
 
     plt.show()
 

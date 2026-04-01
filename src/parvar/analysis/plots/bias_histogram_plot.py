@@ -7,7 +7,6 @@ from parvar import RESULTS_SIMPLE_PK, RESULTS_ICG, RESULTS_SIMPLE_CHAIN
 from parvar.analysis.utils import append_server_result, join_optimization_results
 from matplotlib import gridspec
 from matplotlib import patches as mpatches
-from pymetadata.console import console
 from parvar.plots import colors
 
 
@@ -63,8 +62,8 @@ def bias_histogram(df: pd.DataFrame, save_path: Path = None) -> None:
 
                 legend_handles.append(mpatches.Patch(label=g, color=colors[g]))
 
-                if p in ["BW", "LI__ICGIM_Vmax"] and prior == "prior_biased_1":
-                    console.print(df_g[["point_bias"]])
+                # if p in ["BW", "LI__ICGIM_Vmax"] and prior == "prior_biased_1":
+                #     console.print(df_g[["point_bias"]])
 
             if pc_x == 0:
                 ax.set_title(p)
@@ -102,7 +101,7 @@ def bias_histogram(df: pd.DataFrame, save_path: Path = None) -> None:
     )
 
     if save_path:
-        plt.savefig(save_path)
+        plt.savefig(save_path / "bias_histogram.png")
 
     plt.show()
 

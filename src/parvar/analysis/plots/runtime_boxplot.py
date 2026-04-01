@@ -43,7 +43,7 @@ def runtime_boxplot(df: pd.DataFrame, save_path: Path = None) -> None:
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path)
+        plt.savefig(save_path / "runtime_boxplot.png")
 
     plt.show()
 
