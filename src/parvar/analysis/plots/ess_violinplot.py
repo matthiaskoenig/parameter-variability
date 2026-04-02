@@ -16,7 +16,7 @@ def ess_violinplot(
     show_plot: bool = False,
 ):
     if ax is None:
-        fig, ax = plt.subplots(figsize=(4, 5))
+        fig, ax = plt.subplots(figsize=(6, 5))
 
     groups = [grp["ess"].values for _, grp in df.groupby(column)]
     labels = [key for key, _ in df.groupby(column)]
@@ -33,7 +33,7 @@ def ess_violinplot(
         pc.set_alpha(0.6)
 
     for i, grp in enumerate(groups):
-        ax.scatter([i] * len(grp), grp, color="navy", alpha=0.5, s=15, zorder=3)
+        ax.scatter([i] * len(grp), grp, color="navy", alpha=0.2, s=15, zorder=3)
 
     parts["cmedians"].set_color("navy")
     parts["cmins"].set_color("steelblue")
@@ -41,12 +41,13 @@ def ess_violinplot(
     parts["cbars"].set_color("steelblue")
 
     ax.set_xticks(range(len(labels)))
-    ax.set_xticklabels(labels)
+    ax.set_xticklabels(labels, fontsize=9)
+    ax.set_xlabel(axis_labels[column], fontsize=11)
 
-    ax.set_xlabel(axis_labels[column], fontsize=10)
+    ax.tick_params(axis="y", labelsize=9)
     ax.set_ylabel(
-        "Effective Sample Size", fontsize=10
-    ) if save_path or show_plot else None
+        "Effective Sample Size", fontsize=11
+    ) if show_plot or save_path else None
 
     if save_path:
         plt.savefig(save_path / f"{column}_ess_violinplot.png")
