@@ -36,7 +36,7 @@ def runtime_boxplot(
     )
 
     ax.set_xlabel(axis_labels[column], fontsize=10)
-    ax.set_ylabel("Runtime (s)", fontsize=12) if show_plot else None
+    ax.set_ylabel("Runtime (s)", fontsize=12) if save_path or show_plot else None
 
     if save_path:
         plt.savefig(save_path / f"{column}_runtime_boxplot.png")

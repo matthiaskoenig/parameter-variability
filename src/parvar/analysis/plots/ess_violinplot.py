@@ -44,7 +44,9 @@ def ess_violinplot(
     ax.set_xticklabels(labels)
 
     ax.set_xlabel(axis_labels[column], fontsize=10)
-    ax.set_ylabel("Effective Sample Size", fontsize=10) if show_plot else None
+    ax.set_ylabel(
+        "Effective Sample Size", fontsize=10
+    ) if save_path or show_plot else None
 
     if save_path:
         plt.savefig(save_path / f"{column}_ess_violinplot.png")
