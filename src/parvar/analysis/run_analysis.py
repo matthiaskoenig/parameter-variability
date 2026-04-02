@@ -29,8 +29,6 @@ if __name__ == "__main__":
 
             ess_violinplot(results, column=col, save_path=plot_path)
 
-        exit()
-
         # # 1. Reference plot
         # reference_plot(df=results, reference=reference, save_path=plot_path)
         #
