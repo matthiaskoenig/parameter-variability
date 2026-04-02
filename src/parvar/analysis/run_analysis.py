@@ -1,8 +1,6 @@
 from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
-from parvar.analysis.plots.bias_histogram_plot import bias_histogram
 from parvar.analysis.plots.ess_violinplot import ess_violinplot
-from parvar.analysis.plots.reference_plot import reference_plot
-from parvar.analysis.plots.runtime_boxplot import runtime_boxplot
+from parvar.analysis.plots.runtime_boxplot import runtime_boxplots
 from parvar.analysis.utils import append_server_result, join_optimization_results
 
 
@@ -16,18 +14,21 @@ if __name__ == "__main__":
 
     for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
         results_path = append_server_result(results_path=r, which="run_2")
+
         results = join_optimization_results(results_path=results_path, xp_type="all")
-        plot_path = results_path.parent / "plots"
+        plot_path = results_path / "xps" / "plots"
         plot_path.mkdir(parents=True, exist_ok=True)
 
-        # 1. Reference plot
-        reference_plot(df=results, reference=reference, save_path=plot_path)
-
-        # 2. Histogram plot
-        bias_histogram(df=results, save_path=plot_path)
-
-        # 3. Runtime boxplot
-        runtime_boxplot(df=results, save_path=plot_path)
-
-        # 4. ESS violin plot
+        # # 1. Reference plot
+        # reference_plot(df=results, reference=reference, save_path=plot_path)
+        #
+        # # 2. Histogram plot
+        # bias_histogram(df=results, save_path=plot_path)
+        #
+        # # 3. Runtime boxplot
+        runtime_boxplots(df=results, save_path=plot_path)
+        #
+        # # 4. ESS violin plot
         ess_violinplot(df=results, save_path=plot_path)
+
+        # grouped_boxplot(results, save_path=plot_path)

@@ -7,13 +7,21 @@ from parvar import RESULTS_SIMPLE_PK, RESULTS_ICG, RESULTS_SIMPLE_CHAIN
 from parvar.analysis.utils import append_server_result, join_optimization_results
 from matplotlib import gridspec
 from matplotlib import patches as mpatches
-from parvar.plots import colors
+from parvar.plots import colors, parameter_labels, value_labels, axis_labels
 
 
-def bias_histogram(df: pd.DataFrame, save_path: Path = None) -> None:
+def bias_histogram(
+    df: pd.DataFrame,
+    column: str = "prior_type",
+    save_path: Path = None,
+) -> None:
     pars = df["parameter"].unique()
     groups = df["group"].unique()
-    priors = df["prior_type"].unique()
+    vals = df[column].unique()
+
+    # Only accept maximum of 4 values
+    if len(vals) > 4:
+        vals = vals[-4:]
 
     def point_bias(df: pd.DataFrame) -> pd.DataFrame:
         df["point_bias"] = (
@@ -25,11 +33,11 @@ def bias_histogram(df: pd.DataFrame, save_path: Path = None) -> None:
 
     fig = plt.figure(
         dpi=360,
-        figsize=(len(pars) * 4, len(priors) * 2),
+        figsize=(len(pars) * 4, len(vals) * 2),
     )
 
     gs = gridspec.GridSpec(
-        3,
+        len(vals),
         len(pars),
         figure=fig,
         hspace=0.45,
@@ -45,8 +53,8 @@ def bias_histogram(df: pd.DataFrame, save_path: Path = None) -> None:
     legend_handles = []
 
     for p in pars:
-        for prior in priors:
-            df_p = df[(df["parameter"] == p) & (df["prior_type"] == prior)]
+        for val in vals:
+            df_p = df[(df["parameter"] == p) & (df[column] == val)]
 
             ax = fig.add_subplot(gs[pc_x, pc_y])
             for g in groups:
@@ -60,21 +68,28 @@ def bias_histogram(df: pd.DataFrame, save_path: Path = None) -> None:
                     color=colors[g],
                 )
 
+                if column == "prior_type" and pc_y == 0:
+                    ax.set_ylabel(value_labels[column][val], fontsize=8)
+                elif pc_y == 0:
+                    ax.set_ylabel(val, fontsize=8)
+
                 legend_handles.append(mpatches.Patch(label=g, color=colors[g]))
 
-                # if p in ["BW", "LI__ICGIM_Vmax"] and prior == "prior_biased_1":
+                # if p in ["BW", "LI__ICGIM_Vmax"] and val == "prior_biased_1":
                 #     console.print(df_g[["point_bias"]])
 
             if pc_x == 0:
-                ax.set_title(p)
+                ax.set_title(parameter_labels[p])
+
             ax.tick_params(axis="x", labelsize=8)
             ax.tick_params(axis="y", labelsize=8)
 
             pc_x += 1
-            if pc_x == len(priors):
+            if pc_x == len(vals):
                 pc_x = 0
 
-        fig.supxlabel("Point Bias", y=0.02)
+        fig.supxlabel("Point Bias", fontsize=11, y=0.2)
+        fig.supylabel(axis_labels[column], fontsize=11, x=-0.02, y=0.6)
 
         pc_y += 1
 
@@ -90,19 +105,12 @@ def bias_histogram(df: pd.DataFrame, save_path: Path = None) -> None:
         loc="lower center",
         ncol=2,
         fontsize=9,
-        frameon=True,
-        framealpha=0.9,
-        edgecolor="#CCCCCC",
-        facecolor="#FFFFFF",
         bbox_to_anchor=(0.5, 0.1),
-        handlelength=2.0,
-        handletextpad=0.5,
-        columnspacing=1.2,
     )
 
     if save_path:
-        plt.savefig(save_path / "bias_histogram.png")
-
+        plt.savefig(save_path / f"{column}_bias_histogram.png", bbox_inches="tight")
+    plt.tight_layout()
     plt.show()
 
 
@@ -111,4 +119,4 @@ if __name__ == "__main__":
         results_path = append_server_result(results_path=r, which="run_2")
         results = join_optimization_results(results_path=results_path, xp_type="all")
 
-        bias_histogram(df=results)
+        bias_histogram(df=results, column="samples")

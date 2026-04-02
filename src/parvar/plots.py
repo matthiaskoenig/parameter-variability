@@ -22,4 +22,36 @@ colors = {
     "FEMALE": "tab:red",
 }
 
-__all__ = ["plt", "colors"]
+# Latex Labels
+parameter_labels = {
+    "k1": r"$k_1$",
+    "CL": r"$CL$",
+    "k_abs": r"$k$",
+    "BW": r"$Bw$",
+    "LI__ICGIM_Vmax": r"$V_{max}$",
+}
+
+# Value Labels
+value_labels = {
+    "prior_type": {
+        "prior_biased_1": "Biased 1",
+        "prior_biased_2": "Biased 2",
+        "exact_prior": "Exact",
+    }
+}
+
+# Axis Labels
+axis_labels = {
+    "prior_type": "Prior Types",
+    "samples": "Samples",
+    "timepoints": "Timepoints",
+    "noise_cv": "Coefficient of variation",
+}
+
+__all__ = [
+    "plt",
+    "colors",
+    "parameter_labels",
+    "value_labels",
+    "axis_labels",
+]
