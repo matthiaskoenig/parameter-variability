@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 from matplotlib import gridspec
 from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
 from parvar.analysis.utils import append_server_result, join_optimization_results
+from parvar.plots import value_labels, axis_labels
 
 
 def runtime_boxplot(
@@ -20,6 +21,9 @@ def runtime_boxplot(
     groups = [grp["optim_duration"].values for _, grp in df.groupby(column)]
     labels = [key for key, _ in df.groupby(column)]
 
+    if column == "prior_type":
+        labels = [value_labels[column][lab] for lab in labels]
+
     ax.boxplot(
         groups,
         labels=labels,
@@ -31,7 +35,7 @@ def runtime_boxplot(
         flierprops=dict(marker="o", color="#AAA", markersize=4),
     )
 
-    ax.set_xlabel(column, fontsize=12)
+    ax.set_xlabel(axis_labels[column], fontsize=10)
     ax.set_ylabel("Runtime (s)", fontsize=12) if show_plot else None
 
     if save_path:

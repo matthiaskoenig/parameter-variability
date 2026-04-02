@@ -1,5 +1,5 @@
 from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
-from parvar.analysis.plots.ess_violinplot import ess_violinplot
+from parvar.analysis.plots.ess_violinplot import ess_violinplots
 from parvar.analysis.plots.runtime_boxplot import runtime_boxplots
 from parvar.analysis.utils import append_server_result, join_optimization_results
 
@@ -29,6 +29,6 @@ if __name__ == "__main__":
         runtime_boxplots(df=results, save_path=plot_path)
         #
         # # 4. ESS violin plot
-        ess_violinplot(df=results, save_path=plot_path)
+        ess_violinplots(df=results, save_path=plot_path)
 
         # grouped_boxplot(results, save_path=plot_path)
