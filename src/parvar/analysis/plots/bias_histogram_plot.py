@@ -33,14 +33,14 @@ def bias_histogram(
 
     fig = plt.figure(
         dpi=360,
-        figsize=(len(pars) * 4, len(vals) * 2),
+        figsize=(len(pars) * 4.2, len(vals) * 1.5),
     )
 
     gs = gridspec.GridSpec(
         len(vals),
         len(pars),
         figure=fig,
-        hspace=0.45,
+        hspace=0.3,
         wspace=0.30,
         top=0.93,
         bottom=0.3,  # ← legend lives in this margin
@@ -89,7 +89,13 @@ def bias_histogram(
                 pc_x = 0
 
         fig.supxlabel("Point Bias", fontsize=11, y=0.2)
-        fig.supylabel(axis_labels[column], fontsize=11, x=-0.02, y=0.6)
+
+        if len(pars) == 1:
+            ylabel_x = -0.1
+        else:
+            ylabel_x = -0.01
+
+        fig.supylabel(axis_labels[column], fontsize=11, x=ylabel_x, y=0.6)
 
         pc_y += 1
 
@@ -108,9 +114,10 @@ def bias_histogram(
         bbox_to_anchor=(0.5, 0.1),
     )
 
+    plt.tight_layout()
     if save_path:
         plt.savefig(save_path / f"{column}_bias_histogram.png", bbox_inches="tight")
-    plt.tight_layout()
+
     plt.show()
 
 
