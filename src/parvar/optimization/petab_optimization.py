@@ -332,7 +332,7 @@ def optimize_experiment(
 
         # save DataFrame
         df = pypesto_sampler.results_df(uid, settings)
-        df["bayesian_sampler_values"] = df["bayesian_sampler_values"].apply(json.dumps)
+        df["values"] = df["values"].apply(lambda x: json.dumps(x.tolist()))
         df.to_csv(results_path, sep="\t", index=False)
         console.print(f"Results saved to {results_path}", style="green bold")
         return True

@@ -1,10 +1,15 @@
+import ast
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from parvar import RESULTS_SIMPLE_PK, RESULTS_ICG, RESULTS_SIMPLE_CHAIN
-from parvar.analysis.utils import append_server_result, join_optimization_results
+from parvar.analysis.utils import (
+    # append_server_result,
+    join_optimization_results,
+    reference_df_filter,
+)
 from matplotlib import gridspec
 from matplotlib import patches as mpatches
 from parvar.plots import colors, parameter_labels, value_labels, axis_labels
@@ -23,13 +28,10 @@ def bias_histogram(
     if len(vals) > 4:
         vals = vals[-4:]
 
-    def point_bias(df: pd.DataFrame) -> pd.DataFrame:
-        df["point_bias"] = (
-            np.abs(df["sample_loc"] - df["bayes_sampler_median"]) / df["sample_loc"]
-        )
-        return df
+    df = reference_df_filter(column, df, reference)
 
-    df = point_bias(df)
+    def point_bias(df: pd.DataFrame, array: np.array) -> np.array:
+        return np.abs(df["sample_loc"].to_numpy() - array) / df["sample_loc"].to_numpy()
 
     fig = plt.figure(
         dpi=360,
@@ -59,8 +61,15 @@ def bias_histogram(
             ax = fig.add_subplot(gs[pc_x, pc_y])
             for g in groups:
                 df_g = df_p[df_p["group"] == g]
+
+                array_string = df_g["bayes_sampler_values"].values[0]
+                bayes_samples = np.array(ast.literal_eval(array_string)).flatten()
+
+                bayes_samples_diff = point_bias(df_g, bayes_samples)
+                # console.print(type(bayes_samples_diff))
+                # exit()
                 ax.hist(
-                    df_g["point_bias"],
+                    bayes_samples_diff,
                     density=True,
                     bins="auto",
                     histtype="stepfilled",
@@ -88,7 +97,7 @@ def bias_histogram(
             if pc_x == len(vals):
                 pc_x = 0
 
-        fig.supxlabel("Point Bias", fontsize=11, y=0.2)
+        fig.supxlabel("Point Bias", fontsize=11, y=0.1)
 
         if len(pars) == 1:
             ylabel_x = -0.1
@@ -99,20 +108,20 @@ def bias_histogram(
 
         pc_y += 1
 
-    seen = set()
-    unique_handles = []
-    for h in legend_handles:
-        label = h.get_label()
-        if label not in seen:
-            seen.add(label)
-            unique_handles.append(h)
-    fig.legend(
-        handles=unique_handles,
-        loc="lower center",
-        ncol=2,
-        fontsize=9,
-        bbox_to_anchor=(0.5, 0.1),
-    )
+    # seen = set()
+    # unique_handles = []
+    # for h in legend_handles:
+    #     label = h.get_label()
+    #     if label not in seen:
+    #         seen.add(label)
+    #         unique_handles.append(h)
+    # fig.legend(
+    #     handles=unique_handles,
+    #     loc="lower center",
+    #     ncol=2,
+    #     fontsize=9,
+    #     bbox_to_anchor=(0.5, 0.1),
+    # )
 
     plt.tight_layout()
     if save_path:
@@ -122,8 +131,15 @@ def bias_histogram(
 
 
 if __name__ == "__main__":
-    for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
-        results_path = append_server_result(results_path=r, which="run_2")
-        results = join_optimization_results(results_path=results_path, xp_type="all")
+    reference = {
+        "prior_type": "exact_prior",
+        "timepoints": 10,
+        "samples": 20,
+        "noise_cv": 0.1,
+    }
 
-        bias_histogram(df=results, column="samples")
+    for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
+        # results_path = append_server_result(results_path=r, which="run_2")
+        results = join_optimization_results(results_path=r, xp_type="timepoints")
+
+        bias_histogram(df=results, column="timepoints")
