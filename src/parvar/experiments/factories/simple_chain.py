@@ -24,22 +24,7 @@ pars_true: dict[str, Parameter] = {
     ),
 }
 
-pars_biased_1: dict[str, Parameter] = {
-    "MALE": Parameter(
-        id="k1",
-        distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 10.0, "scale": 0.2}
-        ),
-    ),
-    "FEMALE": Parameter(
-        id="k1",
-        distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 10.0, "scale": 0.2}
-        ),
-    ),
-}
-
-pars_biased_2: dict[str, Parameter] = {
+pars_prior_biased: dict[str, Parameter] = {
     "MALE": Parameter(
         id="k1",
         distribution=Distribution(
@@ -50,6 +35,21 @@ pars_biased_2: dict[str, Parameter] = {
         id="k1",
         distribution=Distribution(
             type=DistributionType.LOGNORMAL, parameters={"loc": 3.0, "scale": 2}
+        ),
+    ),
+}
+
+pars_prior_incorrect: dict[str, Parameter] = {
+    "MALE": Parameter(
+        id="k1",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 5.0, "scale": 1}
+        ),
+    ),
+    "FEMALE": Parameter(
+        id="k1",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 6.0, "scale": 1}
         ),
     ),
 }
@@ -90,8 +90,8 @@ exp_base = PETabExperiment(
 )
 
 pars_biased = {
-    "prior_biased_1": pars_biased_1,
-    "prior_biased_2": pars_biased_2,
+    "prior_biased": pars_prior_biased,
+    "prior_incorrect": pars_prior_incorrect,
 }
 
 factory_data = {

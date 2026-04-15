@@ -27,6 +27,12 @@ pars_true_icg: dict[str, Parameter] = {
             type=DistributionType.LOGNORMAL, parameters={"loc": 75.0, "scale": 10}
         ),
     ),  # bodyweight [kg] (loc: mean;
+    "BW_FEMALE": Parameter(
+        id="BW",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 65.0, "scale": 10}
+        ),
+    ),  # bodyweight [kg] (loc: mean;
     "LI__ICGIM_Vmax_MALE": Parameter(
         id="LI__ICGIM_Vmax",
         distribution=Distribution(
@@ -34,12 +40,6 @@ pars_true_icg: dict[str, Parameter] = {
             parameters={"loc": 0.0369598840327503, "scale": 0.01},
         ),
     ),
-    "BW_FEMALE": Parameter(
-        id="BW",
-        distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 65.0, "scale": 10}
-        ),
-    ),  # bodyweight [kg] (loc: mean;
     "LI__ICGIM_Vmax_FEMALE": Parameter(
         id="LI__ICGIM_Vmax",
         distribution=Distribution(
@@ -48,60 +48,60 @@ pars_true_icg: dict[str, Parameter] = {
     ),
 }
 
-# Biased parameters
-pars_biased_icg_1: dict[str, Parameter] = {
+pars_prior_biased = {
     "BW_MALE": Parameter(
         id="BW",
         distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 10.0, "scale": 0.2}
-        ),
-    ),
-    "LI__ICGIM_Vmax_MALE": Parameter(
-        id="LI__ICGIM_Vmax",
-        distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 10.0, "scale": 0.2}
+            type=DistributionType.LOGNORMAL, parameters={"loc": 60.0, "scale": 20}
         ),
     ),
     "BW_FEMALE": Parameter(
         id="BW",
         distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 30.0, "scale": 20}
+            type=DistributionType.LOGNORMAL, parameters={"loc": 50, "scale": 20}
+        ),
+    ),
+    "LI__ICGIM_Vmax_MALE": Parameter(
+        id="LI__ICGIM_Vmax",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 0.1, "scale": 0.1}
         ),
     ),
     "LI__ICGIM_Vmax_FEMALE": Parameter(
         id="LI__ICGIM_Vmax",
         distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 30, "scale": 20}
+            type=DistributionType.LOGNORMAL, parameters={"loc": 0.1, "scale": 0.1}
         ),
     ),
 }
 
-pars_biased_icg_2 = {
+pars_prior_incorrect: dict[str, Parameter] = {
     "BW_MALE": Parameter(
         id="BW",
         distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 60.0, "scale": 10}
-        ),
-    ),
-    "LI__ICGIM_Vmax_MALE": Parameter(
-        id="LI__ICGIM_Vmax",
-        distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 0.1, "scale": 1}
+            type=DistributionType.LOGNORMAL, parameters={"loc": 10.0, "scale": 10}
         ),
     ),
     "BW_FEMALE": Parameter(
         id="BW",
         distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 50, "scale": 10}
+            type=DistributionType.LOGNORMAL, parameters={"loc": 30.0, "scale": 10}
+        ),
+    ),
+    "LI__ICGIM_Vmax_MALE": Parameter(
+        id="LI__ICGIM_Vmax",
+        distribution=Distribution(
+            type=DistributionType.LOGNORMAL, parameters={"loc": 1.0, "scale": 0.01}
         ),
     ),
     "LI__ICGIM_Vmax_FEMALE": Parameter(
         id="LI__ICGIM_Vmax",
         distribution=Distribution(
-            type=DistributionType.LOGNORMAL, parameters={"loc": 0.1, "scale": 1}
+            type=DistributionType.LOGNORMAL, parameters={"loc": 0.8, "scale": 0.01}
         ),
     ),
 }
+
 
 # True sampling
 true_sampling: dict[str, Sampling] = {
@@ -151,12 +151,12 @@ exp_base = PETabExperiment(
 )
 
 pars_biased = {
-    "prior_biased_1": pars_biased_icg_1,
-    "prior_biased_2": pars_biased_icg_2,
+    "prior_biased": pars_prior_biased,
+    "prior_incorrect": pars_prior_incorrect,
 }
 
 factory_data = {
     "exp_base": exp_base,
     "pars_true": pars_true_icg,
-    "pars_biased": pars_biased,  # TODO: be a dict with prior_types as keysx
+    "pars_biased": pars_biased,
 }

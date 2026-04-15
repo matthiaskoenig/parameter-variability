@@ -4,17 +4,17 @@ from typing import Any
 
 definitions_minimal: dict[str, dict[str, Any]] = {
     "timepoints": {
-        "prior_types": ["prior_biased_1", "prior_biased_2", "exact_prior"],
+        "prior_types": ["exact_prior", "prior_biased_1", "prior_biased_2"],
         "timepoints": [5, 10],
     },
 }
 
 definitions_all: dict[str, dict[str, Any]] = {
     "all": {
-        "prior_types": ["prior_biased_1", "prior_biased_2", "exact_prior"],
-        "samples": [1, 2, 3, 4, 5, 10, 20, 40, 80],  # n=9
-        "timepoints": [2, 3, 4, 5, 10, 20, 40, 80],  # n=8
-        "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5],  # n=7
+        "prior_types": ["exact_prior", "prior_biased_1", "prior_biased_2"],
+        "samples": [1, 2, 3, 4, 5, 10, 20, 40, 80, 160],  # n=10
+        "timepoints": [2, 3, 4, 5, 10, 20, 40, 80, 160],  # n=9
+        "noise_cvs": [0.0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0],  # n=8
     },
     # "prior_types": {
     #     "prior_types": ["no_prior", "prior_biased", "exact_prior"],
