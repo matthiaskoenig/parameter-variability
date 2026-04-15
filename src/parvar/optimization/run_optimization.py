@@ -12,7 +12,7 @@ from parvar.experiments.petab_factory import select_all_experiments
 from parvar.optimization.petab_optimization import optimize_experiments_multicore
 
 if __name__ == "__main__":
-    optimization_run: str = "2025-03-24_v1"
+    optimization_run: str = "2025-04-15"
 
     for results_path in [
         RESULTS_SIMPLE_PK,
