@@ -539,6 +539,7 @@ def create_petabs(
             yaml.dump(ex_m, f, sort_keys=False, indent=2)
 
     df_res = exps.to_dataframe()
+    df_res["timepoints"] = df_res["timepoints"] + 1  # adding back the one
     df_res.to_csv(results_path / DEFINITIONS_FILENAME, sep="\t", index=False)
 
     return yaml_files
@@ -676,7 +677,7 @@ def model_experiment_factory(
 
         for g in exp_n.groups:
             g.sampling.n_samples = n_sample
-            g.sampling.steps = n_timepoint - 1
+            g.sampling.steps = n_timepoint - 1  # Steps start at 0 for the simulator
             g.sampling.noise.cv = cv
 
             if exp_n.prior_type == "no_prior":
