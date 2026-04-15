@@ -98,3 +98,15 @@ def join_optimization_results(
     df.to_csv(directories / "definitions_results.tsv", sep="\t", index=False)
 
     return df
+
+
+def reference_df_filter(column: str, df: pd.DataFrame, reference: dict) -> pd.DataFrame:
+    reference_cp = reference.copy()
+    reference_cp.pop(column)
+
+    mask = pd.Series([True] * len(df), index=df.index)
+
+    for col, val in reference_cp.items():
+        mask &= df[col] == val
+
+    return df[mask]

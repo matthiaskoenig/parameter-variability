@@ -2,7 +2,11 @@ import ast
 from pathlib import Path
 
 from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
-from parvar.analysis.utils import join_optimization_results
+from parvar.analysis.utils import (
+    # append_server_result,
+    join_optimization_results,
+    reference_df_filter,
+)
 from parvar.plots import colors, parameter_labels, axis_labels, value_labels
 
 import matplotlib.pyplot as plt
@@ -27,15 +31,7 @@ def grouped_boxplot(
     n_x = len(values)
     n_groups = len(groups)
 
-    reference_cp = reference.copy()
-    reference_cp.pop(column)
-
-    mask = pd.Series([True] * len(df), index=df.index)
-
-    for col, val in reference_cp.items():
-        mask &= df[col] == val
-
-    df = df[mask]
+    df = reference_df_filter(column, df, reference)
 
     group_width = 0.7  # total width occupied by all boxes at one x tick
     box_width = group_width / n_groups
@@ -142,7 +138,7 @@ def grouped_boxplot(
         ax.spines[["top", "right"]].set_visible(False)
 
     fig.supxlabel(axis_labels[column], fontsize=11)
-    fig.supylabel("Posterior Median", fontsize=11)
+    fig.supylabel("Posterior Samples", fontsize=11)
     legend_handles: list = [
         mpatches.Patch(facecolor=colors[g], alpha=0.75, edgecolor="white", label=g)
         for g in groups
