@@ -1,6 +1,7 @@
+import re
 from pathlib import Path
 
-from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
+from parvar import RESULTS_SIMPLE_CHAIN
 from parvar.analysis.utils import append_server_result, join_optimization_results
 from parvar.plots import colors, parameter_labels, axis_labels, value_labels
 
@@ -9,10 +10,12 @@ import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
 import numpy as np
 import pandas as pd
+from pymetadata.console import console
 
 
 def grouped_boxplot(
     df: pd.DataFrame,
+    reference: dict = None,
     column: str = "samples",
     save_path: Path = None,
 ) -> None:
@@ -23,6 +26,15 @@ def grouped_boxplot(
     n_pars = len(pars)
     n_x = len(values)
     n_groups = len(groups)
+
+    reference.pop(column)
+
+    mask = pd.Series([True] * len(df), index=df.index)
+
+    for col, val in reference.items():
+        mask &= df[col] == val
+
+    df = df[mask]
 
     group_width = 0.7  # total width occupied by all boxes at one x tick
     box_width = group_width / n_groups
@@ -51,8 +63,18 @@ def grouped_boxplot(
             positions = []
             box_data = []
             for v_idx, val in enumerate(values):
+                array_string = df_g[df_g[column] == val]["bayes_sampler_values"].values[
+                    0
+                ]
+                array_string = array_string.strip("[]")
+                rows = re.findall(r"\[([^\]]+)\]", array_string)
+                console.print(np.array([list(map(float, row.split())) for row in rows]))
+                exit()
+
                 cell = (
-                    df_g[df_g[column] == val]["bayes_sampler_median"].dropna().tolist()
+                    np.array(
+                        df_g[df_g[column] == val]["bayes_sampler_values"]
+                    )  # ]tolist()
                 )
                 if cell:
                     positions.append(v_idx + offsets[g_idx])
@@ -174,8 +196,15 @@ def grouped_boxplot(
 
 
 if __name__ == "__main__":
-    for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
+    reference = {
+        "prior_type": "exact_prior",
+        "timepoints": 9,
+        "samples": 40,
+        "noise_cv": 0.001,
+    }
+    # [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]
+    for r in [RESULTS_SIMPLE_CHAIN]:
         results_path = append_server_result(results_path=r, which="run_2")
         results = join_optimization_results(results_path=results_path, xp_type="all")
 
-        grouped_boxplot(results, column="prior_type")
+        grouped_boxplot(results, reference, column="prior_type")
