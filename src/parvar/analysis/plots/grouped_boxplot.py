@@ -2,7 +2,7 @@ from pathlib import Path
 
 from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
 from parvar.analysis.utils import append_server_result, join_optimization_results
-from parvar.plots import colors, parameter_labels, axis_labels
+from parvar.plots import colors, parameter_labels, axis_labels, value_labels
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -115,7 +115,12 @@ def grouped_boxplot(
                 )
 
         ax.set_xticks(range(n_x))
-        ax.set_xticklabels(values, fontsize=10)
+        if column == "prior_type":
+            ax.set_xticklabels(
+                [value_labels[column][val] for val in values], fontsize=10
+            )
+        else:
+            ax.set_xticklabels(values, fontsize=10)
         ax.set_xlim(-0.5, n_x - 0.5)
         ax.set_title(parameter_labels[par], fontsize=13, fontweight="bold", pad=10)
         ax.yaxis.grid(True, linestyle=":", linewidth=0.7, alpha=0.6)
@@ -123,7 +128,7 @@ def grouped_boxplot(
         ax.spines[["top", "right"]].set_visible(False)
 
     fig.supxlabel(axis_labels[column], fontsize=11)
-    fig.supylabel("Parameter Value", fontsize=11)
+    fig.supylabel("Posterior Median", fontsize=11)
     legend_handles: list = [
         mpatches.Patch(facecolor=colors[g], alpha=0.75, edgecolor="white", label=g)
         for g in groups
@@ -173,4 +178,4 @@ if __name__ == "__main__":
         results_path = append_server_result(results_path=r, which="run_2")
         results = join_optimization_results(results_path=results_path, xp_type="all")
 
-        grouped_boxplot(results)
+        grouped_boxplot(results, column="prior_type")

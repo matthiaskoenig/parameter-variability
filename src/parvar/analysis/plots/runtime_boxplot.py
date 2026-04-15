@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib import gridspec
@@ -18,7 +19,7 @@ def runtime_boxplot(
     if ax is None:
         fig, ax = plt.subplots(figsize=(6, 5))
 
-    groups = [grp["optim_duration"].values for _, grp in df.groupby(column)]
+    groups = [np.log(grp["optim_duration"]).values for _, grp in df.groupby(column)]
     labels = [key for key, _ in df.groupby(column)]
 
     if column == "prior_type":
@@ -38,7 +39,7 @@ def runtime_boxplot(
     ax.tick_params(axis="both", labelsize=9)
 
     ax.set_xlabel(axis_labels[column], fontsize=11)
-    ax.set_ylabel("Runtime (s)", fontsize=11) if show_plot or save_path else None
+    ax.set_ylabel("log(Runtime)", fontsize=11) if show_plot or save_path else None
 
     if save_path:
         plt.savefig(save_path / f"{column}_runtime_boxplot.png")
