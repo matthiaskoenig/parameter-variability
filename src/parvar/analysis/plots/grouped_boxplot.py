@@ -1,8 +1,8 @@
-import re
+import ast
 from pathlib import Path
 
-from parvar import RESULTS_SIMPLE_CHAIN
-from parvar.analysis.utils import append_server_result, join_optimization_results
+from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
+from parvar.analysis.utils import join_optimization_results
 from parvar.plots import colors, parameter_labels, axis_labels, value_labels
 
 import matplotlib.pyplot as plt
@@ -22,16 +22,17 @@ def grouped_boxplot(
     pars = df["parameter"].unique()
     values = df[column].unique()
     groups = df["group"].unique()
-
+    console.print(reference)
     n_pars = len(pars)
     n_x = len(values)
     n_groups = len(groups)
 
-    reference.pop(column)
+    reference_cp = reference.copy()
+    reference_cp.pop(column)
 
     mask = pd.Series([True] * len(df), index=df.index)
 
-    for col, val in reference.items():
+    for col, val in reference_cp.items():
         mask &= df[col] == val
 
     df = df[mask]
@@ -66,19 +67,10 @@ def grouped_boxplot(
                 array_string = df_g[df_g[column] == val]["bayes_sampler_values"].values[
                     0
                 ]
-                array_string = array_string.strip("[]")
-                rows = re.findall(r"\[([^\]]+)\]", array_string)
-                console.print(np.array([list(map(float, row.split())) for row in rows]))
-                exit()
-
-                cell = (
-                    np.array(
-                        df_g[df_g[column] == val]["bayes_sampler_values"]
-                    )  # ]tolist()
-                )
-                if cell:
-                    positions.append(v_idx + offsets[g_idx])
-                    box_data.append(cell)
+                cell = np.array(ast.literal_eval(array_string)).flatten().tolist()
+                # if cell:
+                positions.append(v_idx + offsets[g_idx])
+                box_data.append(cell)
 
             if not box_data:
                 continue
@@ -198,13 +190,14 @@ def grouped_boxplot(
 if __name__ == "__main__":
     reference = {
         "prior_type": "exact_prior",
-        "timepoints": 9,
-        "samples": 40,
-        "noise_cv": 0.001,
+        "timepoints": 10,
+        "samples": 20,
+        "noise_cv": 0.1,
     }
     # [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]
-    for r in [RESULTS_SIMPLE_CHAIN]:
-        results_path = append_server_result(results_path=r, which="run_2")
-        results = join_optimization_results(results_path=results_path, xp_type="all")
+    for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
+        # results_path = append_server_result(results_path=r, which="run_2")
+        results = join_optimization_results(results_path=r, xp_type="timepoints")
+        # console.print(results['bayes_sampler_values'][0])
 
-        grouped_boxplot(results, reference, column="prior_type")
+        grouped_boxplot(results, reference, column="timepoints")

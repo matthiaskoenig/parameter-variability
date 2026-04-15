@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import json
+import numpy as np
 import pandas as pd
 import ast
 
@@ -43,10 +45,11 @@ def join_optimization_results(
     for filename in optim_filenames:
         # console.print(filename)
         df = pd.read_csv(filename, sep="\t")
+        df["values"] = df["values"].apply(lambda x: np.array(json.loads(x)))
         df_ls.append(df)
 
     df_bayes = pd.concat(df_ls)
-    df_bayes.drop(["Unnamed: 0"], axis=1, inplace=True)
+    # df_bayes.drop(["Unnamed: 0"], axis=1, inplace=True)
     console.print(df_bayes.info())
 
     df_xp = pd.read_csv(directories / "definitions.tsv", sep="\t")
@@ -87,6 +90,11 @@ def join_optimization_results(
 
     df = df_join[col_order]
     df = df[df["prior_type"] != "no_prior"]
+
+    df["bayes_sampler_values"] = df["bayes_sampler_values"].apply(
+        lambda x: json.dumps(x.tolist())
+    )
+
     df.to_csv(directories / "definitions_results.tsv", sep="\t", index=False)
 
     return df
