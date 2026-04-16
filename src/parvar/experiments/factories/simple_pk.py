@@ -131,8 +131,8 @@ exp_base = PETabExperiment(
             sampling=true_sampling["MALE"],
             estimation=Estimation(
                 parameters=[
-                    pars_true["CL_MALE"],
                     pars_true["k_abs_MALE"],
+                    pars_true["CL_MALE"],
                 ]
             ),
         ),
@@ -141,8 +141,8 @@ exp_base = PETabExperiment(
             sampling=true_sampling["FEMALE"],
             estimation=Estimation(
                 parameters=[
-                    pars_true["CL_FEMALE"],
                     pars_true["k_abs_FEMALE"],
+                    pars_true["CL_FEMALE"],
                 ]
             ),
         ),

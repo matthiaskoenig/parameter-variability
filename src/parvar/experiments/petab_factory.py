@@ -683,17 +683,16 @@ def model_experiment_factory(
             if exp_n.prior_type == "no_prior":
                 g.estimation = Estimation(parameters=[])
 
-            elif "prior_biased" in exp_n.prior_type:
-                # TODO: filter for the biased prior based on the prior_type name
-                p_b: dict = pars_biased[prior_type]
-                pars_id = [par for par in p_b if g.id in par]
-                g.estimation = Estimation(parameters=[p_b[par] for par in pars_id])
-
             elif exp_n.prior_type == "exact_prior":
                 pars_id = [par for par in pars_true if g.id in par]
                 g.estimation = Estimation(
                     parameters=[pars_true[par] for par in pars_id]
                 )
+
+            else:  # for all biased priors with different names
+                p_b: dict = pars_biased[prior_type]
+                pars_id = [par for par in p_b if g.id in par]
+                g.estimation = Estimation(parameters=[p_b[par] for par in pars_id])
 
         experiments.append(exp_n)
 
