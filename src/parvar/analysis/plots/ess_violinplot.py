@@ -15,6 +15,9 @@ def ess_violinplot(
     ax: plt.Axes = None,
     show_plot: bool = False,
 ):
+    if column not in ["prior_type"]:
+        df = df[df["prior_tyoe"] == "exact_prior"]
+
     if ax is None:
         fig, ax = plt.subplots(figsize=(6, 5))
 

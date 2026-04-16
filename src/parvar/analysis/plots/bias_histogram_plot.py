@@ -20,6 +20,8 @@ def bias_histogram(
     column: str = "prior_type",
     save_path: Path = None,
 ) -> None:
+    xp_id = df["id"].unique()
+    model = df["model"].unique()
     pars = df["parameter"].unique()
     groups = df["group"].unique()
     vals = df[column].unique()
@@ -31,7 +33,7 @@ def bias_histogram(
     df = reference_df_filter(column, df, reference)
 
     def point_bias(df: pd.DataFrame, array: np.array) -> np.array:
-        return np.abs(df["sample_loc"].to_numpy() - array) / df["sample_loc"].to_numpy()
+        return (df["sample_loc"].to_numpy() - array) / df["sample_loc"].to_numpy()
 
     fig = plt.figure(
         dpi=360,
@@ -53,7 +55,7 @@ def bias_histogram(
     pc_x = 0
     pc_y = 0
     legend_handles = []
-
+    logs: list[dict] = []
     for p in pars:
         for val in vals:
             df_p = df[(df["parameter"] == p) & (df[column] == val)]
@@ -76,6 +78,26 @@ def bias_histogram(
                     alpha=0.5,
                     color=colors[g],
                 )
+
+                ax.axvline(
+                    np.median(bayes_samples_diff),
+                    color=colors[g],
+                    linewidth=1.0,
+                    linestyle="--",
+                    zorder=5,
+                    alpha=0.7,
+                )
+                if save_path:
+                    log = {
+                        "id": xp_id,
+                        "model": model,
+                        "parameter": p,
+                        "groups": g,
+                        "prior_type": p,
+                        "column": column,
+                        "median_point_bias": np.median(bayes_samples_diff),
+                    }
+                    logs.append(log)
 
                 if column == "prior_type" and pc_y == 0:
                     ax.set_ylabel(value_labels[column][val], fontsize=8)
@@ -124,8 +146,11 @@ def bias_histogram(
     # )
 
     plt.tight_layout()
+
     if save_path:
         plt.savefig(save_path / f"{column}_bias_histogram.png", bbox_inches="tight")
+        logs_df = pd.DataFrame(logs)
+        logs_df.to_csv(save_path / f"{column}_bias_results.tsv", sep="\t", index=False)
 
     plt.show()
 
