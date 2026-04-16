@@ -19,6 +19,9 @@ def runtime_boxplot(
     if ax is None:
         fig, ax = plt.subplots(figsize=(6, 5))
 
+    if column not in ["prior_type"]:
+        df = df[df["prior_tyoe"] == "exact_prior"]
+
     groups = [np.log(grp["optim_duration"]).values for _, grp in df.groupby(column)]
     labels = [key for key, _ in df.groupby(column)]
 

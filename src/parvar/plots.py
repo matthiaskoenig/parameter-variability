@@ -37,6 +37,8 @@ value_labels = {
         "prior_biased_1": "Biased 1",
         "prior_biased_2": "Biased 2",
         "exact_prior": "Exact",
+        "prior_biased": "Biased",
+        "prior_incorrect": "Incorrect",
     }
 }
 
