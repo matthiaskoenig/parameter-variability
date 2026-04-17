@@ -6,7 +6,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from parvar import RESULTS_SIMPLE_PK, RESULTS_ICG, RESULTS_SIMPLE_CHAIN
 from parvar.analysis.utils import (
-    # append_server_result,
+    append_server_result,
     join_optimization_results,
     reference_df_filter,
 )
@@ -17,6 +17,7 @@ from parvar.plots import colors, parameter_labels, value_labels, axis_labels
 
 def bias_histogram(
     df: pd.DataFrame,
+    reference: dict,
     column: str = "prior_type",
     save_path: Path = None,
 ) -> None:
@@ -24,10 +25,15 @@ def bias_histogram(
     model = df["model"].unique()
     pars = df["parameter"].unique()
     groups = df["group"].unique()
-    vals = df[column].unique()
+    vals = df[column].unique().tolist()
+    if column == "prior_type":
+        vals = sorted(vals, reverse=True)
 
     # Only accept maximum of 4 values
-    if len(vals) > 4:
+    if len(vals) > 4 and column in ["timepoints", "samples"]:
+        vals = vals[::2][:4]
+
+    elif len(vals) > 4 and column == "noise_cv":
         vals = vals[-4:]
 
     df = reference_df_filter(column, df, reference)
@@ -47,7 +53,7 @@ def bias_histogram(
         hspace=0.3,
         wspace=0.30,
         top=0.93,
-        bottom=0.3,  # ← legend lives in this margin
+        bottom=0.1,  # ← legend lives in this margin
         left=0.07,
         right=0.97,
     )
@@ -119,14 +125,16 @@ def bias_histogram(
             if pc_x == len(vals):
                 pc_x = 0
 
-        fig.supxlabel("Point Bias", fontsize=11, y=0.1)
+        fig.supxlabel("Point Bias", fontsize=11, y=-0.02, fontweight="bold")
 
         if len(pars) == 1:
             ylabel_x = -0.1
         else:
             ylabel_x = -0.01
 
-        fig.supylabel(axis_labels[column], fontsize=11, x=ylabel_x, y=0.6)
+        fig.supylabel(
+            axis_labels[column], fontsize=11, x=ylabel_x, y=0.5, fontweight="bold"
+        )
 
         pc_y += 1
 
@@ -164,7 +172,10 @@ if __name__ == "__main__":
     }
 
     for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
-        # results_path = append_server_result(results_path=r, which="run_2")
-        results = join_optimization_results(results_path=r, xp_type="timepoints")
+        results_path = append_server_result(results_path=r, which="run_3")
+        results = join_optimization_results(results_path=results_path, xp_type="all")
 
-        bias_histogram(df=results, column="timepoints")
+        # results_path = append_server_result(results_path=r, which="run_2")
+        # results = join_optimization_results(results_path=r, xp_type="timepoints")
+
+        bias_histogram(df=results, reference=reference, column="timepoints")
