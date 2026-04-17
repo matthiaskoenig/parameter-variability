@@ -3,7 +3,7 @@ from pathlib import Path
 
 from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
 from parvar.analysis.utils import (
-    # append_server_result,
+    append_server_result,
     join_optimization_results,
     reference_df_filter,
 )
@@ -24,7 +24,9 @@ def grouped_boxplot(
     save_path: Path = None,
 ) -> None:
     pars = df["parameter"].unique()
-    values = df[column].unique()
+    values = df[column].unique().tolist()
+    if column == "prior_type":
+        values = sorted(values, reverse=True)
     groups = df["group"].unique()
     console.print(reference)
     n_pars = len(pars)
@@ -137,8 +139,8 @@ def grouped_boxplot(
         ax.set_axisbelow(True)
         ax.spines[["top", "right"]].set_visible(False)
 
-    fig.supxlabel(axis_labels[column], fontsize=11)
-    fig.supylabel("Posterior Samples", fontsize=11)
+    fig.supxlabel(axis_labels[column], fontsize=11, fontweight="bold")
+    fig.supylabel("Posterior Samples", fontsize=11, fontweight="bold")
     legend_handles: list = [
         mpatches.Patch(facecolor=colors[g], alpha=0.75, edgecolor="white", label=g)
         for g in groups
@@ -192,8 +194,8 @@ if __name__ == "__main__":
     }
     # [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]
     for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
-        # results_path = append_server_result(results_path=r, which="run_2")
-        results = join_optimization_results(results_path=r, xp_type="timepoints")
+        results_path = append_server_result(results_path=r, which="run_3")
+        results = join_optimization_results(results_path=results_path, xp_type="all")
         # console.print(results['bayes_sampler_values'][0])
 
         grouped_boxplot(results, reference, column="timepoints")

@@ -20,12 +20,13 @@ def runtime_boxplot(
         fig, ax = plt.subplots(figsize=(6, 5))
 
     if column not in ["prior_type"]:
-        df = df[df["prior_tyoe"] == "exact_prior"]
+        df = df[df["prior_type"] == "exact_prior"]
 
     groups = [np.log(grp["optim_duration"]).values for _, grp in df.groupby(column)]
-    labels = [key for key, _ in df.groupby(column)]
+    labels: list = [key for key, _ in df.groupby(column)]
 
     if column == "prior_type":
+        labels = sorted(labels, reverse=True)
         labels = [value_labels[column][lab] for lab in labels]
 
     ax.boxplot(
@@ -41,8 +42,10 @@ def runtime_boxplot(
 
     ax.tick_params(axis="both", labelsize=9)
 
-    ax.set_xlabel(axis_labels[column], fontsize=11)
-    ax.set_ylabel("log(Runtime)", fontsize=11) if show_plot or save_path else None
+    ax.set_xlabel(axis_labels[column], fontsize=11, fontweight="bold")
+    ax.set_ylabel(
+        "log(Runtime)", fontsize=11, fontweight="bold"
+    ) if show_plot or save_path else None
 
     if save_path:
         plt.savefig(save_path / f"{column}_runtime_boxplot.png")
@@ -69,7 +72,7 @@ def runtime_boxplots(df: pd.DataFrame, save_path: Path = None) -> None:
         ax = fig.add_subplot(gs[0, i])
         runtime_boxplot(df, column=c, ax=ax)
 
-    fig.supylabel("Runtime (s)", fontsize=12)
+    fig.supylabel("Runtime (s)", fontsize=12, fontweight="bold")
 
     plt.tight_layout()
 
@@ -81,7 +84,7 @@ def runtime_boxplots(df: pd.DataFrame, save_path: Path = None) -> None:
 
 if __name__ == "__main__":
     for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
-        results_path = append_server_result(results_path=r, which="run_2")
+        results_path = append_server_result(results_path=r, which="run_3")
         results = join_optimization_results(results_path=results_path, xp_type="all")
 
         runtime_boxplot(results, show_plot=True)

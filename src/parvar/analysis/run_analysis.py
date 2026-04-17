@@ -8,22 +8,26 @@ from parvar.analysis.utils import append_server_result, join_optimization_result
 
 if __name__ == "__main__":
     reference = {
-        "prior_type": "prior_biased_2",
-        "timepoints": 9,
-        "samples": 40,
-        "noise_cv": 0.001,
+        "prior_type": "exact_prior",
+        "timepoints": 5,
+        "samples": 5,
+        "noise_cv": 0.1,
     }
 
     for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
-        results_path = append_server_result(results_path=r, which="run_2")
-
+        results_path = append_server_result(results_path=r, which="run_4")
         results = join_optimization_results(results_path=results_path, xp_type="all")
         plot_path = results_path / "xps" / "plots"
         plot_path.mkdir(parents=True, exist_ok=True)
-        for col in ["prior_type", "samples", "timepoints", "noise_cv"]:
-            grouped_boxplot(results, column=col, save_path=plot_path)
 
-            bias_histogram(results, column=col, save_path=plot_path)
+        for col in ["prior_type", "samples", "timepoints", "noise_cv"]:
+            grouped_boxplot(
+                results, reference=reference, column=col, save_path=plot_path
+            )
+
+            bias_histogram(
+                results, reference=reference, column=col, save_path=plot_path
+            )
 
             runtime_boxplot(results, column=col, save_path=plot_path)
 

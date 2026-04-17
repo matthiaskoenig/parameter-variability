@@ -16,15 +16,16 @@ def ess_violinplot(
     show_plot: bool = False,
 ):
     if column not in ["prior_type"]:
-        df = df[df["prior_tyoe"] == "exact_prior"]
+        df = df[df["prior_type"] == "exact_prior"]
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(6, 5))
 
     groups = [grp["ess"].values for _, grp in df.groupby(column)]
-    labels = [key for key, _ in df.groupby(column)]
+    labels: list = [key for key, _ in df.groupby(column)]
 
     if column == "prior_type":
+        labels = sorted(labels, reverse=True)
         labels = [value_labels[column][lab] for lab in labels]
 
     parts = ax.violinplot(
@@ -45,11 +46,11 @@ def ess_violinplot(
 
     ax.set_xticks(range(len(labels)))
     ax.set_xticklabels(labels, fontsize=9)
-    ax.set_xlabel(axis_labels[column], fontsize=11)
+    ax.set_xlabel(axis_labels[column], fontsize=11, fontweight="bold")
 
     ax.tick_params(axis="y", labelsize=9)
     ax.set_ylabel(
-        "Effective Sample Size", fontsize=11
+        "Effective Sample Size", fontsize=11, fontweight="bold"
     ) if show_plot or save_path else None
 
     if save_path:
@@ -80,7 +81,7 @@ def ess_violinplots(
         ax = fig.add_subplot(gs[0, i])
         ess_violinplot(df, column=c, ax=ax)
 
-    fig.supylabel("Effective Sample Size", fontsize=12)
+    fig.supylabel("Effective Sample Size", fontsize=12, fontweight="bold")
 
     plt.tight_layout()
 
@@ -92,8 +93,8 @@ def ess_violinplots(
 
 if __name__ == "__main__":
     for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
-        results_path = append_server_result(results_path=r, which="run_2")
+        results_path = append_server_result(results_path=r, which="run_3")
         results = join_optimization_results(results_path=results_path, xp_type="all")
 
-        ess_violinplot(results, column="prior_type", show_plot=True)
+        ess_violinplot(results, column="timepoints", show_plot=True)
         # ess_violinplots(results)
