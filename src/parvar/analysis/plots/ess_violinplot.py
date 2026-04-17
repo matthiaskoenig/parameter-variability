@@ -3,8 +3,6 @@ from pathlib import Path
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib import gridspec
-from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
-from parvar.analysis.utils import append_server_result, join_optimization_results
 from parvar.plots import value_labels, axis_labels
 
 
@@ -92,9 +90,11 @@ def ess_violinplots(
 
 
 if __name__ == "__main__":
-    for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
-        results_path = append_server_result(results_path=r, which="run_3")
-        results = join_optimization_results(results_path=results_path, xp_type="all")
-
-        ess_violinplot(results, column="timepoints", show_plot=True)
-        # ess_violinplots(results)
+    pass
+    # from parvar.analysis.utils import append_server_result
+    # for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
+    #     results_path = append_server_result(results_path=r, which="run_3")
+    #     results = join_optimization_results(results_path=results_path, xp_type="all")
+    #
+    #     ess_violinplot(results, column="timepoints", show_plot=True)
+    #     # ess_violinplots(results)

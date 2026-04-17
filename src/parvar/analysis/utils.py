@@ -25,16 +25,13 @@ def extract_key_from_dict(s: pd.Series, key: str) -> pd.Series:
     return s.apply(parse_and_get)
 
 
-def append_server_result(results_path: Path, which: str) -> Path:
-    return results_path.parent / "server" / which / results_path.name
-
-
 def join_optimization_results(
     results_path: Path,
     xp_type: str,
 ) -> pd.DataFrame:
     """Join the experiment setup with the results."""
 
+    console.print(f"Joining optimization results '{results_path}'...")
     directories: Path = results_path / "xps" / xp_type
     # console.print(directories)
 
@@ -96,11 +93,13 @@ def join_optimization_results(
     )
 
     df.to_csv(directories / "definitions_results.tsv", sep="\t", index=False)
+    df.to_parquet(directories / "definitions_results.parquet")
 
     return df
 
 
 def reference_df_filter(column: str, df: pd.DataFrame, reference: dict) -> pd.DataFrame:
+    """Get subset of dataframe for column."""
     reference_cp = reference.copy()
     reference_cp.pop(column)
 

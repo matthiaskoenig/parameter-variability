@@ -49,6 +49,8 @@ dependencies = [
     "graphviz",
     "pytest",
     "pandas-stubs~=2.3.3",
+    "pyarrow>=23.0.1",
+    "fastparquet>=2026.3.0",
 ]
 
 [project.optional-dependencies]

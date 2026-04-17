@@ -1,10 +1,7 @@
 import ast
 from pathlib import Path
 
-from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
 from parvar.analysis.utils import (
-    append_server_result,
-    join_optimization_results,
     reference_df_filter,
 )
 from parvar.plots import colors, parameter_labels, axis_labels, value_labels
@@ -186,16 +183,18 @@ def grouped_boxplot(
 
 
 if __name__ == "__main__":
-    reference = {
-        "prior_type": "exact_prior",
-        "timepoints": 10,
-        "samples": 20,
-        "noise_cv": 0.1,
-    }
-    # [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]
-    for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
-        results_path = append_server_result(results_path=r, which="run_3")
-        results = join_optimization_results(results_path=results_path, xp_type="all")
-        # console.print(results['bayes_sampler_values'][0])
-
-        grouped_boxplot(results, reference, column="timepoints")
+    pass
+    # from parvar.analysis.utils import append_server_result
+    # reference = {
+    #     "prior_type": "exact_prior",
+    #     "timepoints": 10,
+    #     "samples": 20,
+    #     "noise_cv": 0.1,
+    # }
+    # # [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]
+    # for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
+    #     results_path = append_server_result(results_path=r, which="run_3")
+    #     results = join_optimization_results(results_path=results_path, xp_type="all")
+    #     # console.print(results['bayes_sampler_values'][0])
+    #
+    #     grouped_boxplot(results, reference, column="timepoints")

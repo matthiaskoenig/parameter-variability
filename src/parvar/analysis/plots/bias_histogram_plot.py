@@ -4,10 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from parvar import RESULTS_SIMPLE_PK, RESULTS_ICG, RESULTS_SIMPLE_CHAIN
 from parvar.analysis.utils import (
-    append_server_result,
-    join_optimization_results,
     reference_df_filter,
 )
 from matplotlib import gridspec
@@ -164,18 +161,19 @@ def bias_histogram(
 
 
 if __name__ == "__main__":
-    reference = {
-        "prior_type": "exact_prior",
-        "timepoints": 10,
-        "samples": 20,
-        "noise_cv": 0.1,
-    }
-
-    for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
-        results_path = append_server_result(results_path=r, which="run_3")
-        results = join_optimization_results(results_path=results_path, xp_type="all")
-
-        # results_path = append_server_result(results_path=r, which="run_2")
-        # results = join_optimization_results(results_path=r, xp_type="timepoints")
-
-        bias_histogram(df=results, reference=reference, column="timepoints")
+    pass
+    # reference = {
+    #     "prior_type": "exact_prior",
+    #     "timepoints": 10,
+    #     "samples": 20,
+    #     "noise_cv": 0.1,
+    # }
+    #
+    # for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
+    #     results_path = append_server_result(results_path=r, which="run_3")
+    #     results = join_optimization_results(results_path=results_path, xp_type="all")
+    #
+    #     # results_path = append_server_result(results_path=r, which="run_2")
+    #     # results = join_optimization_results(results_path=r, xp_type="timepoints")
+    #
+    #     bias_histogram(df=results, reference=reference, column="timepoints")
