@@ -31,10 +31,10 @@ def runtime_boxplot(
         groups,
         labels=labels,
         patch_artist=True,
-        boxprops=dict(facecolor="#AED6F1", color="#2471A3"),
-        medianprops=dict(color="#E74C3C", linewidth=2),
-        whiskerprops=dict(color="#2471A3"),
-        capprops=dict(color="#2471A3"),
+        boxprops=dict(facecolor="forestgreen", color="tab:green"),
+        medianprops=dict(color="tab:blue", linewidth=2),
+        whiskerprops=dict(color="tab:green"),
+        capprops=dict(color="tab:green"),
         flierprops=dict(marker="o", color="#AAA", markersize=4),
     )
 

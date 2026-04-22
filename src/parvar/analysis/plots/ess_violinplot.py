@@ -27,20 +27,23 @@ def ess_violinplot(
         labels = [value_labels[column][lab] for lab in labels]
 
     parts = ax.violinplot(
-        groups, positions=range(len(labels)), showmedians=True, showextrema=True
+        groups,
+        positions=range(len(labels)),
+        showmedians=True,
+        showextrema=True,
     )
 
     for pc in parts["bodies"]:
-        pc.set_facecolor("steelblue")
+        pc.set_facecolor("tab:purple")
         pc.set_alpha(0.6)
 
     for i, grp in enumerate(groups):
-        ax.scatter([i] * len(grp), grp, color="navy", alpha=0.2, s=15, zorder=3)
+        ax.scatter([i] * len(grp), grp, color="indigo", alpha=0.2, s=15, zorder=3)
 
-    parts["cmedians"].set_color("navy")
-    parts["cmins"].set_color("steelblue")
-    parts["cmaxes"].set_color("steelblue")
-    parts["cbars"].set_color("steelblue")
+    parts["cmedians"].set_color("indigo")
+    parts["cmins"].set_color("tab:purple")
+    parts["cmaxes"].set_color("tab:purple")
+    parts["cbars"].set_color("tab:purple")
 
     ax.set_xticks(range(len(labels)))
     ax.set_xticklabels(labels, fontsize=9)
