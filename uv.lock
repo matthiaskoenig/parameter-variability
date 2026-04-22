@@ -1460,7 +1460,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "amici", specifier = ">=1.0.1" },
-    { name = "arviz", specifier = ">=0.20.0" },
+    { name = "arviz", specifier = "<1.0.0" },
     { name = "bump-my-version", marker = "extra == 'dev'", specifier = ">=1.2.6" },
     { name = "fastparquet", specifier = ">=2026.3.0" },
     { name = "fides", specifier = ">=0.8.0" },

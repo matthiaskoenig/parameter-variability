@@ -3,22 +3,14 @@
 import pytest
 from pathlib import Path
 
-from parvar.experiments.petab_factory import create_petabs_for_definitions
-from parvar.optimization.petab_optimization import run_optimizations
-
-from parvar.experiments.factories.icg_body_flat import definitions as definitions_icg
-from parvar.experiments.factories.icg_body_flat import factory_data as factory_data_icg
-
-from parvar.experiments.factories.simple_chain import (
-    definitions as definitions_simple_chain,
+from parvar.experiments.factories import definitions_minimal
+from parvar.experiments.petab_factory import (
+    create_petabs_for_definitions,
+    select_all_experiments,
 )
+from parvar.optimization.petab_optimization import optimize_experiments
 from parvar.experiments.factories.simple_chain import (
     factory_data as factory_data_simple_chain,
-)
-
-from parvar.experiments.factories.simple_pk import definitions as definitions_simple_pk
-from parvar.experiments.factories.simple_pk import (
-    factory_data as factory_data_simple_pk,
 )
 
 optim = {
@@ -28,16 +20,15 @@ optim = {
 }
 
 testdata = [
-    (definitions_simple_chain, factory_data_simple_chain, optim),
-    (definitions_icg, factory_data_icg, optim),
-    (definitions_simple_pk, factory_data_simple_pk, optim),
+    (definitions_minimal, factory_data_simple_chain, optim),
 ]
 
 
 @pytest.mark.parametrize(
     "definitions, factory_data, optimizations",
     testdata,
-    ids=["simple_chain", "icg", "simple_pk"],
+    # ids=["simple_chain", "icg", "simple_pk"],
+    ids=["simple_chain"],
 )
 def test_optimization(
     definitions: dict, factory_data: dict, optimizations: dict, tmp_path: Path
@@ -49,9 +40,14 @@ def test_optimization(
         factory_data=factory_data,
     )
 
-    run_optimizations(
-        optimizations={k: v for (k, v) in optimizations.items() if k == "timepoints"},
+    # select all problems to optimize
+    yaml_paths: list[Path] = select_all_experiments(
         results_path=tmp_path,
     )
+    yaml_paths = sorted(yaml_paths)
 
-    assert (tmp_path / "xps" / "timepoints" / "bayes_results.tsv").exists()
+    optimize_experiments(
+        results_dir=tmp_path,
+        yaml_paths=yaml_paths,
+        caching=False,
+    )

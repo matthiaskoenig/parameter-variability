@@ -1,8 +1,8 @@
 [![GitHub Actions CI/CD Status](https://github.com/matthiaskoenig/parameter-variability/workflows/CI-CD/badge.svg)](https://github.com/matthiaskoenig/parameter-variability/actions/workflows/main.yml)
 
-# Bayesian models for ODE models in SBML
+# Bayesian optimization workflow for ODE models in SBML
 
-This project implements Bayesian models using [PyMC](https://www.pymc.io) on top of ODE-based models encoded in the [Systems Biology Markup Language](https://sbml.org/) (SBML).
+Within this thesis a reproducible parameter optimization approach applicable to a range of pharmacokinetic (PK) computational models was developed. The worflow was applied to three PK models of increasing complexity, from simple compartmental models to physiologically-based pharmacokinetic (PBPK) models. The influence of key hyperparameters consisting of number of samples, timepoints, coefficient of variation and priors was studied (@hyper-param) on the three models.
 
 ## Motivation
 
@@ -29,7 +29,6 @@ uv sync
 For development setup via the following which installs the development dependencies
 and the pre-commit.
 ```bash
-
 # install core dependencies
 uv sync
 
@@ -50,11 +49,8 @@ tox r -e py314
 ```
 Run all tests in parallel
 ```bash
-tox run-parallel
+tox r
 ```
-
-
-
 
 # Example
 ## ODE model
@@ -99,52 +95,6 @@ d y_cent/dt = (ABSORPTION / Vcent - CLEARANCE / Vcent - R1 / Vcent) + R2 / Vcent
 d y_gut/dt = -ABSORPTION / Vgut  # [mmol/l/min]
 d y_peri/dt = R1 / Vperi - R2 / Vperi  # [mmol/l/min]
 ```
-
-An example output of the model is provided here
-
-<img src="src/parvar/models/sbml/simple_pk_simulation.png" alt="simple_pk simulation" width="250"/>
-
-
-## Bayesian model
-To generate the toy example, the two-compartment model is fed draws from an idealized random distribution for each parameter. These are called `true_thetas'.
-A forward simulation is then run to generate a run simulation for each theta.
-
-After adding noise to the simulation(s), a Bayesian model fits the data and draws samples from a posterior distribution.
-The empirical distribution of these samples should contain the `true_thetas'.
-
-Current modelled parameters:
-- `k`: Absorption constant
-- `CL` Clearance constant
-
-To run the example Bayesian model execute the `bayes_example.py` script
-
-```bash
-(parameter-variability) python src/parameter_variability/bayes/bayes_example.py
-```
-
-### Outputs
-
-Plots of results for the analysis on the Gut compartment
-
-*Figure 1*: Sampling random parameters from "true" distribution
-
-<img src="img/01-parameter_sampling.png" alt="01-parameter_sampling" width="200"/>
-
-*Figure 2*: Toy Data simulated using values from the true distribution
-
-<img src="img/02-simulation_plotting.png" alt="02-simulation_plotting" width="200"/>
-
-*Figure 3*: Graph representing the Bayesian Model
-
-<img src="img/03-bayesian_model.png" alt="03-bayesian_model" width="200"/>
-
-*Figure 4*: Trace Plot of the parameters sampled from the Bayesian model
-
-<img src="img/04-trace_plot.png" alt="04-trace_plot" width="200"/>
-
-*Figure 5*: Proposed simulations sampled from the Bayesian Model
-
-<img src="img/05-bayesian_sample.png" alt="05-bayesian_sample" width="200"/>
 
 
 # License

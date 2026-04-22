@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "parvar"
-version = "0.1.0"
+version = "0.2.0"
 description = "Parameter variability in SBML models"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -43,7 +43,7 @@ dependencies = [
     "fides>=0.8.0",
     "petab>=0.8.2",
     "amici>=1.0.1",
-    "arviz>=0.20.0",
+    "arviz<1.0.0",
     "rich>=13.9.4",
     "xarray>=2025.1.2",
     "graphviz",

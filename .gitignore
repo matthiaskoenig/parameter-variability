@@ -9,3 +9,5 @@ src/parvar.egg-info/
 uv.lock
 
 results
+amici_models
+tests/amici_models
