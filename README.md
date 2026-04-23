@@ -1,6 +1,6 @@
 [![GitHub Actions CI/CD Status](https://github.com/matthiaskoenig/parameter-variability/workflows/CI-CD/badge.svg)](https://github.com/matthiaskoenig/parameter-variability/actions/workflows/main.yml)
 [![MIT License](https://img.shields.io/pypi/l/visfem.svg)](https://opensource.org/licenses/MIT)
-[![DOI](https://zenodo.org/badge/DOI/https://doi.org/10.5281/zenodo.19695915.svg)](https://doi.org/https://doi.org/10.5281/zenodo.19695915)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19695915.svg)](https://doi.org/https://doi.org/10.5281/zenodo.19695915)
 
 # Bayesian optimization workflow for ODE models in SBML
 
