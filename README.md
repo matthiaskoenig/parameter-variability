@@ -1,22 +1,40 @@
 [![GitHub Actions CI/CD Status](https://github.com/matthiaskoenig/parameter-variability/workflows/CI-CD/badge.svg)](https://github.com/matthiaskoenig/parameter-variability/actions/workflows/main.yml)
+[![MIT License](https://img.shields.io/pypi/l/visfem.svg)](https://opensource.org/licenses/MIT)
+[![DOI](https://zenodo.org/badge/DOI/https://doi.org/10.5281/zenodo.19695915.svg)](https://doi.org/https://doi.org/10.5281/zenodo.19695915)
 
 # Bayesian optimization workflow for ODE models in SBML
 
-Within this thesis a reproducible parameter optimization approach applicable to a range of pharmacokinetic (PK) computational models was developed. The worflow was applied to three PK models of increasing complexity, from simple compartmental models to physiologically-based pharmacokinetic (PBPK) models. The influence of key hyperparameters consisting of number of samples, timepoints, coefficient of variation and priors was studied (@hyper-param) on the three models.
-
-## Motivation
+Within this thesis a reproducible parameter optimization approach applicable to a range of pharmacokinetic (PK) computational models was developed. The worflow was applied to three PK models of increasing complexity, from simple compartmental models to physiologically-based pharmacokinetic (PBPK) models. The influence of key hyperparameters consisting of number of samples, timepoints, coefficient of variation and priors was studied on the three models.
 
 [Systems Biology Markup Language](https://sbml.org/) (SBML) provides an intuitive and reproducible way to define ordinary differential equation (ODE) models in systems biology and systems medicine. Here we outline an attempt to build a Bayesian framework to quantify the uncertainty of estimates associated with physiologically based pharmacokinetic (PBPK) models encoded in SBML.
 
+For documentation see [Bayesian optimization workflow for ODE models in SBML [Alvarez2026]](./docs/Master.Thesis.Antonio.Alvarez.pdf).
+
+## How to cite
+To cite the software repository
+
+> Alvarez, A. & König, M. (2026).
+> *Bayesian optimization workflow for ODE models in SBML.*
+> Zenodo. [https://doi.org/10.5281/zenodo.19695915](https://doi.org/10.5281/zenodo.19695915)
+
+To cite the documentation
+> Alvarez, A. (2026).
+> *Parameter Uncertainty in the Optimization of Pharmacokinetic Models: A Reproducible Bayesian Approach*
+
+# License
+* Source Code: [MIT](https://opensource.org/license/MIT)
+* Documentation: [CC BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/)
+* Models: [CC BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/)
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.
 
 ## Installation
 
 ### Dependencies
 ```bash
 sudo apt install -y build-essential cmake libhdf5-serial-dev
-sudo add-apt-repository ppa:deadsnakes/ppa
-sudo apt update
-sudo apt install -y python3.14-dev
 ```
 
 ### Running
@@ -95,11 +113,6 @@ d y_cent/dt = (ABSORPTION / Vcent - CLEARANCE / Vcent - R1 / Vcent) + R2 / Vcent
 d y_gut/dt = -ABSORPTION / Vgut  # [mmol/l/min]
 d y_peri/dt = R1 / Vperi - R2 / Vperi  # [mmol/l/min]
 ```
-
-
-# License
-- Source Code: [MIT](https://opensource.org/license/MIT)
-- Documentation: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 
 # Funding
 Matthias König is supported by the Federal Ministry of Education and Research (BMBF, Germany) within the research network Systems Medicine of the Liver (**LiSyM**, grant number 031L0054) and by the German Research Foundation (DFG) within the Research Unit Programme FOR 5151 [QuaLiPerF](https://qualiperf.de) (Quantifying Liver Perfusion-Function Relationship in Complex Resection - A Systems Medicine Approach)" by grant number 436883643 and by grant number 465194077 (Priority Programme SPP 2311, Subproject SimLivA).
