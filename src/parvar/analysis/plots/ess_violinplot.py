@@ -93,11 +93,14 @@ def ess_violinplots(
 
 
 if __name__ == "__main__":
-    pass
-    # from parvar.analysis.utils import append_server_result
-    # for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
-    #     results_path = append_server_result(results_path=r, which="run_3")
-    #     results = join_optimization_results(results_path=results_path, xp_type="all")
-    #
-    #     ess_violinplot(results, column="timepoints", show_plot=True)
-    #     # ess_violinplots(results)
+    # pass
+    from parvar.analysis.utils import join_optimization_results
+    from parvar import RESULTS_SIMPLE_PK, RESULTS_SIMPLE_CHAIN, RESULTS_ICG
+
+    for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
+        results = join_optimization_results(
+            results_path=r, xp_type="timepoints", server=False
+        )
+
+        ess_violinplot(results, column="timepoints", show_plot=True)
+        # ess_violinplots(results)

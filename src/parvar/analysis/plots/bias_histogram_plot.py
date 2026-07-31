@@ -4,9 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from parvar.analysis.utils import (
-    reference_df_filter,
-)
+from parvar.analysis.utils import reference_df_filter, point_bias
 from matplotlib import gridspec
 from matplotlib import patches as mpatches
 from parvar.plots import colors, parameter_labels, value_labels, axis_labels
@@ -34,9 +32,6 @@ def bias_histogram(
         vals = vals[-4:]
 
     df = reference_df_filter(column, df, reference)
-
-    def point_bias(df: pd.DataFrame, array: np.array) -> np.array:
-        return (df["sample_loc"].to_numpy() - array) / df["sample_loc"].to_numpy()
 
     fig = plt.figure(
         dpi=360,

@@ -7,12 +7,18 @@ import petab
 from pypesto import petab as pt
 
 
-from parvar import RESULTS_DIR, RESULTS_SIMPLE_PK, RESULTS_SIMPLE_CHAIN, RESULTS_ICG
+from parvar import (
+    RESULTS_DIR,
+    RESULTS_SIMPLE_PK,
+    RESULTS_SIMPLE_CHAIN,
+    RESULTS_ICG,
+    OPTIMIZATION_RUN,
+)
 from parvar.experiments.petab_factory import select_all_experiments
 from parvar.optimization.petab_optimization import optimize_experiments_multicore
 
 if __name__ == "__main__":
-    optimization_run: str = "2025-04-16_v2"
+    optimization_run: str = OPTIMIZATION_RUN
 
     for results_path in [
         RESULTS_SIMPLE_PK,

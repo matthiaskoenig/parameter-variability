@@ -28,3 +28,5 @@ MODELS: dict[str, Path] = {
     "simple_pk": MODEL_SIMPLE_PK,
     "icg_body_flat": MODEL_ICG,
 }
+
+OPTIMIZATION_RUN = "2026-07-31_v1"

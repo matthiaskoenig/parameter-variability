@@ -6,6 +6,7 @@ import pandas as pd
 import ast
 
 from pymetadata.console import console
+from parvar import OPTIMIZATION_RUN
 
 
 def extract_key_from_dict(s: pd.Series, key: str) -> pd.Series:
@@ -26,17 +27,23 @@ def extract_key_from_dict(s: pd.Series, key: str) -> pd.Series:
 
 
 def join_optimization_results(
-    results_path: Path,
-    xp_type: str,
+    results_path: Path, xp_type: str, server: bool = True
 ) -> pd.DataFrame:
-    """Join the experiment setup with the results."""
+    """Join the experiment setup with the results.
+    Outputs the result dataframe used in plots
+    """
 
-    console.print(f"Joining optimization results '{results_path}'...")
+    console.print(f"Joining optimization results '{results_path.name}'...")
     directories: Path = results_path / "xps" / xp_type
     # console.print(directories)
 
     # Optimization results
-    optim_filenames = (directories / "optimization_results").glob("*.tsv")
+    if server:
+        optim_filenames = (directories / OPTIMIZATION_RUN).glob("*.tsv")
+    else:
+        optim_filenames = (
+            results_path.parent / OPTIMIZATION_RUN / results_path.name
+        ).glob("*.tsv")
 
     df_ls = []
     for filename in optim_filenames:
@@ -64,6 +71,7 @@ def join_optimization_results(
 
     df_join.rename(columns=col_rename, inplace=True)
 
+    # Order of the columns for the result dataframe
     col_order = [
         "id",
         "model",
@@ -86,7 +94,7 @@ def join_optimization_results(
     ]
 
     df = df_join[col_order]
-    df = df[df["prior_type"] != "no_prior"]
+    df = df[df["prior_type"] != "no_prior"]  # remove no prior experiments
 
     df["bayes_sampler_values"] = df["bayes_sampler_values"].apply(
         lambda x: json.dumps(x.tolist())
@@ -109,3 +117,7 @@ def reference_df_filter(column: str, df: pd.DataFrame, reference: dict) -> pd.Da
         mask &= df[col] == val
 
     return df[mask]
+
+
+def point_bias(df: pd.DataFrame, array: np.array) -> np.array:
+    return (df["sample_loc"].to_numpy() - array) / df["sample_loc"].to_numpy()
