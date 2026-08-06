@@ -1,12 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import ast
 import json
 import re
 
+from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
+from parvar.analysis.utils import point_bias, join_optimization_results
 
-def faceted_heatmap_alternating(
+
+def bias_heatmap(
     df,
     y_col,
     h_facet_col,
@@ -92,6 +94,8 @@ def faceted_heatmap_alternating(
     # --- Proceed with the scalar aggregated column ---
     agg_col = f"{value_col}__scalar"
 
+    df_agg["bias"] = point_bias(df_agg, df_agg[agg_col])
+
     h_facet_values = sorted(df_agg[h_facet_col].unique())
     n_cols = len(h_facet_values)
     n_rows = len(v_cats)
@@ -101,9 +105,9 @@ def faceted_heatmap_alternating(
 
     # Determine shared color scale
     if vmin is None:
-        vmin = df_agg[agg_col].min()
+        vmin = df_agg["bias"].min()
     if vmax is None:
-        vmax = df_agg[agg_col].max()
+        vmax = df_agg["bias"].max()
 
     fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize)
 
@@ -126,7 +130,7 @@ def faceted_heatmap_alternating(
 
             # Pivot: y_col as index, current v_cat as columns
             pivot = subset.pivot_table(
-                index=y_col, columns=v_cat, values=agg_col, aggfunc=cell_agg
+                index=y_col, columns=v_cat, values="bias", aggfunc=cell_agg
             )
 
             # Sort for consistency
@@ -429,120 +433,21 @@ def _safe_aggregate(arr, agg_func):
 
 # --- Example usage ---
 if __name__ == "__main__":
-    np.random.seed(42)
+    for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
+        results = join_optimization_results(results_path=r, xp_type="all", server=True)
 
-    # 4 categorical variables + 1 string-encoded nested array column
-    regions = ["North", "South", "East"]
-    products = ["Widget", "Gadget", "Doohickey"]
-    channels = ["Online", "Retail", "Wholesale"]
-    segments = ["Consumer", "Enterprise", "Govt"]
-    years = ["2021", "2022", "2023", "2024"]
+        fig, axes = bias_heatmap(
+            results,
+            y_col="noise_cv",
+            h_facet_col="prior_type",
+            v_cats=["timepoints", "samples"],
+            value_col="bayes_sampler_values",
+            value_agg="mean",
+            cell_agg="mean",
+            cmap="coolwarm",
+            title="Mixed String Format Example",
+            row_height=3,
+            col_width=4,
+        )
 
-    data = []
-    for region in regions:
-        for product in products:
-            for channel in channels:
-                for segment in segments:
-                    for year in years:
-                        # Create nested arrays of varying shapes and sizes
-                        n_outer = np.random.randint(2, 5)
-                        nested = []
-                        for _ in range(n_outer):
-                            n_inner = np.random.randint(1, 6)
-                            inner = list(
-                                np.round(np.random.uniform(10, 100, size=n_inner), 2)
-                            )
-                            nested.append(inner)
-
-                        # Store as string (simulating how it might come from CSV/DB)
-                        measurements_str = str(nested)
-
-                        data.append(
-                            {
-                                "Region": region,
-                                "Product": product,
-                                "Channel": channel,
-                                "Segment": segment,
-                                "Year": year,
-                                "Measurements": measurements_str,
-                            }
-                        )
-
-    df = pd.DataFrame(data)
-
-    print("Sample data:")
-    print(df[["Region", "Product", "Year", "Measurements"]].head(5))
-    print(f"\nExample value: {df['Measurements'].iloc[0]}")
-    print(f"Type: {type(df['Measurements'].iloc[0])}")
-
-    # --- Example 1: Mean aggregation ---
-    fig, axes = faceted_heatmap_alternating(
-        df,
-        y_col="Year",
-        h_facet_col="Region",
-        v_cats=["Product", "Channel", "Segment"],
-        value_col="Measurements",
-        value_agg="mean",
-        cell_agg="mean",
-        cmap="YlOrRd",
-        title="Mean of Measurements (from string-encoded nested arrays)",
-    )
-    plt.show()
-
-    # --- Example 2: Demonstrating different string formats ---
-    df_mixed = pd.DataFrame(
-        {
-            "Category_A": ["X", "X", "Y", "Y", "X", "Y"],
-            "Category_B": ["P", "Q", "P", "Q", "P", "Q"],
-            "Category_C": ["Low", "Low", "Low", "High", "High", "High"],
-            "Year": ["2023", "2023", "2024", "2024", "2024", "2023"],
-            "Values": [
-                "[[1.0, 2.0], [3.0, 4.0]]",  # 2x2 nested
-                "[5.0, 6.0, 7.0]",  # flat list
-                "[[10.5], [20.3, 30.1], [40.0]]",  # ragged nested
-                "[[100.0, 200.0, 300.0]]",  # 1xN nested
-                "[[1.5, 2.5], [3.5, 4.5], [5.5]]",  # ragged
-                "42.0",  # single value
-            ],
-        }
-    )
-
-    print("\n\nMixed format example:")
-    print(df_mixed)
-
-    fig, axes = faceted_heatmap_alternating(
-        df_mixed,
-        y_col="Year",
-        h_facet_col="Category_C",
-        v_cats=["Category_A", "Category_B"],
-        value_col="Values",
-        value_agg="mean",
-        cell_agg="mean",
-        cmap="coolwarm",
-        title="Mixed String Format Example",
-        row_height=3,
-        col_width=4,
-    )
-    plt.show()
-
-    # TODO: Make it work for the local and server results
-    # for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
-    #     results = join_optimization_results(
-    #         results_path=r, xp_type="timepoints", server=False
-    #     )
-    #
-    #     fig, axes = faceted_heatmap_alternating(
-    #         results,
-    #         y_col='noise_cv',
-    #         h_facet_col='prior_type',
-    #         v_cats=['timepoints', 'samples'],
-    #         value_col='bayes_sampler_values',
-    #         value_agg='mean',
-    #         cell_agg='mean',
-    #         cmap='coolwarm',
-    #         title='Mixed String Format Example',
-    #         row_height=3,
-    #         col_width=4
-    #     )
-    #
-    #     plt.show()
+        plt.show()

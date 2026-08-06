@@ -6,7 +6,7 @@ import pandas as pd
 import ast
 
 from pymetadata.console import console
-from parvar import OPTIMIZATION_RUN
+from parvar import OPTIMIZATION_RUN, SERVER_RUN_NUMBER
 
 
 def extract_key_from_dict(s: pd.Series, key: str) -> pd.Series:
@@ -34,13 +34,22 @@ def join_optimization_results(
     """
 
     console.print(f"Joining optimization results '{results_path.name}'...")
-    directories: Path = results_path / "xps" / xp_type
+    # directories: Path = results_path / "xps" / xp_type
     # console.print(directories)
 
     # Optimization results
     if server:
+        directories: Path = (
+            results_path.parent
+            / "server"
+            / SERVER_RUN_NUMBER
+            / results_path.name
+            / "xps"
+            / xp_type
+        )
         optim_filenames = (directories / OPTIMIZATION_RUN).glob("*.tsv")
     else:
+        directories: Path = results_path / "xps" / xp_type
         optim_filenames = (
             results_path.parent / OPTIMIZATION_RUN / results_path.name
         ).glob("*.tsv")

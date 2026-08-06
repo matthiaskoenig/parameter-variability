@@ -30,3 +30,5 @@ MODELS: dict[str, Path] = {
 }
 
 OPTIMIZATION_RUN = "2026-07-31_v1"
+
+SERVER_RUN_NUMBER = "run_4"
