@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 import ast
 import json
@@ -8,7 +9,7 @@ from parvar import RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG
 from parvar.analysis.utils import point_bias, join_optimization_results
 
 
-def bias_heatmap(
+def facetted_heatmap(
     df,
     y_col,
     h_facet_col,
@@ -48,8 +49,9 @@ def bias_heatmap(
         List of column names (any length >= 1) that alternate as vertical facets
         (rows of subplot grid). Each becomes the x-axis in its respective row.
     value_col : str
-        Column name for the numerical variable. Each entry is a string representation
-        of a (potentially nested) float array, e.g., "[[1.0, 2.0], [3.0, 4.0]]".
+        Column name for the numerical variable. If bias, each entry is a
+        string representation of a float array, e.g., "[[1.0, 2.0], [3.0, 4.0]]".
+        Else the array is assumed to be numerical.
     value_agg : str or callable, optional
         How to aggregate each flattened array into a single scalar value.
         If str, must be one of: 'mean', 'median', 'sum', 'min', 'max', 'std',
@@ -84,17 +86,21 @@ def bias_heatmap(
     fig, axes : matplotlib Figure and 2D array of Axes
     """
     assert len(v_cats) >= 1, "v_cats must contain at least 1 column name."
+    if value_col == "bias":
+        # --- Stage 1: Parse strings and flatten to flat float arrays ---
+        df_parsed = _parse_and_flatten(df, "bayes_sampler_values")
 
-    # --- Stage 1: Parse strings and flatten to flat float arrays ---
-    df_parsed = _parse_and_flatten(df, value_col)
+        # --- Stage 2: Array-level aggregation (flat array → scalar) ---
+        df_agg = _aggregate_arrays(df_parsed, "bayes_sampler_values", value_agg)
 
-    # --- Stage 2: Array-level aggregation (flat array → scalar) ---
-    df_agg = _aggregate_arrays(df_parsed, value_col, value_agg)
+        # --- Proceed with the scalar aggregated column ---
+        agg_col = "bias"
+        df_agg[agg_col] = point_bias(df_agg, df_agg["bayes_sampler_values__scalar"])
 
-    # --- Proceed with the scalar aggregated column ---
-    agg_col = f"{value_col}__scalar"
-
-    df_agg["bias"] = point_bias(df_agg, df_agg[agg_col])
+    else:
+        # No parsing needed — value_col already contains scalar floats
+        df_agg = df.copy()
+        agg_col = value_col
 
     h_facet_values = sorted(df_agg[h_facet_col].unique())
     n_cols = len(h_facet_values)
@@ -104,10 +110,6 @@ def bias_heatmap(
         figsize = (col_width * n_cols + 2, row_height * n_rows)
 
     # Determine shared color scale
-    if vmin is None:
-        vmin = df_agg["bias"].min()
-    if vmax is None:
-        vmax = df_agg["bias"].max()
 
     fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize)
 
@@ -128,14 +130,26 @@ def bias_heatmap(
             # Filter data for this horizontal facet
             subset = df_agg[df_agg[h_facet_col] == h_val]
 
+            # if vmin is None:
+            #     vmin = subset[agg_col].min()
+            # if vmax is None:
+            #     vmax = subset[agg_col].max()
+
             # Pivot: y_col as index, current v_cat as columns
             pivot = subset.pivot_table(
-                index=y_col, columns=v_cat, values="bias", aggfunc=cell_agg
+                index=y_col, columns=v_cat, values=agg_col, aggfunc=cell_agg
             )
 
             # Sort for consistency
             pivot = pivot.sort_index()
-            pivot = pivot[sorted(pivot.columns, key=str)]
+            pivot = pivot[_sort_columns(pivot.columns)]
+
+            facet_data = pivot.values[~np.isnan(pivot.values)]
+            if len(facet_data) > 0:
+                facet_vmin = facet_data.min()
+                facet_vmax = facet_data.max()
+            else:
+                facet_vmin, facet_vmax = 0, 1
 
             # Plot heatmap
             data_matrix = pivot.values
@@ -143,8 +157,8 @@ def bias_heatmap(
                 data_matrix,
                 aspect="auto",
                 cmap=cmap,
-                vmin=vmin,
-                vmax=vmax,
+                vmin=facet_vmin,
+                vmax=facet_vmax,
                 origin="lower",
             )
 
@@ -168,16 +182,27 @@ def bias_heatmap(
                 ax.set_title(f"{h_facet_col} = {h_val}", fontsize=11, fontweight="bold")
 
             # Row label on the right side
-            if col_idx == n_cols - 1:
-                ax_right = ax.twinx()
-                ax_right.set_yticks([])
-                ax_right.set_ylabel(
-                    f"X: {v_cat}",
-                    rotation=270,
-                    labelpad=18,
-                    fontsize=10,
-                    fontstyle="italic",
-                )
+            # if col_idx == n_cols - 1:
+            #     ax_right = ax.twinx()
+            #     ax_right.set_yticks([])
+            #     ax_right.set_ylabel(
+            #         f"X: {v_cat}",
+            #         rotation=270,
+            #         labelpad=18,
+            #         fontsize=10,
+            #         fontstyle="italic",
+            #     )
+
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="5%", pad=0.08)
+            cbar = fig.colorbar(im, cax=cax)
+            cbar.ax.tick_params(labelsize=7)
+
+            # Add min/max labels to individual colorbars
+            # cbar.ax.set_ylabel(
+            #     f'[{facet_vmin:.1f}, {facet_vmax:.1f}]',
+            #     fontsize=7, rotation=270, labelpad=12
+            # )
 
             # Annotate cells
             if annot:
@@ -200,18 +225,55 @@ def bias_heatmap(
                             )
 
     # Add shared colorbar
-    agg_label = value_agg if isinstance(value_agg, str) else value_agg.__name__
-    fig.subplots_adjust(right=0.88)
-    cbar_ax = fig.add_axes([0.91, 0.15, 0.015, 0.7])
-    cbar = fig.colorbar(im, cax=cbar_ax)
-    cbar.set_label(f"{value_col} ({agg_label})")
+    # agg_label = value_agg if isinstance(value_agg, str) else value_agg.__name__
+    # fig.subplots_adjust(right=0.88)
+    # cbar_ax = fig.add_axes([0.91, 0.15, 0.015, 0.7])
+    # cbar = fig.colorbar(im, cax=cbar_ax)
+    # cbar.set_label(f"{value_col} ({agg_label})")
 
     if title:
         fig.suptitle(title, fontsize=14, fontweight="bold", y=1.02)
 
-    plt.tight_layout(rect=[0, 0, 0.89, 0.96])
+    plt.tight_layout()
 
     return fig, axes
+
+
+def _sort_columns(columns):
+    """
+    Sort column values intelligently:
+    - If all values are numeric (or can be converted to numeric), sort numerically ascending.
+    - Otherwise, sort alphabetically ascending.
+
+    Parameters
+    ----------
+    columns : pd.Index
+        The column index to sort.
+
+    Returns
+    -------
+    list
+        Sorted list of column values.
+    """
+    col_list = list(columns)
+
+    # Attempt to convert all column values to numeric
+    numeric_values = []
+    all_numeric = True
+    for val in col_list:
+        try:
+            numeric_values.append(float(val))
+        except (ValueError, TypeError):
+            all_numeric = False
+            break
+
+    if all_numeric:
+        # Sort numerically ascending: pair numeric values with originals, sort, extract
+        sorted_pairs = sorted(zip(numeric_values, col_list), key=lambda x: x[0])
+        return [pair[1] for pair in sorted_pairs]
+    else:
+        # Sort alphabetically ascending
+        return sorted(col_list, key=str)
 
 
 def _parse_string_to_array(s):
@@ -436,15 +498,15 @@ if __name__ == "__main__":
     for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
         results = join_optimization_results(results_path=r, xp_type="all", server=True)
 
-        fig, axes = bias_heatmap(
+        fig, axes = facetted_heatmap(
             results,
             y_col="noise_cv",
             h_facet_col="prior_type",
             v_cats=["timepoints", "samples", "group"],
-            value_col="bayes_sampler_values",
-            value_agg="median",
-            cell_agg="median",
-            cmap="RdYlGn",
+            value_col="optim_duration",
+            value_agg="mean",
+            cell_agg="mean",
+            cmap="RdYlGn_r",
             title="Mixed String Format Example",
             row_height=3,
             col_width=4,
