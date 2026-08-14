@@ -54,6 +54,16 @@ def join_optimization_results(
             results_path.parent / OPTIMIZATION_RUN / results_path.name
         ).glob("*.tsv")
 
+    # if file was saved before, just use cache
+    if (directories / "definitions_results.parquet").is_file():
+        console.print(f"Reading Parquet '{results_path.name}'...")
+        return pd.read_parquet((directories / "definitions_results.parquet"))
+
+    # 1st Simple model eveyrone know
+    #   Textbook example
+    # 2nd Used a real life model with real life data
+    #   Pick an example from another lab
+
     df_ls = []
     for filename in optim_filenames:
         # console.print(filename)

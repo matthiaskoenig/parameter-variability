@@ -497,13 +497,12 @@ def _safe_aggregate(arr, agg_func):
 if __name__ == "__main__":
     for r in [RESULTS_SIMPLE_CHAIN, RESULTS_SIMPLE_PK, RESULTS_ICG]:
         results = join_optimization_results(results_path=r, xp_type="all", server=True)
-
         fig, axes = facetted_heatmap(
             results,
             y_col="noise_cv",
             h_facet_col="prior_type",
             v_cats=["timepoints", "samples", "group"],
-            value_col="optim_duration",
+            value_col="bias",
             value_agg="mean",
             cell_agg="mean",
             cmap="RdYlGn_r",
