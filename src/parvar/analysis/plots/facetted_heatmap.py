@@ -133,11 +133,6 @@ def facetted_heatmap(
             # Filter data for this horizontal facet
             subset = df_agg[df_agg[h_facet_col] == h_val]
 
-            # if vmin is None:
-            #     vmin = subset[agg_col].min()
-            # if vmax is None:
-            #     vmax = subset[agg_col].max()
-
             # Pivot: y_col as index, current v_cat as columns
             pivot = subset.pivot_table(
                 index=y_col, columns=v_cat, values=agg_col, aggfunc=cell_agg
@@ -184,28 +179,10 @@ def facetted_heatmap(
             if row_idx == 0:
                 ax.set_title(f"{h_facet_col} = {h_val}", fontsize=11, fontweight="bold")
 
-            # Row label on the right side
-            # if col_idx == n_cols - 1:
-            #     ax_right = ax.twinx()
-            #     ax_right.set_yticks([])
-            #     ax_right.set_ylabel(
-            #         f"X: {v_cat}",
-            #         rotation=270,
-            #         labelpad=18,
-            #         fontsize=10,
-            #         fontstyle="italic",
-            #     )
-
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", size="5%", pad=0.08)
             cbar = fig.colorbar(im, cax=cax)
             cbar.ax.tick_params(labelsize=7)
-
-            # Add min/max labels to individual colorbars
-            # cbar.ax.set_ylabel(
-            #     f'[{facet_vmin:.1f}, {facet_vmax:.1f}]',
-            #     fontsize=7, rotation=270, labelpad=12
-            # )
 
             # Annotate cells
             if annot:
@@ -226,13 +203,6 @@ def facetted_heatmap(
                                 color=text_color,
                                 fontsize=7,
                             )
-
-    # Add shared colorbar
-    # agg_label = value_agg if isinstance(value_agg, str) else value_agg.__name__
-    # fig.subplots_adjust(right=0.88)
-    # cbar_ax = fig.add_axes([0.91, 0.15, 0.015, 0.7])
-    # cbar = fig.colorbar(im, cax=cbar_ax)
-    # cbar.set_label(f"{value_col} ({agg_label})")
 
     if title:
         fig.suptitle(title, fontsize=14, fontweight="bold", y=1.02)
