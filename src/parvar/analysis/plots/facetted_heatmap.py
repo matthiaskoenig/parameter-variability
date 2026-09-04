@@ -225,7 +225,6 @@ if __name__ == "__main__":
             value_agg="mean",
             cell_agg="mean",
             cmap="RdYlGn_r",
-            title="Mixed String Format Example",
             row_height=3,
             col_width=4,
         )
