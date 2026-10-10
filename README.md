@@ -69,6 +69,11 @@ Run all tests in parallel
 ```bash
 tox r
 ```
+What follows `--` is passed on to pytest, e.g. the tests in parallel with the durations of the slowest tests
+```bash
+tox r -e py3.14 -- -n auto --durations=15
+```
+Continuous integration runs only `py3.14` on linux, in parallel; the complete `envlist` (python 3.13 and 3.14) runs locally with `tox r` before a change is pushed.
 
 # Example
 ## ODE model

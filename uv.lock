@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.13"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -1422,7 +1422,7 @@ wheels = [
 
 [[package]]
 name = "parvar"
-version = "0.1.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "amici" },
@@ -1439,6 +1439,7 @@ dependencies = [
     { name = "pyarrow" },
     { name = "pydantic" },
     { name = "pydantic-yaml" },
+    { name = "pymetadata" },
     { name = "pypesto", extra = ["fides"] },
     { name = "pytest" },
     { name = "rich" },
@@ -1476,13 +1477,14 @@ requires-dist = [
     { name = "pyarrow", specifier = ">=23.0.1" },
     { name = "pydantic" },
     { name = "pydantic-yaml" },
+    { name = "pymetadata", specifier = "<0.6" },
     { name = "pypesto", extras = ["fides"], specifier = ">=0.6.0" },
     { name = "pytest" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.2" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "rich", specifier = ">=13.9.4" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.14.11" },
-    { name = "sbmlutils", specifier = ">=0.9.6" },
+    { name = "sbmlutils", specifier = ">=0.9.6,<0.10" },
     { name = "tox", marker = "extra == 'dev'", specifier = ">=4.34.1" },
     { name = "xarray", specifier = ">=2025.1.2" },
 ]

@@ -1,5 +1,7 @@
 """Simple model for demonstration."""
 
+from pathlib import Path
+
 from sbmlutils.examples.templates import terms_of_use
 from sbmlutils.factory import *
 
@@ -60,22 +62,24 @@ _m.reactions = [
 ]
 
 
-def create_simple_chain():
-    """Create simple chain model."""
+def create_simple_chain(output_dir: Path | None = None):
+    """Create simple chain model in `output_dir`, the models of the package by default."""
     from sbmlutils.converters import odefac
     from sbmlutils.cytoscape import visualize_sbml
     from parvar import MODELS_DIR
 
+    output_dir = output_dir or MODELS_DIR
+
     results: FactoryResult = create_model(
         model=_m,
-        filepath=MODELS_DIR / f"{_m.sid}.xml",
+        filepath=output_dir / f"{_m.sid}.xml",
         sbml_level=3,
         sbml_version=2,
         validation_options=ValidationOptions(units_consistency=False),
     )
 
     # create differential equations
-    md_path = MODELS_DIR / f"{_m.sid}.md"
+    md_path = output_dir / f"{_m.sid}.md"
     ode_factory = odefac.SBML2ODE.from_file(sbml_file=results.sbml_path)
     ode_factory.to_markdown(md_file=md_path)
 

@@ -9,7 +9,7 @@ import traceback
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Callable
+from typing import Any, Optional, Callable
 
 import arviz as az
 import numpy as np
@@ -274,8 +274,13 @@ def optimize_experiment(
     results_dir: Path,
     caching: bool = True,
     engine: str = "SingleCoreEngine",
+    settings: Optional[dict[str, Any]] = None,
 ) -> bool:
-    """Optimize a single petab problem using PyPesto."""
+    """Optimize a single petab problem using PyPesto.
+
+    `settings` overrides the default settings of the optimization and the
+    sampling, e.g. fewer starts and samples for a test.
+    """
     uid = yaml_path.parent.name
 
     console.print()
@@ -291,7 +296,7 @@ def optimize_experiment(
         console.print("Cached results: optimization results already exist.")
         return True
 
-    settings = dict(
+    default_settings: dict[str, Any] = dict(
         maxiter=1e4,
         fatol=1e-12,
         frtol=1e-12,
@@ -304,6 +309,9 @@ def optimize_experiment(
         n_samples=5000,
         n_chains=4,
     )
+    if settings:
+        default_settings.update(settings)
+    settings = default_settings
 
     try:
         pypesto_sampler = PyPestoSampler(yaml_file=yaml_path)
@@ -353,10 +361,12 @@ def optimize_experiments(
     yaml_paths: list[Path],
     caching: bool = True,
     engine: str = "MultiProcessEngine",
+    settings: Optional[dict[str, Any]] = None,
 ) -> None:
     """Optimize PETab problems serial.
 
-    For remote execution and multiprocessing see below.
+    For remote execution and multiprocessing see below. `settings` overrides
+    the default settings, see `optimize_experiment`.
     """
     for yaml_path in yaml_paths:
         optimize_experiment(
@@ -364,6 +374,7 @@ def optimize_experiments(
             results_dir=results_dir,
             caching=caching,
             engine=engine,
+            settings=settings,
         )
 
 
