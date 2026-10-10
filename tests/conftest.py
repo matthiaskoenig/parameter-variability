@@ -4,13 +4,17 @@ import pytest
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    """Load the identifiers.org registry of pymetadata once before the tests.
+    """Import the modules under test once in the main process before the tests.
 
-    pymetadata downloads the registry into its cache at the first import of
-    `pymetadata.identifiers.registry` when the cached file is missing or older
-    than a day. With pytest-xdist every worker imports it at the same time and
-    reads the file while another worker writes it, so the main process loads
-    it before the workers start.
+    Some dependencies write into a shared cache when they are imported:
+    pymetadata downloads the identifiers.org registry into its cache when the
+    cached file is missing or older than a day, arviz writes a file for its
+    daily warning. With pytest-xdist every worker imports them at the same
+    time, one worker reads or renames the file while another one writes it and
+    the collection fails. Importing them in the main process first leaves the
+    workers a fresh cache.
     """
     if not hasattr(config, "workerinput"):
-        from pymetadata.identifiers import registry  # noqa: F401
+        import parvar.experiments.petab_factory  # noqa: F401
+        import parvar.models.create_models  # noqa: F401
+        import parvar.optimization.petab_optimization  # noqa: F401
