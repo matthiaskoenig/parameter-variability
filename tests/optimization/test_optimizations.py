@@ -19,6 +19,14 @@ optim = {
     },
 }
 
+# fewer starts and samples than an analysis uses: the test checks that the
+# optimization and the sampling run through, not the quality of the estimates
+test_settings = {
+    "n_starts": 4,
+    "n_samples": 500,
+    "n_chains": 2,
+}
+
 testdata = [
     (definitions_minimal, factory_data_simple_chain, optim),
 ]
@@ -50,4 +58,12 @@ def test_optimization(
         results_dir=tmp_path,
         yaml_paths=yaml_paths,
         caching=False,
+        settings=test_settings,
     )
+    # every experiment is optimized and sampled, an error is written to a file
+    for yaml_path in yaml_paths:
+        uid = yaml_path.parent.name
+        assert not (tmp_path / f"{uid}_errors.tsv").exists(), (
+            tmp_path / f"{uid}_errors.tsv"
+        ).read_text()
+        assert (tmp_path / f"{uid}_results.tsv").exists()

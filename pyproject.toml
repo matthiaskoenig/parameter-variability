@@ -31,7 +31,11 @@ keywords = [
 	"variability",
 ]
 dependencies = [
-    "sbmlutils>=0.9.6",
+    # sbmlutils 0.10 moved `sbmlutils.examples` out of the package and 0.14
+    # removed `sbmlutils.converters.odefac`, both are used by `parvar.models`
+    "sbmlutils>=0.9.6,<0.10",
+    # sbmlutils 0.9 imports `pymetadata.identifiers`, which pymetadata 0.6 moved
+    "pymetadata<0.6",
     "libroadrunner>=2.9.2",
     "numpy>=2.4.2",
     "pandas>=2.3.3",

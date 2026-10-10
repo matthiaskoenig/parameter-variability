@@ -10,6 +10,7 @@ concurrency:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -37,5 +38,6 @@ jobs:
         cache-python: true
 
     - name: Test with tox
+      # the tests run in parallel, the durations keep slow tests visible
       run:
-        uvx --with tox-uv tox -e py${{ matrix.python-version }}
+        uvx --with tox-uv tox -e py${{ matrix.python-version }} -- -n auto --durations=15
