@@ -1,6 +1,12 @@
 name: CI-CD
 
 on: [push]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # a newer run supersedes the running one of the same branch
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}
@@ -9,7 +15,9 @@ jobs:
       matrix:
         # os: [ubuntu-latest, windows-latest, macos-latest]
         os: [ubuntu-latest]
-        python-version: ["3.13", "3.14"]
+        # continuous integration tests the newest python, python 3.13 is tested
+        # locally with `tox r`, see README.md
+        python-version: ["3.14"]
 
     steps:
     - uses: actions/checkout@v4
@@ -21,10 +29,12 @@ jobs:
            fi
       shell: bash
     - name: Install uv and set the python version
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v7
       with:
         python-version: ${{ matrix.python-version }}
         enable-cache: true
+        # the interpreter is cached with the packages instead of downloaded by every run
+        cache-python: true
 
     - name: Test with tox
       run:

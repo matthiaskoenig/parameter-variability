@@ -69,6 +69,7 @@ Run all tests in parallel
 ```bash
 tox r
 ```
+Continuous integration runs only `py3.14` on linux, the complete `envlist` (python 3.13 and 3.14) runs locally with `tox r` before a change is pushed.
 
 # Example
 ## ODE model
